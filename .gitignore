@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+client/dist/
+server/dist/
+
+# Local SQLite database & runtime data
+server/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Environment & secrets
+.env
+.env.*
+
+# macOS & logs
+.DS_Store
+*.log

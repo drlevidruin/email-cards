@@ -1,0 +1,17 @@
+{
+  "name": "email-cards",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Email Cards: bright, zero-distraction Tinder-style card triage for Gmail",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently --kill-others-on-fail -n SERVER,CLIENT -c cyan,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix server run typecheck && npm --prefix client run build",
+    "build:pages": "VITE_STATIC_DEMO=true VITE_BASE_PATH=/email-cards/ npm --prefix client run build",
+    "start": "NODE_ENV=production npm --prefix server run start",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
