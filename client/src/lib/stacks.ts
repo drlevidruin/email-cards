@@ -1,4 +1,12 @@
 import type { EmailThread, ScreenerSender } from './types';
+import type { Data } from '../storeTypes';
+import { counterpart } from './people';
+import { todoThreadIds } from './todo';
+
+export { counterpart };
+
+/** What a stack is built from. */
+export type StackData = Pick<Data, 'threads' | 'screener' | 'commitments' | 'tasks'>;
 
 export type StackId = 'needs-you' | 'new-senders' | 'newsletters' | 'receipts' | 'bookmarked' | 'later';
 
@@ -7,7 +15,7 @@ export const STACKS: { id: StackId; label: string }[] = [
   { id: 'new-senders', label: 'New senders' },
   { id: 'newsletters', label: 'Newsletters' },
   { id: 'receipts', label: 'Receipts' },
-  { id: 'bookmarked', label: 'Bookmarked' },
+  { id: 'bookmarked', label: 'To-do' },
   { id: 'later', label: 'Later' },
 ];
 
@@ -27,13 +35,8 @@ const ts = (iso?: string | null) => (iso ? new Date(iso).getTime() : 0);
 const snoozed = (t: EmailThread, now: number) => !!t.isSnoozedUntil && ts(t.isSnoozedUntil) > now;
 const newest = (a: EmailThread, b: EmailThread) => ts(b.lastMessageAt) - ts(a.lastMessageAt);
 
-export function buildStack(
-  id: StackId,
-  threads: EmailThread[],
-  screener: ScreenerSender[],
-  account: string,
-  now = Date.now()
-): DeckItem[] {
+export function buildStack(id: StackId, data: StackData, account: string, now = Date.now()): DeckItem[] {
+  const { threads, screener } = data;
   const inAccount = (accountId: string) => account === 'all' || accountId === account;
   if (id === 'new-senders') {
     return screener
@@ -41,6 +44,8 @@ export function buildStack(
       .map((sender) => ({ type: 'sender', id: sender.email, sender }));
   }
 
+  // A thread with an open To-do row lives there, not in Needs you
+  const onTodo = todoThreadIds(data, account);
   const live = threads.filter((t) => !t.isArchived && t.bucket !== 'archived' && inAccount(t.accountId));
   let list: EmailThread[];
   switch (id) {
@@ -49,7 +54,7 @@ export function buildStack(
         .filter(
           (t) =>
             !snoozed(t, now) &&
-            !t.isStarred &&
+            !onTodo.includes(t.id) &&
             (t.bucket === 'decision' ||
               t.bucket === 'waiting' ||
               (t.isUnread && !['feed', 'paper_trail', 'screener'].includes(t.bucket)))
@@ -57,15 +62,13 @@ export function buildStack(
         .sort((a, b) => b.urgencyScore - a.urgencyScore || newest(a, b));
       break;
     case 'newsletters':
-      list = live.filter((t) => t.bucket === 'feed' && !snoozed(t, now)).sort(newest);
+      list = live.filter((t) => t.bucket === 'feed' && !snoozed(t, now) && !onTodo.includes(t.id)).sort(newest);
       break;
     case 'receipts':
-      list = live.filter((t) => (t.bucket === 'paper_trail' || !!t.receiptInfo) && !snoozed(t, now)).sort(newest);
+      list = live.filter((t) => (t.bucket === 'paper_trail' || !!t.receiptInfo) && !snoozed(t, now) && !onTodo.includes(t.id)).sort(newest);
       break;
     case 'bookmarked':
-      list = live
-        .filter((t) => t.isStarred)
-        .sort((a, b) => (a.deadlineAt ? ts(a.deadlineAt) : Infinity) - (b.deadlineAt ? ts(b.deadlineAt) : Infinity));
+      list = onTodo.flatMap((tid) => live.filter((t) => t.id === tid));
       break;
     default:
       list = live.filter((t) => snoozed(t, now)).sort((a, b) => ts(a.isSnoozedUntil) - ts(b.isSnoozedUntil));
@@ -73,27 +76,26 @@ export function buildStack(
   return list.map((thread) => ({ type: 'thread', id: thread.id, thread }));
 }
 
-export function stackCounts(
-  threads: EmailThread[],
-  screener: ScreenerSender[],
-  account: string
-): Record<StackId, number> {
+/** Skipped cards go to the end, in the order they were skipped. */
+export function applySkips(items: DeckItem[], skipped: string[]): DeckItem[] {
+  if (skipped.length === 0) return items;
+  const out = items.filter((i) => !skipped.includes(i.id));
+  for (const id of skipped) {
+    const hit = items.find((i) => i.id === id);
+    if (hit) out.push(hit);
+  }
+  return out;
+}
+
+export function stackCounts(data: StackData, account: string): Record<StackId, number> {
   const out = {} as Record<StackId, number>;
-  for (const s of STACKS) out[s.id] = buildStack(s.id, threads, screener, account).length;
+  for (const s of STACKS) out[s.id] = buildStack(s.id, data, account).length;
   return out;
 }
 
 /** Reply actions are every quick action that is not archive or snooze. */
 export function replyActions(thread: EmailThread) {
   return thread.quickActions.filter((a) => a.kind !== 'archive' && a.kind !== 'snooze');
-}
-
-export function counterpart(thread: EmailThread): { name: string; email: string } {
-  const mine = thread.accountEmail.toLowerCase();
-  return (
-    thread.participants.find((p) => p.email.toLowerCase() !== mine) ||
-    thread.participants[0] || { name: 'Unknown', email: '' }
-  );
 }
 
 export function cleanSubject(subject: string): string {

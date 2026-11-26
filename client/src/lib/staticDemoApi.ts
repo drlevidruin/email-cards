@@ -730,6 +730,14 @@ export const staticDemoApi = {
     return { ok: true };
   },
 
+  reopenCommitment: async (id: string) => {
+    const store = loadStore();
+    const c = store.commitments.find((x) => x.id === id);
+    if (c && c.status === 'resolved') c.status = 'open';
+    saveStore(store);
+    return { ok: true };
+  },
+
   nudgeCommitment: async (id: string) => {
     const store = loadStore();
     const c = store.commitments.find((x) => x.id === id);

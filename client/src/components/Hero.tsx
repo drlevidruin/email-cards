@@ -1,0 +1,48 @@
+import type { EmailThread, ScreenerSender } from '../lib/types';
+import { formatCurrency } from '../lib/utils';
+import { cleanSubject } from '../lib/stacks';
+import './Hero.css';
+
+/** What a card is about, in the largest type: the Goal, the amount on a receipt, or the subject. */
+export function heroKind(thread: EmailThread, goalFirst = false): 'receipt' | 'goal' | 'subject' {
+  // On the To-do deck a thread's Goal is why it is there, even when it is also a receipt
+  if (thread.receiptInfo && !(goalFirst && thread.distilledAsk)) return 'receipt';
+  return thread.distilledAsk ? 'goal' : 'subject';
+}
+
+export function Hero({ thread, goalFirst }: { thread: EmailThread; goalFirst?: boolean }) {
+  const kind = heroKind(thread, goalFirst);
+  const ri = thread.receiptInfo;
+  if (kind === 'receipt' && ri) {
+    return (
+      <div className="hero">
+        <div className="hero__label t-caption hero__label--quiet">{ri.category}</div>
+        <p className="hero__text t-title t-num">{formatCurrency(ri.amount, ri.currency)}</p>
+      </div>
+    );
+  }
+  if (kind === 'goal') {
+    return (
+      <div className="hero">
+        <div className="hero__label t-caption">Goal</div>
+        <p className="hero__text t-title">{thread.distilledAsk}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="hero">
+      <p className="hero__text t-title">{cleanSubject(thread.subject)}</p>
+    </div>
+  );
+}
+
+/** The hero of a new-sender card: why it is new, the address, and the reason. */
+export function SenderHero({ sender }: { sender: ScreenerSender }) {
+  return (
+    <div className="hero">
+      <div className="hero__label hero__label--quiet t-caption">New sender</div>
+      <p className="hero__text t-title-2">{sender.email}</p>
+      <p className="hero__reason t-subhead">{sender.aiReason}</p>
+    </div>
+  );
+}

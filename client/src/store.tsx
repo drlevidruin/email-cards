@@ -47,6 +47,7 @@ const ACCOUNT_KEY = 'email_cards_account';
 function newSession(): Session {
   return {
     dismissed: new Set(),
+    skipped: [],
     counts: { replied: 0, done: 0, later: 0, bookmarked: 0, blocked: 0, allowed: 0, moved: 0 },
     coverPending: null,
     todayDone: false,
@@ -103,7 +104,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast((t) => (t && t.id === toast.id ? null : t)), 5000);
+    const timer = window.setTimeout(() => setToast((t) => (t && t.id === toast.id ? null : t)), 6000);
     return () => window.clearTimeout(timer);
   }, [toast]);
 

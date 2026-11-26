@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, Menu as MenuIcon, Undo2 } from 'lucide-react';
+import { Menu as MenuIcon, Search } from 'lucide-react';
 import { useStore } from '../store';
 import { navigate } from '../router';
 import { finishInfo } from '../lib/finish';
 import { handledToday, markClear, markNudged, markStart, nudgeSeen, useProgressLog } from '../lib/progress';
-import { buildStack, replyActions, stackCounts, stackLabel, type DeckItem, type StackId } from '../lib/stacks';
+import { applySkips, buildStack, stackCounts, stackLabel, type DeckItem, type StackId } from '../lib/stacks';
 import { loadThread } from '../lib/threadCache';
 import { describeWake, type LaterOption } from '../lib/time';
-import type { EmailThread } from '../lib/types';
 import { useCelebrate } from '../lib/useCelebrate';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import { ActionBar, type BarAction, type BarVariant, type Dir } from '../components/ActionBar';
+import type { BadgeLabels } from '../components/SwipeBadge';
+import { useDeckKeys } from '../components/useDeckKeys';
 import { CoverCard } from '../components/CoverCard';
 import { Deck, type DeckHandle } from '../components/Deck';
 import { FinishCard } from '../components/FinishCard';
@@ -18,19 +19,23 @@ import { LaterSheet } from '../components/LaterSheet';
 import { Menu } from '../components/Menu';
 import { SegmentBar } from '../components/SegmentBar';
 import { TodayCard } from '../components/TodayCard';
-import { ShortcutsDialog } from '../components/ShortcutsDialog';
 import { TopBar } from '../components/TopBar';
 import './CardsScreen.css';
 
-export function CardsScreen({ stack }: { stack: StackId }) {
+/** `covered` means the reader is open over the deck: the deck stays put but takes no keys and shows no bar. */
+export function CardsScreen({ stack, covered }: { stack: StackId; covered?: boolean }) {
   const store = useStore();
   const { data, account, status } = store;
   const desktop = useIsDesktop();
   const deck = useRef<DeckHandle>(null);
   const [menu, setMenu] = useState(false);
-  const [shortcuts, setShortcuts] = useState(false);
   const [laterFor, setLaterFor] = useState<DeckItem | null>(null);
   const [active, setActive] = useState<Dir | null>(null);
+  const [past, setPast] = useState(false);
+  const onActive = useCallback((dir: Dir | null, p?: boolean) => {
+    setActive(dir);
+    setPast(!!p);
+  }, []);
 
   const { setLastStack } = store;
   useEffect(() => setLastStack(stack), [stack, setLastStack]);
@@ -38,7 +43,7 @@ export function CardsScreen({ stack }: { stack: StackId }) {
   useProgressLog();
   const session = store.session(stack);
   const base = data
-    ? buildStack(stack, data.threads, data.screener, account).filter((i) => !session.dismissed.has(i.id))
+    ? applySkips(buildStack(stack, data, account).filter((i) => !session.dismissed.has(i.id)), session.skipped)
     : [];
   if (data && session.coverPending === null) {
     session.coverPending = (stack === 'newsletters' || stack === 'receipts') && base.length >= 3;
@@ -61,13 +66,19 @@ export function CardsScreen({ stack }: { stack: StackId }) {
 
   const isSender = stack === 'new-senders';
   const noReplies = stack === 'newsletters' || stack === 'receipts';
-  const variant: BarVariant = isSender ? 'senders' : noReplies ? 'plain' : 'default';
-  const enabled: Dir[] = ['left', 'right'];
-  // Done and Allow and Block fly the card out. Later opens its sheet first, so the card stays until a time is picked.
-  const flyDirs: Dir[] = isSender ? ['left', 'right'] : ['right'];
-  const labels = isSender ? { right: 'Allow', left: 'Block' } : { right: 'Done', left: 'Later' };
+  const onTodo = stack === 'bookmarked';
+  const variant: BarVariant = isSender ? 'senders' : noReplies ? 'plain' : onTodo ? 'todo' : 'default';
+  // On the To-do deck the card is already on To-do, so up does nothing
+  const enabled: Dir[] = onTodo ? ['left', 'right', 'down'] : ['left', 'right', 'up', 'down'];
+  // Done, To-do, Skip and the sender moves fly the card out. Later opens its sheet first and the card waits.
+  const flyDirs: Dir[] = isSender ? enabled : ['right', 'up', 'down'];
+  const labels: BadgeLabels = isSender
+    ? { right: 'Allow', left: 'Block', up: 'Newsletters', down: 'Skip' }
+    : onTodo
+      ? { right: 'Done', left: 'Later', down: 'Skip' }
+      : { right: 'Done', left: 'Later', up: 'To-do', down: 'Skip' };
 
-  const overlay = menu || shortcuts || !!laterFor;
+  const overlay = menu || !!laterFor || !!covered;
   const multi = (data?.accounts.length ?? 0) > 1 && account === 'all';
 
   // Load the first three cards' emails ahead of time, so a card shows its whole email at once.
@@ -83,7 +94,7 @@ export function CardsScreen({ stack }: { stack: StackId }) {
 
   // The day is clear only when Needs you is empty in every account, whichever account is showing
   useEffect(() => {
-    if (finished && stack === 'needs-you' && data && stackCounts(data.threads, data.screener, 'all')['needs-you'] === 0) markClear();
+    if (finished && stack === 'needs-you' && data && stackCounts(data, 'all')['needs-you'] === 0) markClear();
   }, [finished, stack, data]);
 
   // A stack's clock starts the first time it shows a card or its cover (the Start press, on Needs you)
@@ -98,31 +109,51 @@ export function CardsScreen({ stack }: { stack: StackId }) {
     store.touch();
   }, [session, stack, store]);
 
+  const skip = useCallback(
+    (id: string) => {
+      session.skipped = [...session.skipped.filter((s) => s !== id), id];
+      store.touch();
+      // Skip has its own Undo, so Z after a Skip brings the skipped card back, not the move before it
+      store.offerUndo('Skipped', async () => {
+        session.skipped = session.skipped.filter((s) => s !== id);
+        store.touch();
+      });
+    },
+    [session, store]
+  );
+
   const onDirection = useCallback(
     (dir: Dir, item: DeckItem) => {
+      if (dir === 'down') return skip(item.id);
       if (item.type === 'sender') {
-        void store.decide(item.sender, stack, dir === 'left' ? 'muted' : 'approved');
+        void store.decide(item.sender, stack, dir === 'left' ? 'muted' : dir === 'up' ? 'feed' : 'approved');
         return;
       }
       if (dir === 'right') void store.done(item.thread, stack);
+      else if (dir === 'up') void store.bookmark(item.thread, stack, true);
       else setLaterFor(item);
     },
-    [store, stack]
+    [store, stack, skip]
   );
 
-  const bookmark = useCallback(
-    (t: EmailThread) => deck.current?.flyOut('up', () => void store.bookmark(t, stack, !t.isStarred)),
-    [store, stack]
+  const open = useCallback(
+    (item: DeckItem) => {
+      if (item.type === 'thread') navigate(`/read/${item.id}?from=${stack}`);
+      else if (item.sender.threadIds?.[0]) navigate(`/read/${item.sender.threadIds[0]}?from=${stack}&sender=${encodeURIComponent(item.sender.email)}`);
+    },
+    [stack]
   );
 
-  const reply = (t: EmailThread, qa?: string) => navigate(`/reply/${t.id}?${qa ? `qa=${qa}&` : ''}from=deck`);
-
-  const onBar = (slot: BarAction) => {
-    if (slot !== 'middle') return deck.current?.trigger(slot);
+  const reply = () => {
     const top = items[0];
-    if (!top) return;
-    if (top.type === 'sender') deck.current?.flyOut('down', () => void store.decide(top.sender, stack, 'feed'));
-    else if (!noReplies) reply(top.thread);
+    if (top?.type === 'thread' && !noReplies) navigate(`/reply/${top.id}?from=deck`);
+  };
+
+  const onBar = (action: BarAction) => {
+    const dirs: Partial<Record<BarAction, Dir>> = { later: 'left', todo: 'up', done: 'right', block: 'left', newsletters: 'up', allow: 'right' };
+    const dir = dirs[action];
+    if (dir) deck.current?.trigger(dir);
+    else reply();
   };
 
   const pickLater = (o: LaterOption) => {
@@ -132,40 +163,20 @@ export function CardsScreen({ stack }: { stack: StackId }) {
     deck.current?.flyOut('left', () => void store.later(item.thread, stack, o.at, describeWake(o.at)));
   };
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target;
-      if (el instanceof HTMLElement) {
-        if (el.closest('input, textarea, select, [contenteditable="true"]') || el.isContentEditable) return;
-        if ((e.key === 'Enter' || e.key === ' ') && el.closest('button, a')) return;
-      }
-      if (overlay || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key.toLowerCase() === 'z') {
-        void store.undo();
-        return;
-      }
-      if (cover || finished || today) return;
-      const top = items[0];
-      const key = e.key.toLowerCase();
-      if (e.key === 'ArrowRight' || (!isSender && key === 'e')) {
-        e.preventDefault();
-        deck.current?.trigger('right');
-      } else if (e.key === 'ArrowLeft' || (!isSender && key === 'l')) {
-        e.preventDefault();
-        deck.current?.trigger('left');
-      } else if (top?.type === 'thread' && !noReplies && (key === 'r' || e.key === 'Enter')) {
-        e.preventDefault();
-        reply(top.thread);
-      } else if (top?.type === 'thread' && key === 'b') bookmark(top.thread);
-      else if (key === 'm') setMenu(true);
-      else if (e.key === '?') setShortcuts(true);
-      else if (top?.type === 'thread' && !noReplies && /^[1-3]$/.test(e.key)) {
-        const r = replyActions(top.thread)[Number(e.key) - 1];
-        if (r) reply(top.thread, r.id);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+  const closeLater = () => {
+    setLaterFor(null);
+    deck.current?.release();
+  };
+
+  useDeckKeys({
+    off: overlay,
+    cards: !cover && !finished && !today,
+    onDir: (dir) => deck.current?.trigger(dir),
+    onOpen: () => items[0] && open(items[0]),
+    onReply: reply,
+    onUndo: () => void store.undo(),
+    onMenu: desktop ? undefined : () => setMenu(true),
+    senders: isSender,
   });
 
   let content;
@@ -199,7 +210,7 @@ export function CardsScreen({ stack }: { stack: StackId }) {
       />
     );
   } else if (today) {
-    content = <TodayCard left={base.length} account={account} keys={!overlay} onStart={start} />;
+    content = <TodayCard items={base} account={account} keys={!overlay} onStart={start} onOpen={open} />;
   } else if (cover) {
     const threads = base.flatMap((i) => (i.type === 'thread' ? [i.thread] : []));
     content = (
@@ -222,70 +233,57 @@ export function CardsScreen({ stack }: { stack: StackId }) {
         enabled={enabled}
         flyDirs={flyDirs}
         labels={labels}
-        desktop={desktop}
-        noReplies={noReplies}
-        onBookmark={bookmark}
         accounts={multi ? data.accounts : undefined}
         onDirection={onDirection}
-        onActive={setActive}
+        onOpen={open}
+        onActive={onActive}
         onExitDone={store.clearExiting}
+        goalFirst={onTodo}
         nudge={!nudgeSeen() && !overlay}
         onNudged={markNudged}
       />
     );
   }
 
-  const showBar = status === 'ready' && !finished && !cover && !today;
+  const showBar = status === 'ready' && !finished && !cover && !today && !covered;
   const showCount = status === 'ready' && !finished && !cover && !today && total > 0;
+  const live = status === 'ready' && !finished && !cover && !today;
   return (
-    <div className="cards">
+    <div className={`cards${live ? ' cards--live' : ''}`}>
       <div className="cards__col">
         <TopBar
           left={
-            <button className="icon-btn" aria-label="Menu" onClick={() => setMenu(true)}>
-              <MenuIcon size={22} strokeWidth={2} />
-            </button>
+            desktop ? undefined : (
+              <button className="icon-btn" aria-label="Menu" onClick={() => setMenu(true)}>
+                <MenuIcon size={22} strokeWidth={1.75} />
+              </button>
+            )
           }
           right={
-            <>
-              {desktop && (
-                <button className="icon-btn" aria-label="Shortcuts" onClick={() => setShortcuts(true)}>
-                  <Keyboard size={22} strokeWidth={2} />
-                </button>
-              )}
-              <button
-                className="icon-btn"
-                aria-label="Undo"
-                style={{ visibility: store.canUndo ? 'visible' : 'hidden' }}
-                onClick={() => void store.undo()}
-              >
-                <Undo2 size={22} strokeWidth={2} />
+            desktop ? undefined : (
+              <button className="icon-btn" aria-label="Search" onClick={() => navigate('/ask')}>
+                <Search size={22} strokeWidth={1.75} />
               </button>
-            </>
+            )
           }
         >
-          <span className="topbar__title">{stackLabel(stack)}</span>
+          <span className="topbar__title t-headline">{stackLabel(stack)}</span>
           {showCount && (
-            <span className="topbar__count">
+            <span className="topbar__count t-footnote t-num">
               {Math.min(shown + 1, total)} of {total}
             </span>
           )}
         </TopBar>
         <SegmentBar handled={shown} total={total} />
-        <div className="cards__deck">{content}</div>
+        <div className={`cards__deck${today || finished ? ' cards__deck--today' : ''}`}>{content}</div>
         {showBar ? (
-          <ActionBar
-            variant={variant}
-            active={active}
-            onAction={onBar}
-          />
+          <ActionBar variant={variant} active={active} past={past} onAction={onBar} />
         ) : (
-          <div className="cards__bar-space" />
+          !today && !finished && <div className="cards__bar-space" />
         )}
       </div>
-      {menu && <Menu current={stack} onClose={() => setMenu(false)} />}
-      {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
-      {laterFor && <LaterSheet onPick={pickLater} onClose={() => setLaterFor(null)} />}
+      {menu && !desktop && <Menu current={stack} onClose={() => setMenu(false)} />}
+      {laterFor && <LaterSheet onPick={pickLater} onClose={closeLater} />}
     </div>
   );
 }

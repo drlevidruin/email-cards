@@ -1,10 +1,10 @@
 .deck { position: relative; width: 100%; height: 100%; }
 .deck__card { position: absolute; inset: 0; border-radius: var(--radius-card); transform-origin: 50% 100%; }
-.deck__card--top { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.deck__card--top { transform-origin: 50% 130%; }
+.deck__card--top { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .deck__card--top:active { cursor: grabbing; }
-.deck__card--behind { pointer-events: none; background: var(--surface); }
+.deck__card--behind { pointer-events: none; background: var(--surface); box-shadow: var(--shadow-card); }
 .deck__card--behind .card { box-shadow: none; }
-.deck__card--sliver { background: var(--surface); }
 .deck__card--top .card { box-shadow: var(--shadow-card); }
 
 .deck-skeleton { display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%; padding: 32px 24px; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card); }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { api } from '../lib/api';
 import type { ActionProposal, AgentChatMessage } from '../lib/types';
 import { counterpart } from '../lib/stacks';
@@ -9,7 +9,6 @@ import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
 import { PageShell } from '../components/PageShell';
 import '../components/List.css';
-import '../components/ReplyComposer.css';
 import './AskScreen.css';
 
 const SUGGESTIONS = ['What needs me today?', 'Archive every newsletter', 'Find the Stowe cabin email'];
@@ -111,9 +110,22 @@ export function AskScreen() {
     );
   };
 
+  const field = (
+    <form
+      className="search ask__form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void send(text);
+      }}
+    >
+      <Search size={18} strokeWidth={1.75} />
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Search or ask" aria-label="Search or ask" autoFocus enterKeyHint="search" />
+    </form>
+  );
+
   return (
     <PageShell
-      title="Ask Claude"
+      title="Search"
       canvas
       fill
       right={
@@ -125,13 +137,15 @@ export function AskScreen() {
       }
     >
       <div className="ask">
+        {field}
         <div className="ask__scroll">
           {chat.length === 0 && !waiting ? (
             <ul className="list ask__suggestions">
               {SUGGESTIONS.map((s) => (
                 <li key={s}>
                   <button className="list__row ask__suggestion" onClick={() => void send(s)}>
-                    <span className="list__title">{s}</span>
+                    <Search size={18} strokeWidth={1.75} className="ask__suggestion-icon" />
+                    <span className="t-subhead">{s}</span>
                   </button>
                 </li>
               ))}
@@ -140,12 +154,12 @@ export function AskScreen() {
             <div className="ask__thread">
               {chat.map((m) =>
                 m.role === 'user' ? (
-                  <div key={m.id} className="ask__user">
+                  <div key={m.id} className="t-subhead ask__user">
                     {m.content}
                   </div>
                 ) : (
                   <div key={m.id} className="ask__assistant">
-                    <p className="ask__text">{m.content}</p>
+                    <p className="t-body ask__text">{m.content}</p>
                     {m.citations && m.citations.length > 0 && (
                       <ul className="list ask__cites">
                         {m.citations.map((c) => {
@@ -153,8 +167,8 @@ export function AskScreen() {
                           return (
                             <li key={c.threadId}>
                               <button className="list__row ask__cite" onClick={() => navigate(`/read/${c.threadId}`)}>
-                                <span className="ask__cite-subject">{row.title}</span>
-                                <span className="ask__cite-account">
+                                <span className="t-callout ask__cite-subject">{row.title}</span>
+                                <span className="t-footnote ask__cite-account">
                                   {row.who}
                                   {row.due && (
                                     <>
@@ -192,20 +206,6 @@ export function AskScreen() {
             </div>
           )}
         </div>
-        <form
-          className="composer__ask ask__form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send(text);
-          }}
-        >
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask about your mail" aria-label="Ask about your mail" />
-          {text.trim() && (
-            <button type="submit" className="composer__ask-go" aria-label="Send">
-              <ArrowUp size={20} strokeWidth={2} />
-            </button>
-          )}
-        </form>
       </div>
     </PageShell>
   );

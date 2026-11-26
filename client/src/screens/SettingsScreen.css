@@ -1,4 +1,6 @@
-.settings { max-width: 760px; }
+.settings { max-width: 720px; }
+.settings__grow { flex: 1; min-width: 0; }
+.settings__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .settings__row { justify-content: space-between; gap: 16px; }
 .settings__label { font-size: 16px; color: var(--ink); }
 .settings__value { font-size: 16px; color: var(--ink-2); }
@@ -10,7 +12,7 @@
   flex: none; position: relative; width: 44px; height: 26px; border-radius: 13px;
   background: var(--line-strong); transition: background 150ms var(--ease);
 }
-.switch.is-on { background: var(--ink); }
+.switch.is-on { background: var(--accent); }
 .switch__knob {
   position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff;
   transition: transform 150ms var(--ease);
@@ -18,3 +20,6 @@
 .switch.is-on .switch__knob { transform: translateX(18px); }
 /* hit area of 44px high without changing the 26px switch */
 .switch::after { content: ''; position: absolute; inset: -9px 0; }
+
+.settings__chev { color: var(--ink-4); }
+.settings__privacy { padding: 4px 8px 8px; color: var(--ink-2); }

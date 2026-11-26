@@ -1,34 +1,48 @@
 :root {
   color-scheme: light;
-  --canvas: #EDEFF2;
+  --canvas: #EEF0F3;
   --surface: #FFFFFF;
-  --surface-2: #F5F6F8;
-  --line: #E3E6EB;
-  --line-strong: #CBD0D8;
-  --ink: #15171C;
-  --ink-2: #4B5160;
-  --ink-3: #646B7A;
-  --ink-body: #2A2E37;
-  --accent: #2446E4;
-  --accent-press: #1A36BD;
-  --accent-soft: #E9EDFF;
-  --accent-tint: #F4F6FF;
-  --accent-line: rgba(36, 70, 228, 0.08);
-  --accent-mark: rgba(36, 70, 228, 0.13);
+  --surface-2: #F4F5F7;
+  --line: rgba(17, 19, 24, 0.08);
+  --line-strong: rgba(17, 19, 24, 0.14);
+  --ink: #111318;
+  --ink-2: #3D4350;
+  --ink-3: #6B7280;
+  --ink-4: #9AA1AD;
+  --ink-body: #23262E;
+  --accent: #0B7A5A;
+  --accent-press: #08654A;
+  --accent-soft: #E2F2EB;
+  --accent-tint: #F1F8F5;
+  --accent-mark: rgba(11, 122, 90, 0.16);
+  --accent-line: rgba(11, 122, 90, 0.10);
   --danger: #C2362B;
-  --ok: #12795A;
-  --radius-card: 28px;
-  --radius-l: 18px;
-  --radius-pill: 999px;
+  --ok: var(--accent);
+  --radius-card: 26px;
+  --radius-l: 16px;
   --radius-m: 14px;
   --radius-s: 10px;
-  --shadow-card: 0 1px 2px rgba(21, 23, 28, 0.05), 0 4px 12px rgba(21, 23, 28, 0.05), 0 20px 44px -12px rgba(21, 23, 28, 0.16);
-  --shadow-btn: 0 1px 2px rgba(21, 23, 28, 0.06), 0 2px 8px rgba(21, 23, 28, 0.05);
-  --shadow-primary: 0 6px 16px rgba(36, 70, 228, 0.28);
-  --scrim: rgba(21, 23, 28, 0.4);
-  --confetti-1: #9AA8F5;
-  --confetti-2: #C9D2FF;
-  --shadow-pop: 0 8px 40px rgba(21, 23, 28, 0.18);
+  --radius-pill: 999px;
+  --shadow-card: 0 0 0 1px rgba(17, 19, 24, 0.04), 0 2px 4px rgba(17, 19, 24, 0.04), 0 14px 32px -10px rgba(17, 19, 24, 0.14);
+  --shadow-float: 0 0 0 1px rgba(17, 19, 24, 0.05), 0 10px 28px -6px rgba(17, 19, 24, 0.16);
+  --shadow-btn: 0 1px 2px rgba(17, 19, 24, 0.06), 0 2px 8px rgba(17, 19, 24, 0.05);
+  --shadow-primary: 0 6px 16px -4px rgba(11, 122, 90, 0.45);
+  --shadow-pop: var(--shadow-float);
+  --scrim: rgba(17, 19, 24, 0.4);
+  --confetti-1: #5DB898;
+  --confetti-2: #B7E0D1;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* The type scale. Counts use tabular numbers. */
+.t-display { font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.025em; }
+.t-title { font-size: 26px; line-height: 31px; font-weight: 700; letter-spacing: -0.022em; }
+.t-title-2 { font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.015em; }
+.t-headline { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.t-body { font-size: 16px; line-height: 24px; font-weight: 400; }
+.t-callout { font-size: 15px; line-height: 20px; font-weight: 600; }
+.t-subhead { font-size: 15px; line-height: 20px; font-weight: 400; }
+.t-footnote { font-size: 13px; line-height: 18px; font-weight: 400; }
+.t-caption { font-size: 12px; line-height: 16px; font-weight: 600; }
+.t-num { font-variant-numeric: tabular-nums; }

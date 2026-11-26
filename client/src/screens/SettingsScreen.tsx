@@ -1,9 +1,14 @@
+import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+import pkg from '../../package.json';
 import { api, isStaticDemoMode } from '../lib/api';
+import { setStreakOn, useStreakOn } from '../lib/prefs';
 import { forgetSnapshot, isSnapshot, snapshotLabel } from '../lib/snapshot';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
 import { PageShell } from '../components/PageShell';
+import { Sheet } from '../components/Sheet';
 import '../components/List.css';
 import './SettingsScreen.css';
 
@@ -19,6 +24,8 @@ const ZONES: [string, string][] = [
 export function SettingsScreen() {
   const store = useStore();
   const { data } = store;
+  const streak = useStreakOn();
+  const [privacy, setPrivacy] = useState(false);
   if (!data) return <PageShell title="Settings" canvas />;
   const { settings, shabbosStatus } = data;
 
@@ -55,6 +62,31 @@ export function SettingsScreen() {
   return (
     <PageShell title="Settings" canvas>
       <div className="settings">
+        <h2 className="list-heading">Accounts</h2>
+        <ul className="list">
+          {data.accounts.map((a) => (
+            <li key={a.id} className="list__row settings__row">
+              <span className="settings__dot" style={{ background: a.color }} />
+              <span className="settings__label settings__grow">{a.label}</span>
+              <span className="settings__value t-subhead">{a.email}</span>
+            </li>
+          ))}
+        </ul>
+        <h2 className="list-heading">Display</h2>
+        <ul className="list">
+          <li className="list__row settings__row">
+            <span className="settings__label" id="streak-label">Show streak</span>
+            <button
+              className={`switch${streak ? ' is-on' : ''}`}
+              role="switch"
+              aria-checked={streak}
+              aria-labelledby="streak-label"
+              onClick={() => setStreakOn(!streak)}
+            >
+              <span className="switch__knob" />
+            </button>
+          </li>
+        </ul>
         <h2 className="list-heading">Shabbos and Yom Tov</h2>
         <ul className="list">
           <li className="list__row settings__row">
@@ -84,6 +116,19 @@ export function SettingsScreen() {
             </li>
           )}
         </ul>
+        {isStaticDemoMode() && (
+          <>
+            <h2 className="list-heading">Privacy</h2>
+            <ul className="list">
+              <li>
+                <button className="list__row settings__row" onClick={() => setPrivacy(true)}>
+                  <span className="settings__label">Your data</span>
+                  <ChevronRight size={18} strokeWidth={1.75} className="settings__chev" />
+                </button>
+              </li>
+            </ul>
+          </>
+        )}
         {(settings.demoMode || isStaticDemoMode()) && (
           <>
             <h2 className="list-heading">Demo</h2>
@@ -105,7 +150,19 @@ export function SettingsScreen() {
             </ul>
           </>
         )}
+        <h2 className="list-heading">About</h2>
+        <ul className="list">
+          <li className="list__row settings__row">
+            <span className="settings__label">Version</span>
+            <span className="settings__value">{pkg.version}</span>
+          </li>
+        </ul>
       </div>
+      {isStaticDemoMode() && privacy && (
+        <Sheet title="Privacy" onClose={() => setPrivacy(false)} dialog>
+          <p className="t-subhead settings__privacy">This demo runs in your browser. Your mail stays on your device and is never used to train models.</p>
+        </Sheet>
+      )}
     </PageShell>
   );
 }

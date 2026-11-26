@@ -15,29 +15,26 @@ export function useInDeck(thread: EmailThread | undefined): boolean {
     !!thread &&
     !!data &&
     !store.session(lastStack).dismissed.has(thread.id) &&
-    buildStack(lastStack, data.threads, data.screener, account).some((i) => i.id === thread.id)
+    buildStack(lastStack, data, account).some((i) => i.id === thread.id)
   );
 }
 
 /** The card actions for one open email (Read screen, All mail). */
-export function useThreadActions(thread: EmailThread | undefined, leaveAfterMove: boolean): { act: (slot: BarAction) => void; toggleBookmark: () => void; sheet: ReactNode; sheetOpen: boolean } {
+export function useThreadActions(thread: EmailThread | undefined, leaveAfterMove: boolean): { act: (action: BarAction) => void; sheet: ReactNode; sheetOpen: boolean } {
   const store = useStore();
   const [later, setLater] = useState(false);
   const { lastStack } = store;
   const inDeck = useInDeck(thread);
   const stack = inDeck ? lastStack : null;
 
-  const toggleBookmark = () => {
+  const act = (action: BarAction) => {
     if (!thread) return;
-    void store.bookmark(thread, stack, !thread.isStarred);
-    if (leaveAfterMove) goBack();
-  };
-
-  const act = (slot: BarAction) => {
-    if (!thread) return;
-    if (slot === 'right') void store.done(thread, stack);
-    else if (slot === 'left') setLater(true);
-    else navigate(`/reply/${thread.id}?from=read`);
+    if (action === 'done') void store.done(thread, stack);
+    else if (action === 'later') setLater(true);
+    else if (action === 'todo') {
+      void store.bookmark(thread, stack, !thread.isStarred);
+      if (leaveAfterMove) goBack();
+    } else navigate(`/reply/${thread.id}?from=read`);
   };
 
   const pick = (o: LaterOption) => {
@@ -47,5 +44,5 @@ export function useThreadActions(thread: EmailThread | undefined, leaveAfterMove
     if (leaveAfterMove) goBack();
   };
 
-  return { act, toggleBookmark, sheetOpen: later, sheet: later ? <LaterSheet onPick={pick} onClose={() => setLater(false)} /> : null };
+  return { act, sheetOpen: later, sheet: later ? <LaterSheet onPick={pick} onClose={() => setLater(false)} /> : null };
 }

@@ -1,0 +1,19 @@
+.swipewash { position: absolute; inset: 0; z-index: 2; background: #fff; pointer-events: none; }
+.swipeslot { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; pointer-events: none; }
+.swipeslot__item { grid-area: 1 / 1; }
+.swipepill {
+  display: flex; align-items: center; gap: 10px;
+  height: 48px; padding: 6px 18px 6px 6px; border-radius: var(--radius-pill);
+  --tone: var(--ink-2); background: var(--surface); box-shadow: var(--shadow-float); color: var(--ink);
+}
+.swipepill--accent { --tone: var(--accent); }
+.swipepill--danger { --tone: var(--danger); }
+.swipepill__disc {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid var(--tone); color: var(--tone);
+}
+.swipepill__label { white-space: nowrap; }
+.swipepill.is-filled { background: var(--tone); color: #fff; animation: badge-pop 150ms var(--ease); }
+.swipepill.is-filled .swipepill__disc { border-color: #fff; color: #fff; }
+@keyframes badge-pop { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }

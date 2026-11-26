@@ -1,28 +1,33 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { api } from '../lib/api';
 import { counterpart, cleanSubject } from '../lib/stacks';
 import { relativeTime } from '../lib/time';
 import type { EmailThread } from '../lib/types';
-import { useIsDesktop } from '../lib/useIsDesktop';
-import { navigate, useRoute } from '../router';
+import { navigate } from '../router';
 import { useStore } from '../store';
-import { ActionBar } from '../components/ActionBar';
-import { BookmarkButton } from '../components/BookmarkButton';
+import { Avatar } from '../components/Avatar';
 import { PageShell } from '../components/PageShell';
-import { ThreadView } from '../components/ThreadView';
-import { useThreadActions } from '../components/useThreadActions';
 import '../components/List.css';
 import './AllMailScreen.css';
 
+const DAY = 86400000;
+
+/** `Today`, `Yesterday`, then the date. */
+function dayLabel(iso: string, now = new Date()): string {
+  const d = new Date(iso);
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((start(now) - start(d)) / DAY);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).replace(/^\w+, /, '');
+}
+
 export function AllMailScreen() {
   const store = useStore();
-  const desktop = useIsDesktop();
-  const route = useRoute();
   const [query, setQuery] = useState('');
   const [archived, setArchived] = useState(false);
   const [found, setFound] = useState<EmailThread[] | null>(null);
-  const input = useRef<HTMLInputElement>(null);
   const { account, data } = store;
 
   useEffect(() => {
@@ -40,51 +45,28 @@ export function AllMailScreen() {
   }, [query, account]);
 
   // Rows follow the store, so Done on the open email moves it out of Inbox at once.
-  const rows = useMemo(() => {
+  const groups = useMemo(() => {
     if (!found) return null;
     const live = new Map((data?.threads ?? []).map((t) => [t.id, t]));
-    return found
+    const rows = found
       .map((t) => live.get(t.id) ?? t)
       .filter((t) => !!t.isArchived === archived)
       .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+    const out: { label: string; rows: EmailThread[] }[] = [];
+    for (const t of rows) {
+      const label = dayLabel(t.lastMessageAt);
+      const last = out[out.length - 1];
+      if (last && last.label === label) last.rows.push(t);
+      else out.push({ label, rows: [t] });
+    }
+    return out;
   }, [found, data, archived]);
 
-  const wanted = route.segments[0] === 'all' ? route.segments[1] : undefined;
-  const selected = desktop && rows ? rows.find((t) => t.id === wanted) ?? rows[0] : undefined;
-  const { act, toggleBookmark, sheet } = useThreadActions(selected, false);
-
-  useEffect(() => {
-    if (desktop && selected && selected.id !== wanted) navigate(`/all/${selected.id}`, { replace: true });
-  }, [desktop, selected, wanted]);
-
-  useEffect(() => {
-    if (!desktop) return;
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (e.key === '/' && el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-        input.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [desktop]);
-
-  const open = (t: EmailThread) => (desktop ? navigate(`/all/${t.id}`, { replace: true }) : navigate(`/read/${t.id}`));
-
-  const list = (
-    <>
+  return (
+    <PageShell title="All mail" canvas>
       <label className="search">
-        <Search size={18} strokeWidth={2} />
-        <input
-          ref={input}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search mail"
-          aria-label="Search mail"
-          type="search"
-          enterKeyHint="search"
-        />
+        <Search size={18} strokeWidth={1.75} />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search mail" aria-label="Search mail" type="search" enterKeyHint="search" />
       </label>
       <div className="seg" role="group">
         <button className={archived ? '' : 'is-on'} aria-pressed={!archived} onClick={() => setArchived(false)}>
@@ -95,56 +77,30 @@ export function AllMailScreen() {
         </button>
       </div>
       <div className="mail__results">
-        {rows && rows.length === 0 && <div className="list-empty">No mail found</div>}
-        {rows && rows.length > 0 && (
-          <ul className="list">
-            {rows.map((t) => (
-              <li key={t.id}>
-                <button className={`mail__row${selected?.id === t.id ? ' is-open' : ''}`} onClick={() => open(t)}>
-                  <span className="mail__line">
-                    {t.isUnread && <span className="mail__dot" role="img" aria-label="Unread" />}
-                    <span className="mail__from">{counterpart(t).name}</span>
-                    <span className="mail__time">{relativeTime(t.lastMessageAt)}</span>
-                  </span>
-                  <span className="mail__subject">{cleanSubject(t.subject)}</span>
-                  <span className="mail__snippet">{t.snippet}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        {groups && groups.length === 0 && <div className="list-empty">No mail found</div>}
+        {groups?.map((g) => (
+          <section key={g.label}>
+            <h2 className="list-heading">{g.label}</h2>
+            <ul className="list mail__list">
+              {g.rows.map((t) => (
+                <li key={t.id}>
+                  <button className={`mail__row${t.isUnread ? ' is-unread' : ''}`} onClick={() => navigate(`/read/${t.id}`)}>
+                    <Avatar name={counterpart(t).name} card />
+                    <span className="mail__main">
+                      <span className="mail__line">
+                        <span className="t-callout mail__from">{counterpart(t).name}</span>
+                        <span className="t-footnote mail__time">{relativeTime(t.lastMessageAt)}</span>
+                      </span>
+                      <span className="t-subhead mail__subject">{cleanSubject(t.subject)}</span>
+                      <span className="t-footnote mail__snippet">{t.snippet}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
-    </>
-  );
-
-  if (!desktop) {
-    return (
-      <PageShell title="All mail" canvas>
-        {list}
-      </PageShell>
-    );
-  }
-  return (
-    <PageShell title="All mail" canvas fill>
-      <div className="mail">
-        <div className="mail__left">{list}</div>
-        <section className="mail__right">
-          {selected && (
-            <>
-              <div className="mail__thread">
-                <div className="mail__tools">
-                  <BookmarkButton on={selected.isStarred} onToggle={toggleBookmark} />
-                </div>
-                <ThreadView key={selected.id} threadId={selected.id} />
-              </div>
-              <div className="mail__bar">
-                <ActionBar variant="default" active={null} onAction={act} plainLabels />
-              </div>
-            </>
-          )}
-        </section>
-      </div>
-      {sheet}
     </PageShell>
   );
 }

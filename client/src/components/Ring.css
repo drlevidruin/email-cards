@@ -1,16 +1,25 @@
 .ring { position: relative; flex: none; }
-.ring svg { display: block; }
-.ring__fill { transition: stroke-dashoffset 500ms var(--ease); }
-.ring__fill--grow { animation: ring-fill 900ms var(--ease) both; }
-.ring__check { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ring-check 420ms 700ms var(--ease) forwards; }
-.ring__check--rest { animation: none; stroke-dashoffset: 0; }
-.ring__center {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+.ring svg { display: block; position: relative; }
+.ring__disc {
+  position: absolute; top: 50%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--accent); color: #fff;
 }
-@keyframes ring-fill { from { stroke-dashoffset: var(--ring-c); } }
+.ring__check path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.ring__glow {
+  position: absolute; top: 50%; left: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px;
+  border-radius: 50%; background: radial-gradient(circle, var(--accent-mark) 0%, transparent 68%);
+  opacity: 0; pointer-events: none;
+}
+.ring--go .ring__fill { animation: ring-close 600ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.ring--go .ring__disc { animation: disc-in 120ms 600ms linear both; }
+.ring--go .ring__check path { stroke-dashoffset: 1; animation: ring-check 250ms 600ms var(--ease) forwards; }
+.ring--go .ring__glow { animation: ring-glow 700ms 450ms ease-out both; }
+@keyframes ring-close { from { stroke-dashoffset: var(--ring-from); } to { stroke-dashoffset: 0; } }
+@keyframes disc-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ring-check { to { stroke-dashoffset: 0; } }
+@keyframes ring-glow { 0% { opacity: 0.9; transform: scale(0.7); } 100% { opacity: 0; transform: scale(1.15); } }
 @media (prefers-reduced-motion: reduce) {
-  .ring__fill, .ring__fill--grow { transition: none; animation: none; }
-  .ring__check { animation: none; stroke-dashoffset: 0; }
+  .ring--go .ring__fill, .ring--go .ring__disc, .ring--go .ring__check path, .ring--go .ring__glow { animation: none; }
+  .ring--go .ring__check path { stroke-dashoffset: 0; }
 }

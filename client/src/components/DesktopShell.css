@@ -1,0 +1,5 @@
+.dshell { display: grid; grid-template-columns: 248px minmax(0, 1fr); height: 100dvh; overflow: hidden; background: var(--canvas); }
+.dshell--panel { grid-template-columns: 248px minmax(0, 1fr) 320px; }
+.dshell__rail { min-height: 0; }
+.dshell__main { position: relative; min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
+.dshell__panel { min-height: 0; overflow-y: auto; }

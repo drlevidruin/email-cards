@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
-import { sentToast } from '../lib/snapshot';
 import { counterpart } from '../lib/stacks';
+import { relativeTime } from '../lib/time';
 import type { DraftItem } from '../lib/types';
-import { firstName } from '../lib/utils';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
@@ -25,28 +25,29 @@ export function DraftsScreen() {
 
   const who = (d: DraftItem) => {
     const thread = data?.threads.find((t) => t.id === d.threadId);
-    const to = d.toEmails[0] ?? '';
-    return thread && to ? firstName(counterpart(thread).name) : to;
+    return thread ? counterpart(thread).name : d.toEmails[0] ?? 'No recipient';
   };
 
-  const send = async (d: DraftItem) => {
-    setBusy(d.id);
-    try {
-      const res = await api.sendDraft(d.id);
-      store.showToast(sentToast(res.status === 'held_shabbos' || res.heldByShabbos ? 'Held until after Shabbos' : `Sent to ${who(d)}`));
-      await store.refresh();
-    } catch {
-      store.showToast(NOT_SAVED);
-    }
-    setBusy(null);
-  };
-
+  // Delete, with Undo in the toast: the undo makes the same draft again
   const remove = async (d: DraftItem) => {
     setBusy(d.id);
     try {
       await api.deleteDraft(d.id);
-      store.showToast('Draft deleted');
       await store.refresh();
+      store.offerUndo('Draft deleted', async () => {
+        await api.createDraft({
+          threadId: d.threadId ?? null,
+          accountId: d.accountId,
+          toEmails: d.toEmails,
+          ccEmails: d.ccEmails,
+          subject: d.subject,
+          bodyText: d.bodyText,
+          tone: d.tone,
+          status: d.status,
+          createdBy: d.createdBy,
+        });
+        await store.refresh();
+      });
     } catch {
       store.showToast(NOT_SAVED);
     }
@@ -60,26 +61,20 @@ export function DraftsScreen() {
       {drafts.length === 0 ? (
         <div className="list-empty">No drafts</div>
       ) : (
-        <ul className="drafts">
+        <ul className="list drafts">
           {drafts.map((d) => (
             <li key={d.id} className="draft">
-              <div className="draft__head">
-                <span className="draft__to">To {d.toEmails[0] ?? ''}</span>
-                {d.status === 'held_shabbos' && <span className="draft__held">Held until after Shabbos</span>}
-              </div>
-              <h2 className="draft__subject">{d.subject}</h2>
-              <p className="draft__body">{d.bodyText}</p>
-              <div className="draft__actions">
-                <button className="btn btn--primary draft__send" disabled={busy === d.id} onClick={() => void send(d)}>
-                  Send
-                </button>
-                <button className="btn btn--secondary draft__send" disabled={busy === d.id} onClick={() => edit(d)}>
-                  Edit
-                </button>
-                <button className="btn btn--text draft__delete" disabled={busy === d.id} onClick={() => void remove(d)}>
-                  Delete
-                </button>
-              </div>
+              <button className="draft__open" onClick={() => edit(d)}>
+                <span className="draft__line">
+                  <span className="t-callout draft__to">{who(d)}</span>
+                  <span className="t-footnote draft__time">{d.status === 'held_shabbos' ? 'Held until after Shabbos' : relativeTime(d.createdAt)}</span>
+                </span>
+                <span className="t-subhead draft__subject">{d.subject || 'No subject'}</span>
+                <span className="t-footnote draft__body">{d.bodyText}</span>
+              </button>
+              <button className="draft__delete" aria-label={`Delete draft to ${who(d)}`} disabled={busy === d.id} onClick={() => void remove(d)}>
+                <Trash2 size={18} strokeWidth={1.75} />
+              </button>
             </li>
           ))}
         </ul>

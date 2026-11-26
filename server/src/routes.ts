@@ -891,6 +891,15 @@ export function createApiRouter(db: PrismDatabase): Router {
     res.json({ ok: true });
   });
 
+  router.post('/commitments/:id/reopen', (req: Request, res: Response) => {
+    const ok = db.reopenCommitment(req.params.id);
+    if (!ok) {
+      res.status(404).json({ error: 'Commitment not found' });
+      return;
+    }
+    res.json({ ok: true });
+  });
+
   router.post('/commitments/:id/nudge', (req: Request, res: Response) => {
     const draft = db.createNudgeForCommitment(req.params.id);
     if (!draft) {

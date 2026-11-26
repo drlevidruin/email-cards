@@ -1,9 +1,9 @@
 import { getInitials } from '../lib/utils';
 import './Avatar.css';
 
-export function Avatar({ name, small }: { name: string; small?: boolean }) {
+export function Avatar({ name, small, card }: { name: string; small?: boolean; card?: boolean }) {
   return (
-    <span className={`avatar${small ? ' avatar--small' : ''}`} aria-hidden="true">
+    <span className={`avatar${small ? ' avatar--small' : ''}${card ? ' avatar--card' : ''}`} aria-hidden="true">
       {getInitials(name)}
     </span>
   );

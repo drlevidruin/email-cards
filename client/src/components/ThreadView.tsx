@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Paperclip } from 'lucide-react';
 import type { EmailMessage, EmailThread } from '../lib/types';
+import { findQuote } from '../lib/highlight';
 import { loadThread } from '../lib/threadCache';
 import { formatBytes, formatClockTime } from '../lib/utils';
 import './ThreadView.css';
@@ -8,9 +9,23 @@ import './ThreadView.css';
 interface Props {
   threadId: string;
   hideSubject?: boolean;
+  /** The Goal's source sentence; marked in the newest message. */
+  quote?: string | null;
 }
 
-export function ThreadView({ threadId, hideSubject }: Props) {
+function Marked({ text, quote }: { text: string; quote?: string | null }) {
+  const at = findQuote(text, quote);
+  if (!at) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at[0])}
+      <mark className="tv__mark">{text.slice(at[0], at[1])}</mark>
+      {text.slice(at[1])}
+    </>
+  );
+}
+
+export function ThreadView({ threadId, hideSubject, quote }: Props) {
   const [thread, setThread] = useState<EmailThread | null>(null);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -64,12 +79,14 @@ export function ThreadView({ threadId, hideSubject }: Props) {
               <span className="tv__time">{formatClockTime(m.sentAt)}</span>
             </div>
             <div className="tv__to">to {m.toEmails.join(', ')}</div>
-            <div className="tv__body">{m.bodyText}</div>
+            <div className="tv__body">
+              <Marked text={m.bodyText} quote={i === messages.length - 1 ? quote : null} />
+            </div>
             {m.attachments.length > 0 && (
               <ul className="tv__files">
                 {m.attachments.map((a) => (
                   <li key={a.id} className="tv__file">
-                    <Paperclip size={18} strokeWidth={2} />
+                    <Paperclip size={18} strokeWidth={1.75} />
                     <span className="tv__file-name">{a.filename}</span>
                     <span className="tv__file-size">{formatBytes(a.sizeBytes)}</span>
                   </li>

@@ -1,47 +1,44 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
 import { useStore } from '../store';
-import { useRoute } from '../router';
 import './Toast.css';
 
-const DESKTOP = 900;
-
-/** Where an element sits in the layout, ignoring the deck card's scale and offset, so a card still settling gives its final place at once. */
-function layoutTop(el: HTMLElement | Element): number {
-  const deck = document.querySelector<HTMLElement>('.deck');
-  let y = 0;
-  let node: HTMLElement | null = el as HTMLElement;
-  while (node && node !== deck) {
-    y += node.offsetTop;
-    node = node.offsetParent as HTMLElement | null;
-  }
-  return node && deck ? deck.getBoundingClientRect().top + y : el.getBoundingClientRect().top;
+interface Spot {
+  style: CSSProperties;
+  /** Sits under the top bar and slides down, because there is no action bar to sit above. */
+  top: boolean;
 }
 
-/** Where the toast goes so it never sits on a button. Undefined means the CSS default. */
-function place(toast: HTMLElement | null, exiting: boolean): CSSProperties | undefined {
-  const desktop = window.innerWidth >= DESKTOP;
-  // The card that stays on top: not the one flying out after a sent reply
-  const cards = [...document.querySelectorAll<HTMLElement>('.deck__card:not(.deck__card--sliver)')];
-  const tray = cards[exiting ? 1 : 0]?.querySelector('.tray');
-  const bar = document.querySelector('.actionbar');
-  if (desktop && toast) {
-    // Bottom left, when the toast's real box clears both the card column and the action bar
-    const box = { l: 32, r: 32 + toast.offsetWidth, t: window.innerHeight - 32 - toast.offsetHeight, b: window.innerHeight - 32 };
-    const hits = (r?: DOMRect) => !!r && box.l < r.right + 8 && box.r > r.left - 8 && box.t < r.bottom + 8 && box.b > r.top - 8;
-    const col = document.querySelector('.cards__col')?.getBoundingClientRect();
-    if (!hits(col) && !hits(bar?.getBoundingClientRect())) return undefined;
-    // (Falls through to sit above the tray or the bar, or low when there is neither.)
+/** The toast never covers a button. Above the action bar when there is one, else 12px under the top bar and progress line. */
+function place(): Spot {
+  const bars = [...document.querySelectorAll('.actionbar')];
+  const bar = bars[bars.length - 1]?.getBoundingClientRect();
+  const main = document.querySelector('.dshell__main')?.getBoundingClientRect();
+  if (bar && bar.height > 0 && main && window.matchMedia('(min-width: 1024px)').matches) {
+    // On a laptop every toast with a bar sits in one place: centered in the content, 12px above where the deck's bar stands (76px tall, 16px off the bottom)
+    return { top: false, style: { top: 'auto', bottom: 16 + 76 + 12, left: Math.round(main.left), right: Math.round(window.innerWidth - main.right) } };
   }
-  const anchor = tray ?? bar;
-  // No tray and no bar (Today, finish, cover): sit low
-  if (!anchor) return { bottom: 'calc(20px + env(safe-area-inset-bottom))', ...(desktop ? { justifyContent: 'center' } : {}) };
-  const top = tray ? layoutTop(tray) : anchor.getBoundingClientRect().top;
-  return { bottom: Math.round(window.innerHeight - top + 12), ...(desktop ? { justifyContent: 'center' } : {}) };
+  if (bar && bar.height > 0) {
+    return {
+      top: false,
+      style: { top: 'auto', bottom: Math.round(window.innerHeight - bar.top + 12), left: Math.round(bar.left), right: Math.round(window.innerWidth - bar.right) },
+    };
+  }
+  const anchors = [...document.querySelectorAll('.topbar, .segbar, .page__bar')]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.height > 0 && r.bottom < window.innerHeight / 2);
+  const under = anchors.length ? Math.max(...anchors.map((r) => r.bottom)) + 12 : 12;
+  const style: CSSProperties = {
+    top: anchors.length ? Math.round(under) : 'calc(12px + env(safe-area-inset-top))',
+    bottom: 'auto',
+    left: main ? Math.round(main.left) : 0,
+    right: main ? Math.round(window.innerWidth - main.right) : 0,
+  };
+  return { top: true, style };
 }
 
-/** Places the toast while it is up, and again when the top card changes or the window resizes. */
-function usePlace(active: boolean, id: number | undefined, exiting: boolean, el: RefObject<HTMLElement | null>): CSSProperties | undefined {
-  const [style, setStyle] = useState<CSSProperties>();
+/** Places the toast while it is up, and again when the screen changes or the window resizes. */
+function usePlace(active: boolean, id: number | undefined): Spot | undefined {
+  const [spot, setSpot] = useState<Spot>();
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!active) return;
@@ -55,11 +52,12 @@ function usePlace(active: boolean, id: number | undefined, exiting: boolean, el:
       timer = window.setTimeout(() => setTick((n) => n + 1), 320);
     };
     window.addEventListener('resize', again);
-    const host = document.querySelector('.cards__deck');
+    window.addEventListener('hashchange', again);
     const watch = new MutationObserver(again);
-    if (host) watch.observe(host, { childList: true, subtree: true });
+    watch.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true });
     return () => {
       window.removeEventListener('resize', again);
+      window.removeEventListener('hashchange', again);
       watch.disconnect();
       cancelAnimationFrame(raf);
       window.clearTimeout(timer);
@@ -67,31 +65,25 @@ function usePlace(active: boolean, id: number | undefined, exiting: boolean, el:
   }, [active, id]);
   useLayoutEffect(() => {
     if (!active) {
-      setStyle(undefined);
+      setSpot(undefined);
       return;
     }
-    const next = place(el.current, exiting);
-    setStyle((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
-  }, [active, id, exiting, tick, el]);
-  return style;
+    const next = place();
+    setSpot((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+  }, [active, id, tick]);
+  return spot;
 }
 
 export function Toast() {
-  const { toast, undo, exiting } = useStore();
-  const box = useRef<HTMLDivElement>(null);
-  const route = useRoute();
-  const head = route.segments[0];
-  const withBar = head === 'cards' || head === 'read';
-  const style = usePlace(withBar && !!toast, toast?.id, !!exiting, box);
+  const { toast, undo } = useStore();
+  const spot = usePlace(!!toast, toast?.id);
   if (!toast) return null;
-  // Screens with a bottom input would have the toast cover it or sit behind the keyboard.
-  const onTop = head === 'ask' || head === 'new' || head === 'reply';
   return (
-    <div className={`toast-wrap${withBar ? ' toast-wrap--bar' : ''}${onTop ? ' toast-wrap--top' : ''}`} style={style}>
-      <div className="toast" role="status" key={toast.id} ref={box}>
-        <span className="toast__text">{toast.text}</span>
+    <div className={`toast-wrap${spot?.top ? ' toast-wrap--top' : ''}`} style={spot?.style}>
+      <div className="toast" role="status" key={toast.id}>
+        <span className="toast__text t-subhead">{toast.text}</span>
         {toast.undoable && (
-          <button className="toast__undo" onClick={() => void undo()}>
+          <button className="toast__undo t-callout" onClick={() => void undo()}>
             Undo
           </button>
         )}

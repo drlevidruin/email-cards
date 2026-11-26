@@ -1,9 +1,11 @@
-import type { BootstrapPayload, EmailThread, ScreenerSender } from './lib/types';
+import type { BootstrapPayload, CommitmentItem, EmailThread, ScreenerSender } from './lib/types';
 
 export type CountKey = 'replied' | 'done' | 'later' | 'bookmarked' | 'blocked' | 'allowed' | 'moved';
 
 export interface Session {
   dismissed: Set<string>;
+  /** Cards sent to the back of this stack, in the order they were skipped. */
+  skipped: string[];
   counts: Record<CountKey, number>;
   coverPending: boolean | null;
   /** The Today card has been dealt with this session (Start was pressed). */
@@ -25,6 +27,7 @@ export type Data = Omit<BootstrapPayload, 'rules' | 'customViews' | 'briefing'>;
 export interface Snap {
   threads: EmailThread[];
   screener: ScreenerSender[];
+  commitments: CommitmentItem[];
 }
 
 export interface UndoEntry {

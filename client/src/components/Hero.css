@@ -1,0 +1,10 @@
+.hero { flex: none; margin-top: 16px; }
+.hero__label { color: var(--accent); }
+.hero__label--quiet { color: var(--ink-3); }
+.hero__text {
+  margin-top: 2px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.hero__reason { margin-top: 4px; color: var(--ink-2); }

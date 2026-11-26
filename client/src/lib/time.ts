@@ -73,3 +73,59 @@ export function dueText(label: string): string {
   if (/^(due|overdue)\b|waiting/i.test(label)) return label;
   return `Due ${label.replace(/^(today|tomorrow)\b/i, (w) => w.toLowerCase())}`;
 }
+
+const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/** The hour a label names: `4:00 PM`, `noon`, or a rough one for `morning`, `AM`, `PM`. */
+function hourOf(text: string): number {
+  if (/noon/i.test(text)) return 12;
+  const m = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i.exec(text);
+  if (m) {
+    const h = (Number(m[1]) % 12) + (m[3].toLowerCase() === 'pm' ? 12 : 0);
+    return h + Number(m[2] ?? 0) / 60;
+  }
+  if (/morning|\bam\b/i.test(text)) return 9;
+  if (/afternoon|\bpm\b/i.test(text)) return 15;
+  if (/evening|night/i.test(text)) return 18;
+  return 17;
+}
+
+/**
+ * When a due label falls, as a time. Overdue is -Infinity, a label with no date is Infinity.
+ * Labels look like `Today 4:00 PM`, `Tomorrow noon`, `Thu 2:00 PM`, `Due Friday`, `Dec 12`, `Overdue 2 days`.
+ */
+export function dueTime(label?: string | null, now = new Date()): number {
+  if (!label) return Infinity;
+  const text = label.replace(/^due\s+/i, '').trim();
+  if (/^overdue/i.test(text)) return -Infinity;
+  const base = (addDays: number) => at(now, addDays, 0).getTime() + hourOf(text) * 3600000;
+  if (/^today/i.test(text)) return base(0);
+  if (/^tomorrow/i.test(text)) return base(1);
+  const wd = /^(sun|mon|tue|wed|thu|fri|sat)[a-z]*\b/i.exec(text);
+  if (wd) {
+    const ahead = ((WEEKDAYS.indexOf(wd[1].toLowerCase()) - now.getDay() + 7) % 7) || 7;
+    return base(ahead);
+  }
+  const md = /^([a-z]{3})[a-z]*\s+(\d{1,2})\b/i.exec(text);
+  const month = md ? MONTHS.indexOf(md[1].toLowerCase()) : -1;
+  if (md && month >= 0) {
+    let d = new Date(now.getFullYear(), month, Number(md[2]), 0, 0, 0, 0);
+    if (d.getTime() < at(now, 0, 0).getTime()) d = new Date(now.getFullYear() + 1, month, Number(md[2]), 0, 0, 0, 0);
+    return d.getTime() + hourOf(text) * 3600000;
+  }
+  return Infinity;
+}
+
+export const isOverdue = (label?: string | null) => /^(due\s+)?overdue/i.test(label || '');
+export const isDueToday = (label?: string | null) => /^(due\s+)?today/i.test(label || '');
+
+/** Overdue, or due within the next 3 hours. */
+export function isUrgent(label?: string | null, now = new Date()): boolean {
+  if (isOverdue(label)) return true;
+  const t = dueTime(label, now);
+  return Number.isFinite(t) && t - now.getTime() <= 3 * 3600000;
+}
+
+/** A due label without its leading `Due`, for tight rows: `Today 4:00 PM`. */
+export const shortDue = (label: string) => label.replace(/^due\s+/i, '').replace(/^./, (c) => c.toUpperCase());

@@ -6,6 +6,7 @@ import { goBack, useRoute } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
 import { PageShell } from '../components/PageShell';
+import '../components/ReplyComposer.css';
 import './NewEmailScreen.css';
 
 const parse = (to: string) => to.split(',').map((s) => s.trim()).filter(Boolean);
@@ -88,45 +89,51 @@ export function NewEmailScreen() {
   };
 
   return (
-    <PageShell
-      title="New email"
-      fill
-      right={
-        <button className="btn btn--primary new__send" disabled={!canSend} onClick={() => void send()}>
-          Send
-        </button>
-      }
-    >
+    <PageShell bare fill>
       <div className="new">
-        <label className="new__row">
-          <span className="new__label">From</span>
-          <select className="new__control" value={from} onChange={(e) => setFrom(e.target.value)}>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.label} ({a.email})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={`new__row${bad ? ' is-bad' : ''}`}>
-          <span className="new__label">To</span>
-          <input
-            className="new__control"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            onBlur={() => to.trim() && setChecked(true)}
-            type="text"
-            inputMode="email"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-        </label>
-        <label className="new__row">
-          <span className="new__label">Subject</span>
-          <input className="new__control" value={subject} onChange={(e) => setSubject(e.target.value)} />
-        </label>
-        <textarea className="new__body" placeholder="Your message" value={body} onChange={(e) => setBody(e.target.value)} />
+        <header className="composer__head new__head">
+          <button className="composer__cancel t-subhead" onClick={goBack}>
+            Cancel
+          </button>
+          <h1 className="t-headline composer__title">New email</h1>
+          <button className="composer__send" disabled={!canSend} onClick={() => void send()}>
+            <span className="composer__send-pill t-callout">Send</span>
+          </button>
+        </header>
+        <div className="new__rows">
+          {accounts.length > 1 && (
+            <label className="new__row t-subhead">
+              <span className="new__label">From</span>
+              <select className="new__control" value={from} onChange={(e) => setFrom(e.target.value)}>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.label} ({a.email})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className={`new__row t-subhead${bad ? ' is-bad' : ''}`}>
+            <span className="new__label">To</span>
+            <input
+              className="new__control"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              onBlur={() => to.trim() && setChecked(true)}
+              type="text"
+              inputMode="email"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              autoFocus
+            />
+          </label>
+          <label className="new__row t-subhead">
+            <span className="new__label">Subject</span>
+            <input className="new__control" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </label>
+        </div>
+        <textarea className="t-body new__body" aria-label="Message" placeholder="Write your email" value={body} onChange={(e) => setBody(e.target.value)} />
       </div>
     </PageShell>
   );

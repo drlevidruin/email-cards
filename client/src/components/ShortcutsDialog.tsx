@@ -1,29 +1,85 @@
-import { Sheet } from './Sheet';
+import { useRef } from 'react';
+import { useDialog } from './useDialog';
 import './ShortcutsDialog.css';
 
-const ROWS: [string, string][] = [
-  ['Done', '→ or E'],
-  ['Later', '← or L'],
-  ['Reply', 'R or Enter'],
-  ['Bookmark', 'B'],
-  ['Built-in reply', '1 2 3'],
-  ['Undo', 'Z'],
-  ['Menu', 'M'],
-  ['Shortcuts', '?'],
-  ['Close', 'Esc'],
+type Group = { title: string; rows: [string, string[]][] };
+
+const LEFT: Group[] = [
+  {
+    title: 'Cards',
+    rows: [
+      ['Done', ['E', '→']],
+      ['Later', ['H', '←']],
+      ['To-do', ['T', '↑']],
+      ['Skip', ['J', '↓']],
+      ['Open email', ['Enter']],
+      ['Undo', ['Z']],
+      ['Allow sender', ['A']],
+      ['Block sender', ['B']],
+      ['Send to Newsletters', ['N']],
+    ],
+  },
+];
+const RIGHT: Group[] = [
+  {
+    title: 'Reply',
+    rows: [
+      ['Reply', ['R']],
+      ['Pick a reply', ['1', '2', '3']],
+      ['Write my own', ['W']],
+      ['Send', ['⌘', 'Enter']],
+      ['Back', ['Esc']],
+    ],
+  },
+  {
+    title: 'Go to',
+    rows: [
+      ['Search', ['/']],
+      ['New email', ['C']],
+      ['To-do', ['G', 'T']],
+      ['Needs you', ['G', 'I']],
+      ['Drafts', ['G', 'D']],
+      ['This sheet', ['?']],
+    ],
+  },
 ];
 
-export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+function Column({ groups }: { groups: Group[] }) {
   return (
-    <Sheet title="Shortcuts" onClose={onClose} dialog>
-      <ul>
-        {ROWS.map(([action, key]) => (
-          <li key={action} className="shortcuts__row">
-            <span>{action}</span>
-            <span className="shortcuts__key">{key}</span>
-          </li>
-        ))}
-      </ul>
-    </Sheet>
+    <div className="shortcuts__col">
+      {groups.map((g) => (
+        <section key={g.title}>
+          <h3 className="t-footnote shortcuts__group">{g.title}</h3>
+          <ul>
+            {g.rows.map(([action, keys]) => (
+              <li key={action} className="shortcuts__row">
+                <span className="t-subhead shortcuts__action">{action}</span>
+                <span className="shortcuts__keys">
+                  {keys.map((k) => (
+                    <kbd key={k} className="keycap">{k}</kbd>
+                  ))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  useDialog(box, onClose);
+  return (
+    <div className="shortcuts-scrim" onClick={onClose}>
+      <div ref={box} tabIndex={-1} className="shortcuts" role="dialog" aria-modal="true" aria-label="Shortcuts" onClick={(e) => e.stopPropagation()}>
+        <h2 className="t-title-2 shortcuts__title">Shortcuts</h2>
+        <div className="shortcuts__cols">
+          <Column groups={LEFT} />
+          <Column groups={RIGHT} />
+        </div>
+      </div>
+    </div>
   );
 }

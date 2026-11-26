@@ -7,6 +7,6 @@
 }
 .topbar__side { display: flex; align-items: center; }
 .topbar__side--right { justify-content: flex-end; }
-.topbar__center { display: flex; align-items: baseline; gap: 8px; font-size: 15px; white-space: nowrap; }
-.topbar__title { font-weight: 600; color: var(--ink); }
+.topbar__center { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.topbar__title { color: var(--ink); }
 .topbar__count { color: var(--ink-3); }

@@ -1322,6 +1322,13 @@ export class PrismDatabase {
     return info.changes > 0;
   }
 
+  public reopenCommitment(id: string): boolean {
+    const info = this.db
+      .prepare("UPDATE commitments SET status = 'open' WHERE id = ? AND status = 'resolved'")
+      .run(id);
+    return info.changes > 0;
+  }
+
   public createNudgeForCommitment(id: string): DraftItem | null {
     const row = this.db.prepare('SELECT * FROM commitments WHERE id = ?').get(id) as
       | Record<string, unknown>

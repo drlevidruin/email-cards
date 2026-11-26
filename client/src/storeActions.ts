@@ -17,6 +17,10 @@ interface CommitSpec {
   call: () => Promise<unknown>;
   toast: string;
   undoFallback?: () => Promise<unknown>;
+  /** Promises this action resolves; a failed save puts them back. */
+  commitmentIds?: string[];
+  /** Extra steps for Undo, after the thread itself is restored. */
+  afterUndo?: () => Promise<unknown>;
 }
 
 export interface Core {
@@ -40,8 +44,8 @@ export function useCardActions(core: Core) {
     (fn: (s: Snap) => Snap) => {
       setData((d) => {
         if (!d) return d;
-        const next = fn({ threads: d.threads, screener: d.screener });
-        return { ...d, threads: next.threads, screener: next.screener };
+        const next = fn({ threads: d.threads, screener: d.screener, commitments: d.commitments });
+        return { ...d, threads: next.threads, screener: next.screener, commitments: next.commitments };
       });
     },
     [setData]
@@ -81,6 +85,7 @@ export function useCardActions(core: Core) {
           run: async () => {
             if (undoId) await api.undo(undoId);
             else if (spec.undoFallback) await spec.undoFallback();
+            if (spec.afterUndo) await spec.afterUndo();
           },
         };
         setCanUndo(true);
@@ -94,11 +99,14 @@ export function useCardActions(core: Core) {
         // Put back only what this action changed, so an action that saved in the meantime stays.
         const was = (id: string) => prev.threads.find((x) => x.id === id);
         const wasSender = (email: string) => prev.screener.find((x) => x.email === email);
+        const wasPromise = (id: string) => prev.commitments.find((x) => x.id === id);
+        const promises = spec.commitmentIds ?? [];
         setData((d) =>
           d && {
             ...d,
             threads: d.threads.map((x) => (spec.ids.includes(x.id) ? was(x.id) ?? x : x)),
             screener: d.screener.map((x) => (spec.ids.includes(x.email) ? wasSender(x.email) ?? x : x)),
+            commitments: d.commitments.map((x) => (promises.includes(x.id) ? wasPromise(x.id) ?? x : x)),
           }
         );
         bump();
@@ -118,18 +126,40 @@ export function useCardActions(core: Core) {
     [undoRef, setCanUndo, showToast]
   );
 
+  /** Done also clears the thread from To-do: unstar it, resolve its open promises, archive it. Undo brings all of it back. */
   const done = useCallback(
-    (t: EmailThread, stack: StackId | null) =>
-      commit({
+    (t: EmailThread, stack: StackId | null) => {
+      const promises = (dataRef.current?.commitments ?? [])
+        .filter((c) => c.threadId === t.id && c.direction === 'you_promised' && c.status !== 'resolved')
+        .map((c) => c.id);
+      const starred = t.isStarred;
+      return commit({
         stack,
         ids: [t.id],
         count: 'done',
-        local: (s) => ({ ...s, threads: s.threads.map((x) => (x.id === t.id ? { ...x, isArchived: true, bucket: 'archived' } : x)) }),
-        call: () => api.archiveThread(t.id),
-        toast: 'Marked done',
-        undoFallback: () => api.unarchiveThread(t.id),
-      }),
-    [commit]
+        commitmentIds: promises,
+        local: (s) => ({
+          ...s,
+          threads: s.threads.map((x) => (x.id === t.id ? { ...x, isArchived: true, isStarred: false, bucket: 'archived' } : x)),
+          commitments: s.commitments.map((c) => (promises.includes(c.id) ? { ...c, status: 'resolved' } : c)),
+        }),
+        call: async () => {
+          const res = await api.archiveThread(t.id);
+          if (starred) await api.starThread(t.id, false);
+          for (const id of promises) await api.resolveCommitment(id);
+          return res;
+        },
+        toast: 'Done',
+        undoFallback: async () => {
+          await api.unarchiveThread(t.id);
+          if (starred) await api.starThread(t.id, true);
+        },
+        afterUndo: async () => {
+          for (const id of promises) await api.reopenCommitment(id);
+        },
+      });
+    },
+    [commit, dataRef]
   );
 
   const bookmark = useCallback(
@@ -140,7 +170,7 @@ export function useCardActions(core: Core) {
         count: on ? 'bookmarked' : 'done',
         local: (s) => ({ ...s, threads: s.threads.map((x) => (x.id === t.id ? { ...x, isStarred: on } : x)) }),
         call: () => api.starThread(t.id, on),
-        toast: on ? 'Bookmarked' : 'Bookmark removed',
+        toast: on ? 'Moved to To-do' : 'Removed from To-do',
         undoFallback: () => api.starThread(t.id, !on),
       }),
     [commit]
@@ -157,7 +187,7 @@ export function useCardActions(core: Core) {
           threads: s.threads.map((x) => (x.id === t.id ? { ...x, isSnoozedUntil: until.toISOString() } : x)),
         }),
         call: () => api.snoozeThread(t.id, until.toISOString()),
-        toast: `Back ${when}`,
+        toast: `Later: ${when}`,
       }),
     [commit]
   );

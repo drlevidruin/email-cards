@@ -50,12 +50,18 @@ export function useRoute(): Route {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
 
+/** The path this entry was opened from, so a page can name its back button. */
+export function cameFrom(): string | undefined {
+  return typeof window.history.state?.from === 'string' ? window.history.state.from : undefined;
+}
+
 export function navigate(path: string, opts: { replace?: boolean } = {}) {
   const url = `#${path}`;
   if (opts.replace) {
-    window.history.replaceState({ i: depth() }, '', url);
+    window.history.replaceState({ i: depth(), from: cameFrom() }, '', url);
   } else {
-    window.history.pushState({ i: depth() + 1 }, '', url);
+    const here = window.location.hash.replace(/^#/, '') || '/';
+    window.history.pushState({ i: depth() + 1, from: here }, '', url);
   }
   notify();
 }

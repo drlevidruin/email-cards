@@ -2,16 +2,13 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  top: calc(12px + env(safe-area-inset-top));
   display: flex;
   justify-content: center;
   padding: 0 16px;
   pointer-events: none;
   z-index: 60;
 }
-/* sits 12px above the action bar: 10px padding + 54px button + 14px padding */
-.toast-wrap--bar { bottom: calc(90px + env(safe-area-inset-bottom)); }
-.toast-wrap--top { top: calc(60px + env(safe-area-inset-top)); bottom: auto; }
 .toast {
   display: flex;
   align-items: center;
@@ -19,32 +16,30 @@
   max-width: 420px;
   padding: 12px 16px;
   border-radius: var(--radius-m);
-  background: var(--ink);
-  color: #fff;
-  font-size: 15px;
-  box-shadow: var(--shadow-pop);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-float);
   pointer-events: auto;
   animation: toast-in 200ms var(--ease);
 }
+.toast-wrap--top .toast { animation-name: toast-in-top; }
 .toast__text { flex: 1; min-width: 0; }
 .toast__undo {
   flex: none;
   min-height: 44px;
   margin: -12px -8px -12px 0;
   padding: 0 8px;
-  color: #fff;
-  font-weight: 600;
+  color: var(--accent);
 }
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
-@media (min-width: 900px) {
-  /* bottom left, clear of the centred action bar and its labels */
-  .toast-wrap, .toast-wrap--bar { bottom: 32px; justify-content: flex-start; padding: 0 32px; }
-  .toast-wrap--top { top: 68px; bottom: auto; }
+@keyframes toast-in-top {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .toast { animation-name: toast-fade; }
+  .toast, .toast-wrap--top .toast { animation-name: toast-fade; }
   @keyframes toast-fade { from { opacity: 0; } to { opacity: 1; } }
 }

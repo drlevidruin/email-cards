@@ -1,43 +1,35 @@
 import type { ReactNode } from 'react';
 import type { EmailThread, GmailAccount } from '../lib/types';
+import { cleanSubject, counterpart } from '../lib/stacks';
+import { relativeTime } from '../lib/time';
 import { useThread } from '../lib/useThread';
-import { BookmarkButton } from './BookmarkButton';
-import { CardBand, hasBand } from './CardBand';
-import { CardEmail } from './CardEmail';
-import { ReplyTray } from './ReplyTray';
+import { CardBody } from './CardBody';
+import { CardHeader } from './CardHeader';
+import { Hero, heroKind } from './Hero';
+import { newestMessage } from './useNewest';
 import './Card.css';
 
 interface Props {
   thread: EmailThread;
-  desktop: boolean;
   /** Show the account label under the sender name. */
   account?: GmailAccount;
   overlay?: ReactNode;
-  /** Hide the built-in replies, for stacks and screens that do not reply from the card. */
-  noReplies?: boolean;
-  /** The card sits in a deck, so a sent reply flies it off that deck. */
-  fromDeck?: boolean;
-  /** Called by the Bookmark toggle. Without it the toggle is not shown. */
-  onBookmark?: (thread: EmailThread) => void;
+  /** The To-do deck: show the Goal even on a receipt. */
+  goalFirst?: boolean;
 }
 
-export function EmailCard({ thread, desktop, account, overlay, noReplies, fromDeck, onBookmark }: Props) {
+/** A calm letter: who it is from, the Goal, the subject and as much of the email as fits. */
+export function EmailCard({ thread, account, overlay, goalFirst }: Props) {
   const full = useThread(thread.id);
-  const banded = hasBand(thread);
-  const bookmark = onBookmark ? <BookmarkButton on={thread.isStarred} onToggle={() => onBookmark(thread)} /> : null;
+  const newest = newestMessage(full);
+  const kind = heroKind(thread, goalFirst);
   return (
     <article className="card">
-      {banded && <CardBand thread={thread} bookmark={bookmark} />}
-      <CardEmail
-        key={thread.id}
-        thread={thread}
-        full={full}
-        desktop={desktop}
-        account={account}
-        bookmark={banded ? null : bookmark}
-        headline={!banded}
-      />
-      {!noReplies && <ReplyTray thread={thread} fromDeck={fromDeck} />}
+      <CardHeader name={counterpart(thread).name} account={account} age={relativeTime(thread.lastMessageAt)} due={thread.deadlineLabel} />
+      <Hero thread={thread} goalFirst={goalFirst} />
+      <hr className="card__rule" />
+      {kind !== 'subject' && <h2 className="card__subject t-headline">{cleanSubject(thread.subject)}</h2>}
+      <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} attachments={newest?.attachments ?? []} />
       {overlay}
     </article>
   );

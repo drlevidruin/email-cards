@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp } from 'lucide-react';
 import { api } from '../lib/api';
-import type { DraftItem, DraftTone, EmailThread } from '../lib/types';
+import type { DraftItem, DraftTone, EmailThread, QuickActionChip } from '../lib/types';
 import { cleanSubject, counterpart, replyActions } from '../lib/stacks';
 import { firstName } from '../lib/utils';
 import { clearThreadCache } from '../lib/threadCache';
@@ -9,9 +8,9 @@ import { goBack, navigate } from '../router';
 import { useStore } from '../store';
 import { useInDeck } from './useThreadActions';
 import { NOT_SAVED } from '../storeActions';
+import { ReplyChoose } from './ReplyChoose';
+import { ReplyEdit } from './ReplyEdit';
 import './ReplyComposer.css';
-
-const OWN = 'own';
 
 function toneFor(kind: string): DraftTone {
   if (kind === 'approve') return 'executive';
@@ -25,22 +24,24 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
   const chips = replyActions(thread);
   const to = counterpart(thread);
   const first = firstName(to.name);
-  const [sel, setSel] = useState('');
+  // Choose shows every suggested reply in full; Edit is the one reply you may change and send. A saved draft opens straight in Edit.
+  const [mode, setMode] = useState<'choose' | 'edit'>(draftId ? 'edit' : 'choose');
   const [body, setBody] = useState('');
+  // What you changed by hand: shown on Choose as `Your draft`, and saved to Drafts if you leave.
+  const [yours, setYours] = useState('');
   const [drafting, setDrafting] = useState(false);
   const [sending, setSending] = useState(false);
-  const [ask, setAsk] = useState('');
   const draft = useRef<DraftItem | null>(null);
   const baseline = useRef('');
   const token = useRef(0);
-  const bodyRef = useRef('');
+  const yoursRef = useRef('');
   const sent = useRef(false);
   const started = useRef(false);
-  // A draft opened from Goals or Drafts belongs to the user: switching replies never deletes it.
+  // A draft opened from To-do or Drafts belongs to the user: switching replies never deletes it.
   const loaded = useRef(false);
   // The id of a draft resumed from Drafts: sent or replaced, it must not stay behind.
   const resumedId = useRef('');
-  bodyRef.current = body;
+  yoursRef.current = yours;
 
   const subject = /^re:/i.test(thread.subject) ? thread.subject : `Re: ${cleanSubject(thread.subject)}`;
 
@@ -64,6 +65,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       draft.current = d;
       baseline.current = d.bodyText;
       setBody(d.bodyText);
+      setMode('edit');
     } catch {
       if (mine === token.current) store.showToast(NOT_SAVED);
     } finally {
@@ -71,25 +73,35 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     }
   };
 
-  const pick = (id: string) => {
-    setSel(id);
-    if (id === OWN) {
-      token.current += 1;
-      void dropDraft();
-      baseline.current = '';
-      setBody('');
-      setDrafting(false);
-      return;
-    }
-    const chip = chips.find((c) => c.id === id);
-    if (chip) void generate({ instruction: chip.draftHint, tone: toneFor(chip.kind) });
+  const pick = (chip: QuickActionChip) => {
+    token.current += 1;
+    void dropDraft();
+    if (chip.draftBody) {
+      baseline.current = chip.draftBody;
+      setBody(chip.draftBody);
+      setMode('edit');
+    } else void generate({ instruction: chip.draftHint, tone: toneFor(chip.kind) });
+  };
+
+  const startFrom = (text: string) => {
+    token.current += 1;
+    void dropDraft();
+    baseline.current = '';
+    setBody(text);
+    setDrafting(false);
+    setMode('edit');
+  };
+
+  const edit = (text: string) => {
+    setBody(text);
+    // Only what you typed counts as yours; picking a suggestion never overwrites it
+    setYours(text.trim() && text.trim() !== baseline.current.trim() ? text : '');
   };
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
     if (draftId) {
-      setSel(OWN);
       setDrafting(true);
       void api
         .getDrafts()
@@ -98,7 +110,11 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
           if (!d) return;
           // A nudge draft opened with fresh=1 was never saved by the user, so Cancel deletes it.
           loaded.current = !fresh;
-          if (!fresh) resumedId.current = d.id;
+          if (!fresh) {
+            resumedId.current = d.id;
+            // A resumed draft is yours: Choose offers it as `Your draft`
+            setYours(d.bodyText);
+          }
           draft.current = d;
           baseline.current = d.bodyText;
           setBody(d.bodyText);
@@ -107,7 +123,8 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
         .finally(() => setDrafting(false));
       return;
     }
-    pick(chips.find((c) => c.id === qa)?.id ?? chips[0]?.id ?? OWN);
+    const wanted = chips.find((c) => c.id === qa);
+    if (wanted) pick(wanted);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -116,12 +133,13 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     () => () => {
       if (sent.current) return;
       token.current += 1;
-      const text = bodyRef.current.trim();
+      const text = yoursRef.current.trim();
       const d = draft.current;
       draft.current = null;
-      if (text && text !== baseline.current.trim()) {
-        const save = d
-          ? api.updateDraft(d.id, { bodyText: text, status: 'draft' })
+      if (text) {
+        const id = d?.id ?? (resumedId.current || undefined);
+        const save = id
+          ? api.updateDraft(id, { bodyText: text, status: 'draft' })
           : api.createDraft({
               threadId: thread.id,
               accountId: thread.accountId,
@@ -189,74 +207,57 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     }
   };
 
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') goBack();
-      else if (desktop && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void send();
+      const typing = e.target instanceof HTMLElement && !!e.target.closest('input, textarea');
+      if (e.key === 'Escape') {
+        if (modeRef.current === 'edit' && !sending) setMode('choose');
+        else if (modeRef.current === 'choose') goBack();
+      } else if (modeRef.current === 'edit') {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          void send();
+        }
+      } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && !drafting) {
+        const n = Number(e.key);
+        if (n >= 1 && n <= Math.min(3, chips.length)) pick(chips[n - 1]);
+        else if (e.key.toLowerCase() === 'w') startFrom('');
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  if (mode === 'edit') {
+    return (
+      <ReplyEdit
+        first={first}
+        to={to}
+        subject={subject}
+        body={body}
+        drafting={drafting}
+        sending={sending}
+        desktop={desktop}
+        onBody={edit}
+        onBack={() => setMode('choose')}
+        onSend={() => void send()}
+      />
+    );
+  }
   return (
-    <div className="composer">
-      <header className="composer__head">
-        <button className="btn btn--text composer__cancel" onClick={goBack}>
-          Cancel
-        </button>
-        <h1 className="composer__title">Reply to {first}</h1>
-        <button className="btn btn--primary composer__send" disabled={!body.trim() || drafting || sending} onClick={() => void send()}>
-          Send
-        </button>
-      </header>
-      <p className="composer__from">
-        From {thread.accountLabel} to {to.email}
-      </p>
-      {thread.distilledAsk && (
-        <div className="composer__goal">
-          <span className="composer__goal-label">Goal</span>
-          <p className="composer__goal-text">{thread.distilledAsk}</p>
-        </div>
-      )}
-      <div className="composer__pills">
-        {chips.map((c) => (
-          <button key={c.id} className={`pill${sel === c.id ? ' is-on' : ''}`} onClick={() => pick(c.id)}>
-            <span className="pill__label">{c.label}</span>
-          </button>
-        ))}
-        <button className={`pill${sel === OWN ? ' is-on' : ''}`} onClick={() => pick(OWN)}>
-          <span className="pill__label">Write my own</span>
-        </button>
-      </div>
-      <div className="composer__body">
-        {drafting ? (
-          <div className="composer__bars">
-            <span style={{ width: '70%' }} />
-            <span style={{ width: '95%' }} />
-            <span style={{ width: '55%' }} />
-          </div>
-        ) : (
-          <textarea className="composer__text" placeholder="Your reply" value={body} onChange={(e) => setBody(e.target.value)} />
-        )}
-      </div>
-      <form
-        className="composer__ask"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const t = ask.trim();
-          if (!t) return;
-          setAsk('');
-          setSel('');
-          void generate({ instruction: t });
-        }}
-      >
-        <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Tell Claude what to say" aria-label="Tell Claude what to say" />
-        {ask.trim() && (
-          <button type="submit" className="composer__ask-go" aria-label="Write reply">
-            <ArrowUp size={20} strokeWidth={2} />
-          </button>
-        )}
-      </form>
-    </div>
+    <ReplyChoose
+      first={first}
+      to={to}
+      goal={thread.distilledAsk}
+      chips={chips}
+      yours={yours}
+      drafting={drafting}
+      onPick={pick}
+      onYours={() => startFrom(yoursRef.current)}
+      onOwn={() => startFrom('')}
+      onAsk={(instruction) => void generate({ instruction })}
+    />
   );
 }

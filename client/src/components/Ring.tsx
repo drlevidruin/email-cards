@@ -1,20 +1,23 @@
-import type { ReactNode } from 'react';
 import './Ring.css';
 
-const SIZE = 168;
-const STROKE = 12;
+const SIZE = 132;
+const STROKE = 10;
 const R = (SIZE - STROKE) / 2;
 const C = 2 * Math.PI * R;
 
-/** The progress ring. With `check` it fills to complete and draws a check inside; with `rest` it shows that finished state at once, without the motion. */
-export function Ring({ value, check, rest, children }: { value: number; check?: boolean; rest?: boolean; children?: ReactNode }) {
-  const v = Math.max(0, Math.min(1, value));
+/**
+ * The finish ring. At rest it is full with a check in an accent disc. On a real finish it closes from `from` to full in 600ms,
+ * the check draws, and one soft glow grows behind it and fades. Reduced motion shows the rest state.
+ */
+export function Ring({ from, celebrate }: { from: number; celebrate: boolean }) {
+  const start = Math.max(0, Math.min(1, from));
   return (
-    <div className="ring" style={{ width: SIZE, height: SIZE }}>
+    <div className={`ring${celebrate ? ' ring--go' : ''}`} style={{ width: SIZE, height: SIZE }}>
+      <span className="ring__glow" aria-hidden="true" />
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="var(--line)" strokeWidth={STROKE} />
+        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="var(--accent-soft)" strokeWidth={STROKE} />
         <circle
-          className={`ring__fill${check && !rest ? ' ring__fill--grow' : ''}`}
+          className="ring__fill"
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={R}
@@ -23,13 +26,16 @@ export function Ring({ value, check, rest, children }: { value: number; check?: 
           strokeWidth={STROKE}
           strokeLinecap="round"
           strokeDasharray={C}
-          strokeDashoffset={C * (1 - v)}
+          strokeDashoffset={0}
           transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
-          style={{ ['--ring-c' as string]: C }}
+          style={{ ['--ring-c' as string]: C, ['--ring-from' as string]: C * (1 - start) }}
         />
-        {check && <path className={`ring__check${rest ? ' ring__check--rest' : ''}`} d="M58 86 78 106 112 66" fill="none" stroke="var(--accent)" strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" pathLength={1} />}
       </svg>
-      {children && <div className="ring__center">{children}</div>}
+      <span className="ring__disc" aria-hidden="true">
+        <svg className="ring__check" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" pathLength={1} />
+        </svg>
+      </span>
     </div>
   );
 }

@@ -1,0 +1,29 @@
+.cardbody { position: relative; flex: 1; min-height: 0; margin-top: 8px; overflow: hidden; }
+.cardbody__box {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: var(--ink-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cardbody__mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--accent-mark);
+  color: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.cardbody__fade { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface)); pointer-events: none; }
+.cardbody__foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; margin-top: 4px; }
+.cardbody__more { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--ink-2); }
+.cardbody__lead { color: var(--ink-4); }
+.cardbody__files { flex: 0 1 auto; min-width: 0; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+.cardbody__files--solo { margin-left: 0; }
+.cardbody__chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; height: 32px; padding: 0 12px; border-radius: 10px; background: var(--surface-2); color: var(--ink-3); }
+.cardbody__chip svg { flex: none; }
+.cardbody__name { display: inline-flex; min-width: 0; color: var(--ink); white-space: pre; }
+.cardbody__stem { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cardbody__size { flex: none; color: var(--ink-3); }
+.cardbody__rest { flex: none; color: var(--ink-3); }

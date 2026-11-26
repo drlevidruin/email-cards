@@ -246,14 +246,15 @@ export function streak(): number {
   return n;
 }
 
-export type WeekDot = { letter: string; state: 'clear' | 'today' | 'today-clear' | 'open' | 'future' };
+export type WeekDot = { letter: string; state: 'clear' | 'today' | 'today-clear' | 'open' | 'future' | 'rest' };
 
-/** Sunday to Friday of this week. */
+/** This week, Sunday first. Saturday is a rest day: the streak skips it. */
 export function week(): WeekDot[] {
   const log = read();
   const now = new Date();
-  const letters = ['S', 'M', 'T', 'W', 'T', 'F'];
+  const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   return letters.map((letter, i) => {
+    if (i === 6) return { letter, state: 'rest' };
     const d = shift(now, i - now.getDay());
     const clear = !!log.days[dayKey(d)]?.clear;
     if (i === now.getDay()) return { letter, state: clear ? 'today-clear' : 'today' };

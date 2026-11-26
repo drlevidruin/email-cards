@@ -7,13 +7,30 @@
 }
 .cards__col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cards .topbar { padding: 0 8px; }
-.cards__deck { flex: 1; min-height: 0; display: flex; padding: 12px 16px; }
-.cards__bar-space { flex: none; height: calc(78px + env(safe-area-inset-bottom)); }
+.cards__deck { flex: 1; min-height: 0; display: flex; padding: 12px 16px 22px; }
+.cards__deck--today { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.cards__bar-space { flex: none; height: calc(88px + env(safe-area-inset-bottom)); }
 
-@media (min-width: 900px) {
-  .cards { align-items: center; justify-content: center; padding: 0; }
-  .cards__col { flex: none; width: min(760px, 100vw - 96px); }
+@media (min-width: 1024px) {
+  .cards { height: 100%; align-items: center; justify-content: center; padding: 0; }
+  /* The card at a reading width: 600px, less in a narrow window, never under 440 */
+  .cards__col { flex: none; width: min(600px, max(440px, 100% - 48px)); }
   .cards .topbar { padding: 0; }
-  .cards__deck { flex: none; height: min(720px, 100dvh - 200px); padding: 0; margin-top: 12px; }
-  .cards__bar-space { height: 78px; }
+  .cards .topbar__title { font-size: 15px; }
+  .cards__deck { flex: none; height: min(760px, 100dvh - 205px); padding: 0; margin-top: 12px; }
+  .cards__deck--today { height: min(760px, 100dvh - 205px); padding-bottom: 0; }
+  .cards__bar-space { height: 92px; }
+
+  /* A card on the deck: the card is as tall as its email (440 at least, the room at most) under the top bar,
+     and the action bar stays 16px above the window's bottom edge, so it never moves from card to card. */
+  .cards--live .cards__col { position: relative; flex: 1 1 auto; align-self: center; min-height: 0; }
+  .cards--live .cards__deck { display: block; flex: 1; height: auto; min-height: 0; margin-top: 12px; padding-bottom: 108px; container-type: size; }
+  .cards--live .deck { height: auto; }
+  .cards--live .deck__card--top { position: relative; inset: auto; }
+  .cards--live .deck__card--top .card { height: auto; min-height: min(440px, 100cqh); max-height: 100cqh; }
+  .cards--live .deck__card--behind .card { height: 100%; max-height: none; }
+  .cards--live .cardbody { flex: 0 1 auto; }
+  .cards--live .cardbody__box { height: auto; }
+  .cards--live .actionbar { position: absolute; left: 0; right: 0; bottom: 16px; width: auto; margin: 0; }
+  .cards--live .cards__bar-space { display: none; }
 }

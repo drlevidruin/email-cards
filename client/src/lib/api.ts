@@ -337,6 +337,14 @@ export const api = {
           body: JSON.stringify({}),
         }),
 
+  reopenCommitment: (id: string) =>
+    staticDemoActive
+      ? staticDemoApi.reopenCommitment(id)
+      : request<{ ok?: boolean }>(`/api/commitments/${encodeURIComponent(id)}/reopen`, {
+          method: 'POST',
+          body: JSON.stringify({}),
+        }),
+
   nudgeCommitment: (id: string) =>
     staticDemoActive
       ? staticDemoApi.nudgeCommitment(id)

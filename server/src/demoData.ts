@@ -28,6 +28,26 @@ function hoursAgo(h: number): string {
   return new Date(Date.now() - h * 3600 * 1000).toISOString();
 }
 
+/**
+ * A time for a message the user sent: about `h` hours ago, but inside working hours (9 AM to 6 PM local),
+ * after the message before it (`afterH` hours ago) and before the one after it (`beforeH`).
+ */
+function workTime(h: number, afterH?: number, beforeH?: number): string {
+  const now = Date.now();
+  const MIN = 60 * 1000;
+  const lo = now - (afterH ?? h + 24) * 60 * MIN + 10 * MIN;
+  const hi = now - (beforeH ?? 0.25) * 60 * MIN - 10 * MIN;
+  const nominal = now - h * 60 * MIN;
+  for (let k = 0; k <= 120; k++) {
+    for (const sign of k === 0 ? [1] : [1, -1]) {
+      const t = nominal + sign * k * 10 * MIN;
+      const hour = new Date(t).getHours();
+      if (t >= lo && t <= hi && hour >= 9 && hour < 18) return new Date(t).toISOString();
+    }
+  }
+  return new Date(nominal).toISOString();
+}
+
 function hoursFromNow(h: number): string {
   return new Date(Date.now() + h * 3600 * 1000).toISOString();
 }
@@ -87,6 +107,10 @@ export function buildDemoDataset(): DemoDataset {
   };
 
   const messages: EmailMessage[] = [];
+  // The user's own earlier mail, sent in working hours
+  const wait01At = workTime(96);
+  const wait02At = workTime(74);
+  const wait03At = workTime(120);
   const addMsg = (m: EmailMessage) => {
     messages.push(m);
     return m;
@@ -131,7 +155,7 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Thanks Maya! Early 7:00 AM load-in is huge for our fabrication crew. Checking the lighting cap with Lumina AV now.',
     bodyText:
       'Thanks Maya! The 7:00 AM load-in is huge for our stage crew.\n\nI am confirming the directional wash specs with Marcus at Lumina AV right now. Provided our external rig does not trigger a house union surcharge, we are aligned on the $4,200 cap.\n\nBest,\nAlex',
-    sentAt: hoursAgo(18),
+    sentAt: workTime(18, 28, 1.4),
     isUnread: false,
     isOutbound: true,
     attachments: [],
@@ -201,7 +225,7 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Incredible momentum Priya. Reviewing cash reserve with Tessa this morning and confirming wire timing.',
     bodyText:
       'Incredible momentum Priya, huge congrats to the whole team on $1.4M ARR.\n\nI am checking Q4 reserve liquidity with Tessa this morning and reviewing the pro-rata side letter. Will confirm our exact allocation before end of day.\n\nBest,\nAlex',
-    sentAt: hoursAgo(9),
+    sentAt: workTime(9, 22, 0.8),
     isUnread: false,
     isOutbound: true,
     attachments: [],
@@ -216,7 +240,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Re: Kestrel AI Seed Bridge: Pro-Rata Allocation & Closing Packet',
     snippet: 'Cooley is finalizing the closing packet at 5:30 PM today. Please confirm full $75k or partial allocation.',
     bodyText:
-      'Thanks Alex! Just a heads up that outside counsel is locking the signature packet at 5:30 PM today so wires can clear early next week.\n\nPlease reply with "Full $75k", a partial amount, or "Pass" before 5:30 PM today so we keep your slot intact.\n\nBest,\nPriya',
+      'Thanks Alex! Just a heads up that outside counsel is locking the signature packet at 5:30 PM today so wires can clear early next week.\n\nPlease reply with "Full $75k", a partial amount, or "Pass" before 5:30 PM today so we keep your slot intact.\n\nPriya',
     sentAt: hoursAgo(0.8),
     isUnread: true,
     isOutbound: false,
@@ -257,8 +281,8 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
     snippet: 'Confirmed: we just purchased the Monotype commercial license covering print packaging and 500k monthly web views.',
     bodyText:
-      'Hi Jordan,\n\nConfirmed: we purchased the Monotype commercial license this morning (Order #MT-20918), which covers retail packaging up to 50,000 units and 500k monthly web pageviews.\n\nDoing one final kerning pass on the 6pt ingredient panel today.\n\nBest,\nAlex',
-    sentAt: hoursAgo(12),
+      'Confirmed: we purchased the Monotype commercial license this morning (Order #MT-20918), which covers retail packaging up to 50,000 units and 500k monthly web pageviews.\n\nDoing one last kerning pass on the 6pt ingredient panel today.\n\nAlex',
+    sentAt: workTime(12, 26, 2.2),
     isUnread: false,
     isOutbound: true,
     attachments: [],
@@ -273,7 +297,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
     snippet: 'Printer needs final mechanical sign-off by tomorrow noon to hold our November press slot. Ready to greenlight Option B?',
     bodyText:
-      'Awesome, thank you for sorting the font license so quickly.\n\nOur printer in Portland just told us they need final mechanical sign-off by tomorrow at 12:00 PM noon to keep our November press slot (otherwise we slip two weeks). Can you review the updated die-line PDF attached and reply to greenlight Option B?\n\nBest,\nJordan',
+      'Awesome, thank you for sorting the font license so quickly.\n\nOur printer in Portland just told us they need final mechanical sign-off by noon tomorrow to keep our November press slot (otherwise we slip two weeks). Can you review the updated die-line PDF attached and reply to greenlight Option B?\n\nBest,\nJordan',
     sentAt: hoursAgo(2.2),
     isUnread: true,
     isOutbound: false,
@@ -298,7 +322,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Kitchen Remodel Permit Addendum: Steel Lintel Revision',
     snippet: 'City plan check came back with one clean structural note requiring a wider steel lintel over the backyard slider.',
     bodyText:
-      'Hi Alex,\n\nGood news overall: city plan check cleared zoning, electrical, and plumbing with zero corrections! The single remaining structural comment asks for an upgraded W10x22 steel lintel over the 12-foot kitchen slider.\n\nOur fabricator quoted a $2,850 delta (materials + crane lift), which keeps the exact flush ceiling line you wanted with no drop soffit.\n\nBest,\nElena Morales, AIA\nPacific Architectural Studio',
+      'Alex, good news overall: city plan check cleared zoning, electrical, and plumbing with zero corrections! The single remaining structural comment asks for an upgraded W10x22 steel lintel over the 12-foot kitchen slider.\n\nOur fabricator quoted a $2,850 delta (materials + crane lift), which keeps the exact flush ceiling line you wanted with no drop soffit.\n\nElena Morales, AIA\nPacific Architectural Studio',
     sentAt: hoursAgo(15),
     isUnread: false,
     isOutbound: false,
@@ -321,7 +345,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Re: Kitchen Remodel Permit Addendum: Steel Lintel Revision',
     snippet: 'Need your written "Approved" on the $2,850 steel lintel change order by tomorrow 3:00 PM to upload for Thursday review.',
     bodyText:
-      'Hi Alex,\n\nFollowing up quickly: if you approve the $2,850 steel lintel change order by tomorrow at 3:00 PM, I can stamp and upload Sheet S2 before the Thursday morning city intake cutoff and keep our January demo date intact.\n\nJust reply "Approved for W10x22 flush beam" and I will handle the rest.\n\nBest,\nElena',
+      'Alex,\n\nFollowing up quickly: if you approve the $2,850 steel lintel change order by tomorrow at 3:00 PM, I can stamp and upload Sheet S2 before the Thursday morning city intake cutoff and keep our January demo date intact.\n\nJust reply "Approved for W10x22 flush beam" and I will handle the rest.\n\nElena',
     sentAt: hoursAgo(3.1),
     isUnread: true,
     isOutbound: false,
@@ -405,7 +429,7 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Hey Marcus, can you send the revised 6-fixture directional wash quote under our $4,200 cap so we can attach to Addendum B?',
     bodyText:
       'Hey Marcus,\n\nAtelier Loft confirmed zero union surcharge if we stay at or under 6 directional wash fixtures and tie into the balcony circuit.\n\nCould you send over the revised itemized quote under $4,200 so I can sign off with Maya?\n\nThanks,\nAlex',
-    sentAt: hoursAgo(96),
+    sentAt: wait01At,
     isUnread: false,
     isOutbound: true,
     attachments: [],
@@ -423,7 +447,7 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Tessa, checking in on the finalized net IRR and Kestrel/Veridian reserve numbers before we lock the LP memo.',
     bodyText:
       'Hi Tessa,\n\nOnce Carta\'s Q4 cap table export lands, could you share the finalized net IRR table and remaining dry powder figure so I can finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check?\n\nBest,\nAlex',
-    sentAt: hoursAgo(74),
+    sentAt: wait02At,
     isUnread: false,
     isOutbound: true,
     attachments: [],
@@ -440,8 +464,8 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Solis Health Master Services Agreement: Section 9 Indemnity Redline',
     snippet: 'Claire, sent over Solis\'s counsel comments on mutual IP indemnity. Hoping to return a clean draft this week.',
     bodyText:
-      'Hi Claire,\n\nForwarding Solis Health\'s redlines on Section 9 (mutual IP indemnity and liability cap equal to fees paid). Everything else in the SOW is aligned.\n\nLet me know once you have clean markup we can return to Jordan\'s team.\n\nBest,\nAlex',
-    sentAt: hoursAgo(120),
+      'Hi Claire,\n\nForwarding Solis Health\'s redlines on Section 9 (mutual IP indemnity and liability cap equal to fees paid). Everything else in the SOW is aligned.\n\nLet me know once you have clean markup we can return to Jordan\'s team.\n\nThanks, Alex',
+    sentAt: wait03At,
     isUnread: false,
     isOutbound: true,
     attachments: [
@@ -566,7 +590,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Keynote Speaker Invitation: Design Systems Summit 2027',
     snippet: 'We would be honored to host you on the main stage in San Francisco to speak on AI-native spatial interfaces.',
     bodyText:
-      'Hello Alex,\n\nI am curating the main stage program for Design Systems Summit 2027 (March 18-19, San Francisco, 900 attendees). Your studio\'s recent essays on quiet software and spatial triage sparked huge discussion among our committee.\n\nWe would love to invite you for a 25-minute keynote with full travel, hotel, and speaker honorarium covered. Would you be open to a quick 10-minute call next week?\n\nBest,\nNadia Brooks\nProgram Chair, Design Systems Summit',
+      'Alex,\n\nI am curating the main stage program for Design Systems Summit 2027 (March 18-19, San Francisco, 900 attendees). Your studio\'s recent essays on quiet software and spatial triage sparked huge discussion among our committee.\n\nWe would love to invite you for a 25-minute keynote with full travel, hotel, and speaker honorarium covered. Would you be open to a quick 10-minute call next week?\n\nNadia Brooks\nProgram Chair, Design Systems Summit',
     sentAt: hoursAgo(11),
     isUnread: true,
     isOutbound: false,
@@ -746,7 +770,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'AWS Monthly Cloud Infrastructure Invoice #AWS-2026-1142 ($1,850.00)',
     snippet: 'Your November AWS statement for Meridian Studio production clusters is ready. Total charged: $1,850.00 USD.',
     bodyText:
-      'Amazon Web Services Billing Statement\n\nInvoice Number: AWS-2026-1142\nBilling Period: Nov 1 - Nov 30, 2026\nAccount: Meridian Studio Production\nTotal Amount Charged: $1,850.00 USD\n\nBreakdown:\n- EC2 & EKS Staging/Preview Nodes: $1,120.00\n- CloudFront Asset CDN: $410.00\n- S3 + RDS Automated Backups: $320.00\n\nPDF invoice attached for bookkeeping and CPA records.',
+      'Amazon Web Services Billing Statement\n\nInvoice Number: AWS-2026-1142\nBilling Period: Oct 1 - Oct 31, 2026\nAccount: Meridian Studio Production\nTotal Amount Charged: $1,850.00 USD\n\nBreakdown:\n- EC2 & EKS Staging/Preview Nodes: $1,120.00\n- CloudFront Asset CDN: $410.00\n- S3 + RDS Automated Backups: $320.00\n\nPDF invoice attached for bookkeeping and CPA records.',
     sentAt: hoursAgo(10),
     isUnread: false,
     isOutbound: false,
@@ -770,7 +794,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Flight Confirmation DL-8K49MP: JFK to SFO (Dec 11 - Dec 14)',
     snippet: 'Confirmed! Nonstop JFK -> SFO departing Dec 11 at 1:15 PM (Seat 4A). Total paid: $628.40 USD.',
     bodyText:
-      'Delta Air Lines E-Ticket & Itinerary\n\nConfirmation Code: DL-8K49MP\nPassenger: Alex Chen\nTotal Charged: $628.40 USD\n\nOutbound: Thu Dec 11 | DL 402 | New York (JFK) 1:15 PM -> San Francisco (SFO) 4:48 PM | Seat 4A\nReturn: Sun Dec 14 | DL 419 | San Francisco (SFO) 11:30 AM -> New York (JFK) 8:10 PM | Seat 5C\n\nTip: Check in 24 hours prior via the Delta app.',
+      'Delta Air Lines E-Ticket & Itinerary\n\nConfirmation Code: DL-8K49MP\nPassenger: Alex Chen\nTotal Charged: $628.40 USD\n\nOutbound: Thu Dec 11 | DL 402 | New York (JFK) 1:15 PM -> San Francisco (SFO) 4:48 PM | Seat 4A\nReturn: Sun Dec 14 | DL 419 | San Francisco (SFO) 11:30 AM -> New York (JFK) 8:10 PM | Seat 5C\n\nOnline check-in opens 24 hours before each flight in the Fly Delta app.',
     sentAt: hoursAgo(20),
     isUnread: false,
     isOutbound: false,
@@ -1292,7 +1316,7 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Marcus Reid', email: 'marcus@luminaav.io' },
       ],
       messageCount: 1,
-      lastMessageAt: hoursAgo(96),
+      lastMessageAt: wait01At,
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1338,7 +1362,7 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Tessa Holloway', email: 'tessa@northstarventures.io' },
       ],
       messageCount: 1,
-      lastMessageAt: hoursAgo(74),
+      lastMessageAt: wait02At,
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1384,7 +1408,7 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Claire Bennett', email: 'cbennett@meridianlegal.com' },
       ],
       messageCount: 1,
-      lastMessageAt: hoursAgo(120),
+      lastMessageAt: wait03At,
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1959,13 +1983,14 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Travel', 'San Francisco', 'Receipt'],
       bucket: 'paper_trail',
       urgencyScore: 48,
-      distilledAsk: null,
+      distilledAsk: 'Check in for your Dec 11 flight',
+      goalQuote: 'Online check-in opens 24 hours before each flight in the Fly Delta app.',
       aiSummaryBullets: [
         'Round trip JFK to SFO, Dec 11 to 14.',
         'It lines up with the keynote and dinner.',
       ],
       deadlineAt: null,
-      deadlineLabel: 'Dec 11',
+      deadlineLabel: 'Dec 10 6:00 AM',
       quickActions: [{ id: 'qa_rec02_1', label: 'Archive', kind: 'archive' }],
       receiptInfo: {
         vendor: 'Delta Air Lines',
