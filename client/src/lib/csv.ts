@@ -14,16 +14,16 @@ const localDate = (iso: string) => {
 };
 
 /**
- * The receipts in a pile as CSV, built here in the browser: Date, Vendor, Amount, Currency, Subject, Account.
+ * The receipts in a pile as CSV, built here in the browser: Date, Account, Vendor, Amount, Currency, Subject.
  * Oldest first, with a byte order mark so Excel reads it as UTF-8. Named for the month when every row is in one month,
  * otherwise for the range.
  */
 export function receiptsCsv(threads: EmailThread[]): { name: string; text: string } {
   const rows = threads.filter((t) => t.receiptInfo).sort((a, b) => Date.parse(a.lastMessageAt) - Date.parse(b.lastMessageAt));
-  const lines = [['Date', 'Vendor', 'Amount', 'Currency', 'Subject', 'Account']];
+  const lines = [['Date', 'Account', 'Vendor', 'Amount', 'Currency', 'Subject']];
   for (const t of rows) {
     const r = t.receiptInfo!;
-    lines.push([localDate(t.lastMessageAt), r.vendor, r.amount.toFixed(2), r.currency, t.subject, t.accountLabel]);
+    lines.push([localDate(t.lastMessageAt), t.accountLabel, r.vendor, r.amount.toFixed(2), r.currency, t.subject]);
   }
   const first = rows.length ? localDate(rows[0].lastMessageAt) : localDate(new Date().toISOString());
   const last = rows.length ? localDate(rows[rows.length - 1].lastMessageAt) : first;

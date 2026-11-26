@@ -72,16 +72,16 @@ function joinList(items: string[]): string {
 /** The short phrase Search uses for a thread: the thing itself, never the Goal title. */
 const PHRASES: Record<string, string> = {
   thr_dec_01: "Maya's Addendum B",
-  thr_dec_02: "Kestrel's $75k",
-  thr_dec_03: 'Solis press proof',
+  thr_dec_02: "Priya's $75k pro-rata",
+  thr_dec_03: "Jordan's press proof",
   thr_dec_04: "Elena's steel lintel",
   thr_dec_05: "Devon's microsite call",
-  thr_dec_06: 'Samira Patel intro',
+  thr_dec_06: "Daniel's intro to Samira",
   thr_dec_07: "Hannah's Stowe cabin",
   thr_wait_04: "Owen's scorecard notes",
   thr_wait_05: "Rachel's tax uploads",
   thr_wait_06: "Mateo's dinner room",
-  thr_ref_01: 'Studio offsite pick',
+  thr_ref_01: "Devon's offsite pick",
 };
 function phraseOf(t: EmailThread): string {
   return PHRASES[t.id] || `${counterpart(t).name.split(' ')[0]}'s email`;
@@ -1033,16 +1033,32 @@ export const staticDemoApi = {
       const next = needThreads.find((t) => !isDueToday(t.deadlineLabel) && !isOverdue(t.deadlineLabel) && !/^waiting/i.test(t.deadlineLabel || '') && dueParts(t.deadlineLabel));
       const nextText = next ? dueWords(next.deadlineLabel) : '';
       const n = needs.length;
+      const needIds = needThreads.map((t) => t.id);
+      // Due items that sit on the To-do list, not in Needs you
+      const onTodo = dueIds.filter((id) => !needIds.includes(id)).length;
+      const todoSentence =
+        onTodo === 0
+          ? ''
+          : onTodo === dueIds.length
+            ? `${dueIds.length === 1 ? 'It is' : dueIds.length === 2 ? 'Both are' : `All ${numWord(dueIds.length)} are`} on your To-do. `
+            : `${onTodo === 1 ? 'One of them is' : `${numWord(onTodo, true)} of them are`} on your To-do. `;
+      const needsSentence =
+        n === 0
+          ? onTodo > 0 || dueList.length === 0
+            ? 'Nothing needs you.'
+            : 'Nothing else needs you.'
+          : onTodo === 0 && dueList.length > 0
+            ? `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you in all.`
+            : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you${nextText ? `, the first due ${nextText}` : ''}.`;
       const sentence =
         dueList.length > 0
-          ? `${numWord(dueList.length, true)} ${dueList.length === 1 ? 'thing is' : 'things are'} due today: ${joinList(dueList)}. ${
-              n === 0 ? 'Nothing else needs you.' : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you in all.`
-            }`
-          : `Nothing is due today. ${
-              n === 0 ? 'Nothing needs you.' : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you${nextText ? `; the next is due ${nextText}` : ''}.`
-            }`;
-      const cited = [...dueThreads, ...needThreads.filter((t) => !dueIds.includes(t.id)).slice(0, 3)];
-      const more = needThreads.filter((t) => !dueIds.includes(t.id)).length - Math.min(3, needThreads.filter((t) => !dueIds.includes(t.id)).length);
+          ? `${numWord(dueList.length, true)} ${dueList.length === 1 ? 'thing is' : 'things are'} due today: ${joinList(dueList)}. ${todoSentence}${needsSentence}`
+          : `Nothing is due today. ${needsSentence}`;
+      // The rows: the due ones, then Needs you, then `and X more` so the Needs you rows shown plus X make N
+      const rest = needThreads.filter((t) => !dueIds.includes(t.id)).slice(0, 3);
+      const cited = [...dueThreads, ...rest];
+      const shownNeeds = dueThreads.filter((t) => needIds.includes(t.id)).length + rest.length;
+      const more = n - shownNeeds;
       return {
         id: uid('chat'),
         role: 'assistant',
@@ -1051,6 +1067,7 @@ export const staticDemoApi = {
           threadId: t.id,
           subject: t.subject,
           accountLabel: t.accountLabel,
+          group: dueIds.includes(t.id) ? ('due' as const) : ('needs' as const),
         })),
         more: more > 0 ? { count: more, path: '/cards/needs-you' } : undefined,
         toolTrace: [{ tool: 'search_and_filter_threads', summary: `Counted ${dueThreads.length} due today and ${n} needing you` }],

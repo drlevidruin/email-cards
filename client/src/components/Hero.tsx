@@ -1,7 +1,15 @@
 import type { EmailThread, ScreenerSender } from '../lib/types';
 import { formatCurrency } from '../lib/utils';
 import { cleanSubject } from '../lib/stacks';
+import { dueText, isHot } from '../lib/time';
 import './Hero.css';
+
+/** The deadline in words, in the footnote size: emerald, red when due today or overdue, grey for Waiting. Nothing without a deadline. */
+export function DueLine({ label, className }: { label?: string | null; className?: string }) {
+  if (!label) return null;
+  const tone = isHot(label) ? ' dueline--hot' : /^waiting/i.test(label) ? ' dueline--quiet' : '';
+  return <div className={`dueline t-footnote${tone}${className ? ` ${className}` : ''}`}>{dueText(label)}</div>;
+}
 
 /** What a card is about, in the largest type: the Goal, the amount on a receipt, or the subject. */
 export function heroKind(thread: EmailThread, goalFirst = false): 'receipt' | 'goal' | 'subject' {
@@ -16,6 +24,7 @@ export function Hero({ thread, goalFirst }: { thread: EmailThread; goalFirst?: b
   if (kind === 'receipt' && ri) {
     return (
       <div className="hero">
+        <DueLine label={thread.deadlineLabel} />
         <div className="hero__label t-caption hero__label--quiet">{ri.category}</div>
         <p className="hero__text t-title t-num">{formatCurrency(ri.amount, ri.currency)}</p>
       </div>
@@ -24,13 +33,14 @@ export function Hero({ thread, goalFirst }: { thread: EmailThread; goalFirst?: b
   if (kind === 'goal') {
     return (
       <div className="hero">
-        <div className="hero__label t-caption">Goal</div>
+        <DueLine label={thread.deadlineLabel} />
         <p className="hero__text t-title">{thread.distilledAsk}</p>
       </div>
     );
   }
   return (
     <div className="hero">
+      <DueLine label={thread.deadlineLabel} />
       <p className="hero__text t-title">{cleanSubject(thread.subject)}</p>
     </div>
   );

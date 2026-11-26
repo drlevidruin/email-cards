@@ -17,7 +17,7 @@ export function StreakStrip({ pop }: { pop?: boolean }) {
           </div>
         ))}
       </div>
-      <span className="streak__count t-footnote">{clear} of {days} days</span>
+      <span className="streak__count t-footnote">Cleared {clear} of {days} days</span>
     </div>
   );
 }

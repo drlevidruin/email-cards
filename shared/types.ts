@@ -288,6 +288,8 @@ export interface AgentChatMessage {
     threadId: string;
     subject: string;
     accountLabel: string;
+    /** `due` for a thread due today, `needs` for one in Needs you; plain search results have none. */
+    group?: 'due' | 'needs';
   }[];
   /** Cards left out of the list above, and where they open. */
   more?: { count: number; path: string };

@@ -163,3 +163,14 @@ export function openBlanks(text: string, blanks: string[]): number {
   for (const b of new Set(blanks)) n += text.split(b).length - 1;
   return n;
 }
+
+/** The blanks still in the text, each once, in the order they appear. */
+export function openBlankList(text: string, blanks: string[]): string[] {
+  return [...new Set(blanks)].filter((b) => text.includes(b)).sort((a, b) => text.indexOf(a) - text.indexOf(b));
+}
+
+/** A blank's words as a label: `[the change you need]` becomes `The change you need`. */
+export function blankLabel(blank: string): string {
+  const words = blank.replace(/^\[|\]$/g, '').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

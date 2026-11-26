@@ -5,12 +5,14 @@ import { stripReply } from '../lib/replyText';
 import { blanksOf } from '../lib/commitments';
 import { goBack } from '../router';
 import { Avatar } from './Avatar';
+import { DueLine } from './Hero';
 import './ReplyChoose.css';
 
 interface Props {
   first: string;
   to: { name: string; email: string };
   goal?: string | null;
+  due?: string | null;
   chips: QuickActionChip[];
   /** The user's own edits, kept from the editor. */
   yours: string;
@@ -42,7 +44,7 @@ function Suggestion({ text, blanks }: { text: string; blanks: number }) {
 }
 
 /** Every suggested reply, in full, before anything is chosen. Choosing one opens it to edit; nothing is sent from here. */
-export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, onYours, onOwn, onAsk }: Props) {
+export function ReplyChoose({ first, to, goal, due, chips, yours, drafting, onPick, onYours, onOwn, onAsk }: Props) {
   const [ask, setAsk] = useState('');
   const text = ask.trim();
   return (
@@ -63,7 +65,7 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
         </div>
         {goal && (
           <div className="choose__goal">
-            <span className="t-caption choose__goal-label">Goal</span>
+            <DueLine label={due} />
             <p className="t-callout choose__goal-text">{goal}</p>
           </div>
         )}
@@ -92,30 +94,30 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
               </li>
             ))}
             <li>
-              <button className="choose__card choose__card--own" onClick={onOwn}>
+              <button className="choose__own" onClick={onOwn}>
                 <PenLine size={20} strokeWidth={1.75} />
                 <span className="t-headline">Write my own</span>
               </button>
             </li>
           </ul>
         )}
+        <form
+          className="composer__ask"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!text) return;
+            setAsk('');
+            onAsk(text);
+          }}
+        >
+          <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Or tell Claude what to say" aria-label="Tell Claude what to say" />
+          {text && (
+            <button type="submit" className="composer__ask-go" aria-label="Write reply">
+              <ArrowUp size={18} strokeWidth={1.75} />
+            </button>
+          )}
+        </form>
       </div>
-      <form
-        className="composer__ask"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!text) return;
-          setAsk('');
-          onAsk(text);
-        }}
-      >
-        <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Or tell Claude what to say" aria-label="Tell Claude what to say" />
-        {text && (
-          <button type="submit" className="composer__ask-go" aria-label="Write reply">
-            <ArrowUp size={18} strokeWidth={1.75} />
-          </button>
-        )}
-      </form>
     </div>
   );
 }

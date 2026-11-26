@@ -1,7 +1,7 @@
 .mail__results { margin-top: 16px; }
-.mail__list > li + li::before { left: 60px; }
-.mail__row { display: flex; align-items: center; gap: 12px; width: 100%; height: 72px; padding: 0 16px; text-align: left; }
-.mail__row:active { background: var(--surface-2); }
+.mail__list > li + li::before { left: 56px; }
+.mail__row { display: flex; align-items: center; gap: 12px; width: 100%; height: 72px; padding: 0 4px; text-align: left; }
+.mail__row:active { background: var(--line); }
 .mail__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .mail__line { display: flex; align-items: baseline; gap: 8px; }
 .mail__from { flex: 1; min-width: 0; font-weight: 400; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -1,4 +1,4 @@
-/* One grouped style: white groups, radius 16, rows of at least 52px, hairlines inset to the text. */
+/* Two list styles. `.list` is a white group for settings. `.list--desk` is printed on the canvas: no box, rows of at least 52px, hairlines between them. Only cards are paper. */
 .list-heading { margin: 24px 0 8px 4px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-3); }
 .list-heading:first-child { margin-top: 0; }
 .list { overflow: hidden; border-radius: var(--radius-l); background: var(--surface); }
@@ -10,6 +10,10 @@
   text-align: left;
 }
 .list__row:active { background: var(--surface-2); }
+.list--desk { overflow: visible; border-radius: 0; background: transparent; }
+.list--desk > li + li::before { left: 0; }
+.list--desk .list__row { padding: 0 4px; }
+.list--desk .list__row:active { background: var(--line); }
 .list__text { flex: 1; min-width: 0; padding: 8px 0; }
 .list__title { font-size: 16px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .list__meta { font-size: 14px; color: var(--ink-3); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

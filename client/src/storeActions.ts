@@ -203,7 +203,17 @@ export function useCardActions(core: Core) {
         stack,
         ids: [s.email],
         count: d === 'muted' ? 'blocked' : d === 'feed' ? 'moved' : 'allowed',
-        local: (x) => ({ ...x, screener: x.screener.map((y) => (y.email === s.email ? { ...y, status } : y)) }),
+        // The sender's threads move with the decision, the same as the API does, so every pile and count follows at once
+        local: (x) => ({
+          ...x,
+          screener: x.screener.map((y) => (y.email === s.email ? { ...y, status } : y)),
+          threads: x.threads.map((t) => {
+            if (!s.threadIds.includes(t.id)) return t;
+            if (d === 'approved') return { ...t, bucket: 'decision', senderTrust: 'approved' };
+            if (d === 'feed') return { ...t, bucket: 'feed', senderTrust: 'feed' };
+            return { ...t, bucket: 'archived', isArchived: true, senderTrust: 'muted' };
+          }),
+        }),
         call: () => api.decideScreener(s.email, d),
         toast,
       });

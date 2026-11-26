@@ -8,3 +8,7 @@
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
 .hero__reason { margin-top: 4px; color: var(--ink-2); }
+
+.dueline { font-weight: 600; color: var(--accent); }
+.dueline--hot { color: var(--danger); }
+.dueline--quiet { color: var(--ink-3); }

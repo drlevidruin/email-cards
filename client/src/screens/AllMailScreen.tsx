@@ -81,7 +81,7 @@ export function AllMailScreen() {
         {groups?.map((g) => (
           <section key={g.label}>
             <h2 className="list-heading">{g.label}</h2>
-            <ul className="list mail__list">
+            <ul className="list list--desk mail__list">
               {g.rows.map((t) => (
                 <li key={t.id}>
                   <button className={`mail__row${t.isUnread ? ' is-unread' : ''}`} onClick={() => navigate(`/read/${t.id}`)}>

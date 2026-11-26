@@ -1,0 +1,16 @@
+/* The room under the front card holds the edges, so the page lays out around the whole pile. */
+.stack { position: relative; isolation: isolate; margin-bottom: calc(var(--edges, 0) * var(--stack-dy)); }
+.stack__front {
+  position: relative; z-index: 1; display: block; width: 100%; text-align: left;
+  border: 1px solid var(--line); border-radius: var(--stack-radius, var(--radius-card)); background: var(--surface); box-shadow: var(--shadow-card);
+}
+.stack--small { --stack-radius: var(--radius-l); }
+.stack__front--flat { box-shadow: none; }
+.stack__edge {
+  position: absolute; top: 0; bottom: 0;
+  left: calc(var(--k) * var(--stack-dx)); right: calc(var(--k) * var(--stack-dx));
+  transform: translateY(calc(var(--k) * var(--stack-dy)));
+  border: 1px solid var(--line); border-radius: var(--stack-radius, var(--radius-card)); background: var(--surface);
+}
+.stack__edge--last { box-shadow: var(--shadow-card); }
+button.stack__front:active { background: var(--surface-2); }

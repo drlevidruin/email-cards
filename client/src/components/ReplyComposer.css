@@ -5,14 +5,12 @@
 .composer__cancel { grid-column: 1; justify-self: start; min-height: 44px; padding: 0 12px; color: var(--ink-2); }
 .composer__back { grid-column: 1; justify-self: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px 0 0; color: var(--ink-2); }
 .composer__send { grid-column: 3; justify-self: end; display: flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 4px; }
-.composer__send-pill { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: var(--radius-pill); background: var(--accent); color: #fff; white-space: nowrap; }
+.composer__send-pill { display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: var(--radius-m); background: var(--accent); color: #fff; white-space: nowrap; box-shadow: var(--shadow-inset), var(--shadow-btn); }
 .composer__send:active .composer__send-pill { background: var(--accent-press); }
-.pill__short { display: none; }
-@media (max-width: 379px) { .pill__long { display: none; } .pill__short { display: inline; } }
-.composer__send:disabled .composer__send-pill { background: var(--surface-2); color: var(--ink-3); }
+.composer__send:disabled .composer__send-pill { opacity: 0.4; }
 .composer__bars { display: flex; flex-direction: column; gap: 12px; width: 100%; padding-top: 12px; }
 .composer__bars span { display: block; height: 16px; border-radius: 8px; background: var(--surface-2); }
-.composer__ask { flex: none; position: relative; margin: 8px 16px calc(12px + env(safe-area-inset-bottom)); }
+.composer__ask { flex: none; position: relative; margin: 8px 0 calc(12px + env(safe-area-inset-bottom)); }
 .composer__ask input {
   width: 100%; height: 48px; padding: 0 52px 0 16px; border: 0; border-radius: var(--radius-m);
   background: var(--surface); box-shadow: 0 0 0 1px var(--line-strong); font-size: 16px; outline-offset: 2px;
@@ -20,6 +18,6 @@
 .composer__ask input::placeholder { color: var(--ink-3); }
 .composer__ask-go {
   position: absolute; top: 8px; right: 8px; width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--ink); color: #fff;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--accent); color: #fff;
 }
-.composer__ask-go:active { background: #000; }
+.composer__ask-go:active { background: var(--accent-press); }

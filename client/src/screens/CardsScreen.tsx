@@ -271,7 +271,7 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
             )
           }
         >
-          <span className="topbar__title t-headline">{stackLabel(stack)}</span>
+          {!today && <span className="topbar__title t-headline">{stackLabel(stack)}</span>}
           {showCount && (
             <span className="topbar__count t-footnote t-num">
               {Math.min(shown + 1, total)} of {total}

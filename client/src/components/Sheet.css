@@ -22,7 +22,7 @@
 
 .latergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .latertile {
-  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start;
+  display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
   height: auto; min-height: 88px; gap: 8px; padding: 14px; border-radius: var(--radius-l); background: var(--surface-2); text-align: left; color: var(--ink-2);
 }
 .latertile:active { background: var(--line); }

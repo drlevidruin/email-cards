@@ -60,6 +60,17 @@
 
 Not checked: the server route, a real iPhone, a screen reader.
 
+## Handoff, 2026-11-26 (Claude, round 9C): the desk, not a template
+
+- Only cards are paper. `components/Stack.tsx` draws the paper with a stack edge for the deck, the Today card and the three piles. Lists, To-do, Drafts, All mail, Search and the rail sit on the canvas with hairlines.
+- Trust fixes: Search names and counts come from the real threads and say 12 after two senders are allowed. Deciding on a new sender updates the piles. To-do shows only promises you made, and Waiting on holds what others owe you. Labels and highlights were shortened.
+- Today is one card, an Up next line, the three piles and two link rows. Cards show their due line in green, red only when due today or overdue.
+- Search answers in a sentence, then Due today and Needs you lists.
+- A reply with a blank to fill shows one row for it, with Add. Send stays off until every blank is filled.
+- Toasts sit at the bottom. The rail and menu have an account picker. CSV has an Account column after Date.
+- Data changes live in both `client/src/lib/staticDemoData.ts` and `server/src/demoData.ts`.
+- Not checked: a real iPhone, a screen reader, the server route.
+
 ## Handoff, 2026-11-26 (Claude, round 8B): To-do, Today, composer, finish
 
 What changed and where it lives:

@@ -28,7 +28,7 @@
 .actionbar__btn svg { flex: none; }
 .actionbar__label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .actionbar__btn:active { transform: scale(0.97); }
-.actionbar__btn--primary { border-radius: var(--radius-pill); background: var(--accent); color: #fff; }
+.actionbar__btn--primary { border-radius: var(--radius-m); background: var(--accent); color: #fff; box-shadow: var(--shadow-inset), var(--shadow-btn); }
 .actionbar__btn--primary:active { background: var(--accent-press); }
 .actionbar__btn--primary .keycap { border-color: rgba(255, 255, 255, 0.45); background: transparent; color: #fff; }
 /* Dragging toward a button: its icon and label turn ink (Done lightens to a soft emerald so ink reads on it).

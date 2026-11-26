@@ -1,5 +1,4 @@
 import type { GmailAccount } from '../lib/types';
-import { dueText, isHot } from '../lib/time';
 import { Avatar } from './Avatar';
 import './CardHeader.css';
 
@@ -9,11 +8,10 @@ interface Props {
   account?: GmailAccount;
   /** How long ago, such as 2h. */
   age?: string;
-  due?: string | null;
 }
 
-/** The sender's monogram and name, with the account and age under it and the due date at the right. */
-export function CardHeader({ name, email, account, age, due }: Props) {
+/** The sender's monogram and name, with the account and age under it. */
+export function CardHeader({ name, email, account, age }: Props) {
   return (
     <div className="cardhead">
       <Avatar name={name} email={email} card />
@@ -29,7 +27,6 @@ export function CardHeader({ name, email, account, age, due }: Props) {
           {age && <span className="t-num">{age}</span>}
         </div>
       </div>
-      {due && <span className={`cardhead__due t-footnote${isHot(due) ? ' cardhead__due--hot' : ''}`}>{dueText(due)}</span>}
     </div>
   );
 }

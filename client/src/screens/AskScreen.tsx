@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { Search, X } from 'lucide-react';
 import { api } from '../lib/api';
 import type { ActionProposal, AgentChatMessage } from '../lib/types';
 import { counterpart } from '../lib/stacks';
@@ -20,22 +20,18 @@ function message(role: AgentChatMessage['role'], content: string): AgentChatMess
 export function AskScreen() {
   const store = useStore();
   const { chat, setChat, account } = store;
-  const [text, setText] = useState('');
+  // The field keeps the question you asked; only the latest answer shows
+  const [text, setText] = useState(() => [...chat].reverse().find((m) => m.role === 'user')?.content ?? '');
   const [waiting, setWaiting] = useState(false);
   const [running, setRunning] = useState<string | null>(null);
-  const end = useRef<HTMLDivElement>(null);
   const busy = useRef(false);
-
-  useEffect(() => {
-    end.current?.scrollIntoView({ block: 'end' });
-  }, [chat.length, waiting]);
 
   const send = async (raw: string) => {
     const q = raw.trim();
     if (!q || waiting) return;
     const history = chat.map(({ role, content }) => ({ role, content }));
     setChat((c) => [...c, message('user', q)]);
-    setText('');
+    setText(q);
     setWaiting(true);
     try {
       const reply = await api.agentChat({ message: q, history, selectedAccountId: account });
@@ -44,6 +40,12 @@ export function AskScreen() {
       setChat((c) => [...c, message('assistant', 'That did not work. Try again.')]);
     }
     setWaiting(false);
+  };
+
+  // Emptying the field starts over
+  const change = (value: string) => {
+    setText(value);
+    if (!value && chat.length > 0 && !waiting) setChat([]);
   };
 
   const patchProposal = (id: string, patch: Partial<ActionProposal> | null) =>
@@ -98,10 +100,10 @@ export function AskScreen() {
           <div className="ask__done">Done</div>
         ) : (
           <div className="ask__proposal-actions">
-            <button className="btn btn--primary btn--small ask__btn" disabled={running !== null} onClick={() => void doIt(p)}>
+            <button className="btn btn--primary ask__btn" disabled={running !== null} onClick={() => void doIt(p)}>
               Do it
             </button>
-            <button className="btn btn--secondary btn--small ask__btn" onClick={() => patchProposal(p.id, null)}>
+            <button className="btn btn--secondary ask__btn" onClick={() => patchProposal(p.id, null)}>
               Not now
             </button>
           </div>
@@ -119,98 +121,98 @@ export function AskScreen() {
       }}
     >
       <Search size={18} strokeWidth={1.75} />
-      <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Search or ask" aria-label="Search or ask" autoFocus enterKeyHint="search" />
+      <input value={text} onChange={(e) => change(e.target.value)} placeholder="Search or ask" aria-label="Search or ask" autoFocus enterKeyHint="search" />
+      {text && (
+        <button type="button" className="search__clear" aria-label="Clear" onClick={() => change('')}>
+          <X size={18} strokeWidth={1.75} />
+        </button>
+      )}
     </form>
   );
 
+  // The latest answer, its rows grouped when the answer has groups
+  const answer = [...chat].reverse().find((m) => m.role === 'assistant');
+  const rows = answer?.citations ?? [];
+  const grouped = rows.some((c) => c.group);
+  const row = (c: { threadId: string; subject: string; accountLabel: string }) => {
+    const r = cite(c);
+    return (
+      <li key={c.threadId}>
+        <button className="list__row ask__cite" onClick={() => navigate(`/read/${c.threadId}`)}>
+          <span className="t-callout ask__cite-subject">{r.title}</span>
+          <span className="t-footnote ask__cite-account">
+            {r.who}
+            {r.due && (
+              <>
+                {' \u00B7 '}
+                <span className={r.hot ? 'list__hot' : undefined}>{r.due}</span>
+              </>
+            )}
+          </span>
+        </button>
+      </li>
+    );
+  };
+  const section = (label: string | null, items: ReactNode) => (
+    <section className="ask__section">
+      {label && <h2 className="list-heading ask__label">{label}</h2>}
+      <ul className="list list--desk ask__cites">{items}</ul>
+    </section>
+  );
+  const moreRow = answer?.more && (
+    <li key="more">
+      <button className="list__row ask__cite" onClick={() => navigate(answer.more!.path)}>
+        <span className="t-callout ask__cite-subject">and {answer.more.count} more</span>
+      </button>
+    </li>
+  );
+
   return (
-    <PageShell
-      title="Search"
-      canvas
-      fill
-      right={
-        chat.length > 0 ? (
-          <button className="btn btn--text" onClick={() => setChat([])}>
-            New chat
-          </button>
-        ) : undefined
-      }
-    >
+    <PageShell title="Search" canvas fill>
       <div className="ask">
         {field}
         <div className="ask__scroll">
-          {chat.length === 0 && !waiting ? (
-            <ul className="list ask__suggestions">
+          {!answer && !waiting ? (
+            <ul className="list list--desk ask__suggestions">
               {SUGGESTIONS.map((s) => (
                 <li key={s}>
                   <button className="list__row ask__suggestion" onClick={() => void send(s)}>
-                    <Search size={18} strokeWidth={1.75} className="ask__suggestion-icon" />
                     <span className="t-subhead">{s}</span>
                   </button>
                 </li>
               ))}
             </ul>
-          ) : (
-            <div className="ask__thread">
-              {chat.map((m) =>
-                m.role === 'user' ? (
-                  <div key={m.id} className="t-subhead ask__user">
-                    {m.content}
-                  </div>
-                ) : (
-                  <div key={m.id} className="ask__assistant">
-                    <p className="t-body ask__text">{m.content}</p>
-                    {((m.citations && m.citations.length > 0) || m.more) && (
-                      <ul className="list ask__cites">
-                        {(m.citations ?? []).map((c) => {
-                          const row = cite(c);
-                          return (
-                            <li key={c.threadId}>
-                              <button className="list__row ask__cite" onClick={() => navigate(`/read/${c.threadId}`)}>
-                                <span className="t-callout ask__cite-subject">{row.title}</span>
-                                <span className="t-footnote ask__cite-account">
-                                  {row.who}
-                                  {row.due && (
-                                    <>
-                                      {' · '}
-                                      <span className={row.hot ? 'list__hot' : undefined}>{row.due}</span>
-                                    </>
-                                  )}
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                        {m.more && (
-                          <li>
-                            <button className="list__row ask__cite" onClick={() => navigate(m.more!.path)}>
-                              <span className="t-callout ask__cite-subject">and {m.more.count} more</span>
-                            </button>
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                    {m.proposal && proposal(m.proposal)}
-                    {m.createdDraft && (
-                      <div className="ask__saved">
-                        <span>Draft saved</span>
-                        <button className="btn btn--text" onClick={() => navigate('/drafts')}>
-                          Open
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              )}
-              {waiting && (
-                <div className="ask__dots" aria-label="Claude is typing">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              )}
-              <div ref={end} />
+          ) : waiting ? (
+            <div className="ask__dots" aria-label="Searching">
+              <span />
+              <span />
+              <span />
             </div>
+          ) : (
+            answer && (
+              <div className="ask__answer">
+                <p className="t-body ask__text">{answer.content}</p>
+                {grouped ? (
+                  <>
+                    {rows.some((c) => c.group === 'due') &&
+                      section('Due today', rows.filter((c) => c.group === 'due').map(row))}
+                    {(rows.some((c) => c.group !== 'due') || moreRow) &&
+                      section('Needs you', [...rows.filter((c) => c.group !== 'due').map(row), moreRow])}
+                  </>
+                ) : (
+                  (rows.length > 0 || moreRow) && section(null, [...rows.map(row), moreRow])
+                )}
+                {answer.proposal && proposal(answer.proposal)}
+                {answer.createdDraft && (
+                  <div className="ask__saved">
+                    <span>Draft saved</span>
+                    <button className="btn btn--text" onClick={() => navigate('/drafts')}>
+                      Open
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </div>

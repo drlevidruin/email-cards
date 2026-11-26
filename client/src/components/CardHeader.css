@@ -3,5 +3,3 @@
 .cardhead__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .cardhead__meta { display: flex; align-items: center; gap: 8px; color: var(--ink-3); white-space: nowrap; }
 .cardhead__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
-.cardhead__due { flex: none; color: var(--ink-3); text-align: right; white-space: nowrap; }
-.cardhead__due--hot { color: var(--danger); font-weight: 600; }

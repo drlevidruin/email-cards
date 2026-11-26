@@ -1,0 +1,20 @@
+.navrow {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; height: 36px; padding: 0 10px; border-radius: 10px; text-align: left;
+}
+.navrow:hover { background: var(--surface-2); }
+.navrow.is-current { background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.navrow__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.navrow.is-current .navrow__label { font-weight: 600; color: var(--ink); }
+.navrow__count { color: var(--ink-3); }
+.acct { position: relative; }
+.acct__chev { flex: none; color: var(--ink-3); }
+.acct__menu {
+  position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 5;
+  padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); box-shadow: var(--shadow-float);
+}
+.acct__item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 10px; border-radius: 10px; text-align: left; }
+.acct__item:hover { background: var(--surface-2); }
+.acct__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.acct__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.acct__item svg { flex: none; color: var(--ink); }

@@ -61,7 +61,7 @@ export function DraftsScreen() {
       {drafts.length === 0 ? (
         <div className="list-empty">No drafts</div>
       ) : (
-        <ul className="list drafts">
+        <ul className="list list--desk drafts">
           {drafts.map((d) => (
             <li key={d.id} className="draft">
               <button className="draft__open" onClick={() => edit(d)}>

@@ -8,6 +8,7 @@
   overflow: hidden;
   padding: 20px;
   border-radius: var(--radius-card);
+  border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }

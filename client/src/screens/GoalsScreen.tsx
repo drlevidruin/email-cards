@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { api } from '../lib/api';
-import { dueText } from '../lib/time';
+import { dueText, isHot } from '../lib/time';
 import { buildTodo, dueBits, todoCounts, type TodoRow } from '../lib/todo';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -62,7 +62,7 @@ export function GoalsScreen() {
 
   const meta = (row: TodoRow, extra: string[]) => {
     const bits: { text: string; hot?: boolean }[] = [{ text: row.person }];
-    if (row.due) bits.push({ text: dueText(row.due), hot: row.overdue });
+    if (row.due) bits.push({ text: dueText(row.due), hot: isHot(row.due) });
     for (const e of extra) bits.push({ text: e });
     return (
       <div className="t-footnote todo__meta">

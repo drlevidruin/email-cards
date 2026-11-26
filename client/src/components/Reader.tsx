@@ -95,7 +95,7 @@ export function Reader({ thread, stack, senderEmail, promise }: Props) {
           </div>
         )}
         <div className="reader__scroll">
-          <CardHeader name={sender ? sender.name : counterpart(thread).name} email={sender ? sender.email : counterpart(thread).email} account={account} age={sender ? undefined : relativeTime(thread.lastMessageAt)} due={sender ? null : thread.deadlineLabel} />
+          <CardHeader name={sender ? sender.name : counterpart(thread).name} email={sender ? sender.email : counterpart(thread).email} account={account} age={sender ? undefined : relativeTime(thread.lastMessageAt)} />
           {sender ? <SenderHero sender={sender} /> : <Hero thread={thread} goalFirst={onTodo} />}
           <hr className="reader__rule" />
           {(sender || kind !== 'subject') && <h2 className="reader__subject t-headline">{cleanSubject(thread.subject)}</h2>}
@@ -103,7 +103,7 @@ export function Reader({ thread, stack, senderEmail, promise }: Props) {
         </div>
         {!desktop && <ActionBar variant={variant} active={null} onAction={onAction} />}
       </div>
-      {later && <LaterSheet onPick={pick} onClose={() => setLater(false)} due={thread.deadlineLabel} />}
+      {later && <LaterSheet onPick={pick} onClose={() => setLater(false)} />}
     </div>
   );
 }

@@ -4,36 +4,33 @@ import './Toast.css';
 
 interface Spot {
   style: CSSProperties;
-  /** Sits under the top bar and slides down, because there is no action bar to sit above. */
-  top: boolean;
 }
 
-/** The toast never covers a button. Above the action bar when there is one, else 12px under the top bar and progress line. */
+/** The toast sits at the bottom: 12px above the action bar on a deck screen, else 16px above the bottom edge. It never covers the top bar or a title. */
 function place(): Spot {
   const bars = [...document.querySelectorAll('.actionbar')];
   const bar = bars[bars.length - 1]?.getBoundingClientRect();
   const main = document.querySelector('.dshell__main')?.getBoundingClientRect();
-  if (bar && bar.height > 0 && main && window.matchMedia('(min-width: 1024px)').matches) {
+  const desktop = window.matchMedia('(min-width: 1024px)').matches;
+  if (bar && bar.height > 0 && main && desktop) {
     // On a laptop every toast with a bar sits in one place: centered in the content, 12px above where the deck's bar stands (64px tall, 16px off the bottom)
-    return { top: false, style: { top: 'auto', bottom: 16 + 64 + 12, left: Math.round(main.left), right: Math.round(window.innerWidth - main.right) } };
+    return { style: { top: 'auto', bottom: 16 + 64 + 12, left: Math.round(main.left), right: Math.round(window.innerWidth - main.right) } };
   }
   if (bar && bar.height > 0) {
     return {
-      top: false,
       style: { top: 'auto', bottom: Math.round(window.innerHeight - bar.top + 12), left: Math.round(bar.left), right: Math.round(window.innerWidth - bar.right) },
     };
   }
-  const anchors = [...document.querySelectorAll('.topbar, .segbar, .page__bar')]
-    .map((el) => el.getBoundingClientRect())
-    .filter((r) => r.height > 0 && r.bottom < window.innerHeight / 2);
-  const under = anchors.length ? Math.max(...anchors.map((r) => r.bottom)) + 12 : 12;
-  const style: CSSProperties = {
-    top: anchors.length ? Math.round(under) : 'calc(12px + env(safe-area-inset-top))',
-    bottom: 'auto',
-    left: main ? Math.round(main.left) : 0,
-    right: main ? Math.round(window.innerWidth - main.right) : 0,
+  // The To-do page keeps Tackle at the bottom of the phone: the toast rides above it
+  const foot = [...document.querySelectorAll('.todo__tackle')].map((el) => el.getBoundingClientRect()).find((r) => r.height > 0 && r.top > window.innerHeight / 2);
+  return {
+    style: {
+      top: 'auto',
+      bottom: foot ? Math.round(window.innerHeight - foot.top + 12) : 'calc(16px + env(safe-area-inset-bottom))',
+      left: main ? Math.round(main.left) : 0,
+      right: main ? Math.round(window.innerWidth - main.right) : 0,
+    },
   };
-  return { top: true, style };
 }
 
 /** Places the toast while it is up, and again when the screen changes or the window resizes. */
@@ -79,7 +76,7 @@ export function Toast() {
   const spot = usePlace(!!toast, toast?.id);
   if (!toast) return null;
   return (
-    <div className={`toast-wrap${spot?.top ? ' toast-wrap--top' : ''}`} style={spot?.style}>
+    <div className="toast-wrap" style={spot?.style}>
       <div className="toast" role="status" key={toast.id}>
         <span className="toast__text t-subhead">{toast.text}</span>
         {toast.undoable && (

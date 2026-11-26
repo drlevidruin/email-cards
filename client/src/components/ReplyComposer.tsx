@@ -225,7 +225,10 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       } else if (modeRef.current === 'edit') {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
-          void send();
+          // With a blank still open, the shortcut takes you to it instead of sending
+          const field = document.querySelector<HTMLInputElement>('.blank__input');
+          if (field) field.focus();
+          else void send();
         }
       } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && !drafting) {
         const n = Number(e.key);
@@ -259,6 +262,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       first={first}
       to={to}
       goal={thread.distilledAsk}
+      due={thread.deadlineLabel}
       chips={chips}
       yours={yours}
       drafting={drafting}

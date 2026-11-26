@@ -5,7 +5,6 @@ import type { NextRow } from '../lib/finish';
 import type { StackId } from '../lib/stacks';
 import { dueBits, todoCounts } from '../lib/todo';
 import { useStore } from '../store';
-import { CountUp } from './CountUp';
 import { FinishPile } from './FinishPile';
 import { StreakStrip } from './StreakStrip';
 import './FinishCard.css';
@@ -30,6 +29,21 @@ export function duration(mins: number): string {
   const m = total % 60;
   if (h === 0) return `${m} min`;
   return m === 0 ? `${h} hr` : `${h} hr ${m} min`;
+}
+
+/** What each move is called in the moves line, with where it went. */
+const MOVE_WORDS: Record<string, string> = {
+  Done: 'done',
+  Later: 'later',
+  'To-do': 'on your To-do',
+  Blocked: 'blocked',
+  Allowed: 'allowed',
+  Moved: 'to Newsletters',
+};
+
+/** `2 allowed \u00B7 1 to Newsletters \u00B7 1 blocked`: the moves as a lower-case sentence with their destinations. */
+export function movesLine(moves: [string, number][]): string {
+  return moves.map(([k, n]) => `${n} ${MOVE_WORDS[k] ?? k.toLowerCase()}`).join(' \u00B7 ');
 }
 
 /** Handled time over handled cards, to the nearest 5 seconds. Nothing under 3 cards. */
@@ -60,20 +74,18 @@ export function FinishCard({ stack, account, kicker, celebrate, dayClear, next }
         <h1 className="t-title finish__title">All clear</h1>
         {handled > 0 && (
           <p className="t-subhead finish__stats">
-            <CountUp to={handled} run={celebrate} /> handled
-            {replies > 0 && ` · ${replies} ${replies === 1 ? 'reply' : 'replies'}`}
-            {replies > 0 ? ' · ' : ' in '}
+            {replies > 0 ? `${replies} ${replies === 1 ? 'reply' : 'replies'} in ` : 'In '}
             {duration(mins)}
           </p>
         )}
         {speed && <p className="t-footnote finish__pace">{speed}</p>}
-        {moves.length > 0 && <p className="t-footnote finish__pace">{moves.map(([k, n]) => `${n} ${k}`).join(' \u00B7 ')}</p>}
+        {moves.length > 0 && <p className="t-footnote finish__pace">{movesLine(moves)}</p>}
       </div>
       <div className="finish__week">
         <StreakStrip pop={celebrate && stack === 'needs-you' && dayClear} />
       </div>
       {(todoRow || rest.length > 0) && (
-        <ul className="finish__group finish__list">
+        <ul className="finish__list">
           {todoRow && (
             <li>
               <button className="finish__row" onClick={() => navigate('/goals')}>

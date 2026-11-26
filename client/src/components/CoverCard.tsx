@@ -86,6 +86,10 @@ export function CoverCard({ kind, threads, onArchiveAll, onOneByOne }: Props) {
   }, [all.length]);
   const shownCount = fit?.n ?? rendered.length;
   const total = threads.reduce((sum, t) => sum + (t.receiptInfo?.amount ?? 0), 0);
+  // One line of subtotals when the receipts come from more than one account
+  const byAccount = new Map<string, number>();
+  for (const t of threads) byAccount.set(t.accountLabel, (byAccount.get(t.accountLabel) ?? 0) + (t.receiptInfo?.amount ?? 0));
+  const subtotals = byAccount.size > 1 ? [...byAccount.entries()].map(([name, sum]) => `${name.replace(/ /g, "\u00A0")}\u00A0${formatCurrency(sum, 'USD').replace(/ /g, "\u00A0")}`).join(' \u00B7 ') : '';
   const months = new Set(threads.map(monthOf));
   const now = new Date();
   const sameMonth = months.size === 1;
@@ -100,6 +104,7 @@ export function CoverCard({ kind, threads, onArchiveAll, onOneByOne }: Props) {
             <p className="t-subhead cover__sub">
               {threads.length} receipts{when}
             </p>
+            {subtotals && <p className="t-footnote t-num cover__sub">{subtotals}</p>}
           </>
         ) : (
           <>
