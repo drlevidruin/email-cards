@@ -2,7 +2,7 @@
   "name": "email-cards",
   "version": "1.0.0",
   "private": true,
-  "description": "Email Cards: bright, zero-distraction Tinder-style card triage for Gmail",
+  "description": "Email Cards: your inbox, one card at a time",
   "scripts": {
     "install:all": "npm install && npm --prefix server install && npm --prefix client install",
     "dev": "concurrently --kill-others-on-fail -n SERVER,CLIENT -c cyan,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",

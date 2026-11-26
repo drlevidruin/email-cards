@@ -33,13 +33,3 @@ export interface ThreadDetailPayload {
   relatedThreads: EmailThread[];
   tasks: ExtractedTask[];
 }
-
-export interface UndoToastItem {
-  id: string;
-  message: string;
-  detail?: string;
-  undoId?: string;
-  proposalId?: string;
-  onUndo?: () => Promise<void> | void;
-  tone?: 'default' | 'success' | 'warning';
-}

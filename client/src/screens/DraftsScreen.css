@@ -1,0 +1,17 @@
+.drafts { display: grid; gap: 12px; }
+.draft { min-width: 0; padding: 16px; border-radius: var(--radius-m); background: var(--surface); }
+.draft__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.draft__to { min-width: 0; font-size: 14px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.draft__held { flex: none; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.draft__subject { margin-top: 4px; font-size: 16px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.draft__body {
+  margin-top: 8px; font-size: 15px; line-height: 1.45; color: var(--ink-2); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.draft__actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.draft__send { height: 40px; padding: 0 20px; border-radius: 12px; font-size: 15px; }
+.draft__delete { margin-left: auto; color: var(--danger); font-size: 15px; }
+
+@media (min-width: 900px) {
+  .drafts { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}

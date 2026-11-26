@@ -1,0 +1,19 @@
+.cover { flex-direction: column; padding: 24px; }
+.cover__body { flex: 1; min-height: 0; overflow: hidden; }
+.cover__title { font-size: 26px; font-weight: 700; }
+.cover__total { margin-top: 4px; font-size: 17px; font-weight: 600; color: var(--ink-2); }
+.cover__list { margin-top: 20px; }
+.cover__row {
+  display: block; height: 40px; line-height: 40px;
+  font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cover__from { font-weight: 600; color: var(--ink); }
+.cover__subject { color: var(--ink-2); }
+.cover__more { margin-top: 8px; font-size: 14px; color: var(--ink-3); }
+.cover__actions { flex: none; display: flex; flex-direction: column; gap: 12px; padding-top: 16px; }
+
+@media (min-width: 900px) {
+  .cover { align-items: center; padding: 48px 32px 32px; }
+  .cover__body { width: 100%; max-width: 480px; }
+  .cover__actions { width: 100%; max-width: 480px; }
+}

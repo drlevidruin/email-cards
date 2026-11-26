@@ -71,6 +71,7 @@ export interface QuickActionChip {
   label: string;
   kind: 'reply' | 'approve' | 'schedule' | 'snooze' | 'archive' | 'nudge';
   draftHint?: string;
+  draftBody?: string;
 }
 
 export interface ReceiptInfo {

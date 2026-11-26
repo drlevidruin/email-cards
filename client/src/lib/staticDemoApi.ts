@@ -31,7 +31,7 @@ import type {
 } from './types';
 import { buildDemoDataset } from './staticDemoData';
 
-const STORAGE_KEY = 'email_cards_static_demo_v1';
+const STORAGE_KEY = 'email_cards_static_demo_v3';
 
 interface UndoRecord {
   id: string;
@@ -257,7 +257,25 @@ function buildToneDraftBody(
   }
 }
 
-function searchThreadsLocal(threads: EmailThread[], query: string, accountId?: string): EmailThread[] {
+function firstNameOf(thread: EmailThread): string {
+  const other =
+    thread.participants.find((p) => p.email.toLowerCase() !== thread.accountEmail.toLowerCase()) ||
+    thread.participants[0];
+  return other?.name.split(/\s+/)[0] || 'there';
+}
+
+function buildReplyBody(thread: EmailThread, tone: DraftTone, instruction?: string): string {
+  const text = instruction?.trim();
+  if (text) {
+    const written = thread.quickActions.find((a) => a.draftHint === text && a.draftBody);
+    if (written) return written.draftBody as string;
+    const sentence = text.charAt(0).toUpperCase() + text.slice(1);
+    return `Hi ${firstNameOf(thread)},\n\n${/[.!?]$/.test(sentence) ? sentence : sentence + '.'}\n\nBest,\nAlex`;
+  }
+  return buildToneDraftBody(thread, tone);
+}
+
+function searchThreadsLocal(threads: EmailThread[], query: string, accountId?: string, includeArchived = false): EmailThread[] {
   const tokens = query
     .toLowerCase()
     .replace(/[^a-z0-9\s$@.-]/g, ' ')
@@ -265,10 +283,17 @@ function searchThreadsLocal(threads: EmailThread[], query: string, accountId?: s
     .filter((w) => w.length > 2 && !['the', 'and', 'for', 'all', 'with', 'show', 'find', 'emails', 'email', 'about', 'from'].includes(w));
 
   const scoped = threads.filter(
-    (t) => !t.isArchived && (!accountId || accountId === 'all' || t.accountId === accountId)
+    (t) => (includeArchived || !t.isArchived) && (!accountId || accountId === 'all' || t.accountId === accountId)
   );
 
   if (tokens.length === 0) {
+    if (includeArchived) {
+      // A mail search with only short words still has to match something real.
+      const needle = query.trim().toLowerCase();
+      return scoped.filter((t) =>
+        `${t.subject} ${t.snippet} ${t.participants.map((p) => `${p.name} ${p.email}`).join(' ')}`.toLowerCase().includes(needle)
+      );
+    }
     return scoped.slice(0, 6);
   }
 
@@ -334,7 +359,7 @@ export const staticDemoApi = {
       list = list.filter((t) => t.bucket === params.bucket);
     }
     if (params?.q) {
-      list = searchThreadsLocal(list, params.q, params.accountId);
+      list = searchThreadsLocal(list, params.q, params.accountId, true);
     }
     return deepClone(list);
   },
@@ -415,7 +440,6 @@ export const staticDemoApi = {
     if (!t) return { ok: false };
     const undoId = saveUndoSnapshot(store, [id]);
     t.isSnoozedUntil = until;
-    t.bucket = 'waiting';
     saveStore(store);
     return { ok: true, undoId, thread: deepClone(t) };
   },
@@ -606,6 +630,8 @@ export const staticDemoApi = {
     }
 
     d.status = 'sent';
+    const nudged = store.commitments.find((c) => (c as { nudgeDraftId?: string }).nudgeDraftId === id);
+    if (nudged) nudged.status = 'nudged';
     if (d.threadId) {
       const thread = store.threads.find((t) => t.id === d.threadId);
       const acc = store.accounts.find((a) => a.id === d.accountId);
@@ -707,7 +733,7 @@ export const staticDemoApi = {
     const store = loadStore();
     const c = store.commitments.find((x) => x.id === id);
     if (!c) throw new Error('Commitment not found');
-    c.status = 'nudged';
+    // The row shows Nudged only once the nudge draft is sent (see sendDraft).
     const thread = store.threads.find((t) => t.id === c.threadId);
     const draft: DraftItem = {
       id: uid('drf'),
@@ -723,6 +749,7 @@ export const staticDemoApi = {
       createdAt: new Date().toISOString(),
     };
     store.drafts.unshift(draft);
+    (c as { nudgeDraftId?: string }).nudgeDraftId = draft.id;
     saveStore(store);
     return { ok: true, draft: deepClone(draft) };
   },
@@ -847,14 +874,14 @@ export const staticDemoApi = {
         return {
           id: uid('chat'),
           role: 'assistant',
-          content: 'Your newsletter feed is already completely clear.',
+          content: 'You have no newsletters to archive.',
           timestamp: now,
         };
       }
       const proposal: ActionProposal = {
         id: uid('prop'),
-        title: `Archive ${targets.length} Newsletter Cards`,
-        description: 'Moves all unread and read newsletter items out of your active deck with one-click Undo.',
+        title: `Archive ${targets.length} newsletters`,
+        description: 'Moves every newsletter out of your cards. You can undo it.',
         actionType: 'archive',
         targetThreadIds: targets.map((t) => t.id),
         targetThreadsPreview: targets.slice(0, 6).map((t) => ({
@@ -870,7 +897,7 @@ export const staticDemoApi = {
       return {
         id: uid('chat'),
         role: 'assistant',
-        content: `I prepared a safe dry-run preview to archive ${targets.length} newsletters across your accounts. Nothing has changed yet: click Execute below when ready.`,
+        content: `Found ${targets.length} newsletters to archive.`,
         proposal,
         toolTrace: [{ tool: 'propose_bulk_action', summary: `Previewed ${targets.length} newsletters` }],
         timestamp: now,
@@ -896,7 +923,7 @@ export const staticDemoApi = {
         return {
           id: uid('chat'),
           role: 'assistant',
-          content: `I drafted a ${tone} reply to "${target.subject}" and placed it in your Drafts queue for review.`,
+          content: `I wrote a ${tone} reply to "${target.subject}" and saved it in Drafts.`,
           createdDraft: draft,
           citations: [{ threadId: target.id, subject: target.subject, accountLabel: target.accountLabel }],
           toolTrace: [{ tool: 'draft_reply', summary: `Queued ${tone} draft` }],
@@ -909,11 +936,10 @@ export const staticDemoApi = {
     if (payload.activeThreadId && (lower.includes('summarize') || lower.includes('need') || lower.includes('this thread') || lower.includes('this email'))) {
       const target = store.threads.find((t) => t.id === payload.activeThreadId);
       if (target) {
-        const bullets = target.aiSummaryBullets.map((b) => `- ${b}`).join('\n');
         return {
           id: uid('chat'),
           role: 'assistant',
-          content: `Here is the summary for "${target.subject}":\n\nWhat they need: ${target.distilledAsk || target.snippet}\n${bullets ? `\nKey points:\n${bullets}` : ''}${target.deadlineLabel ? `\n\nTiming: ${target.deadlineLabel}` : ''}`,
+          content: target.distilledAsk || target.snippet,
           citations: [{ threadId: target.id, subject: target.subject, accountLabel: target.accountLabel }],
           timestamp: now,
         };
@@ -924,18 +950,10 @@ export const staticDemoApi = {
     if (lower.includes('receipt') || lower.includes('spend') || lower.includes('invoice') || lower.includes('money') || lower.includes('total')) {
       const receipts = scoped.filter((t) => Boolean(t.receiptInfo));
       const total = receipts.reduce((sum, t) => sum + (t.receiptInfo?.amount || 0), 0);
-      const topLines = receipts
-        .sort((a, b) => (b.receiptInfo?.amount || 0) - (a.receiptInfo?.amount || 0))
-        .slice(0, 5)
-        .map(
-          (t) =>
-            `- ${t.receiptInfo!.vendor} (${t.accountLabel}): $${t.receiptInfo!.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
-        )
-        .join('\n');
       return {
         id: uid('chat'),
         role: 'assistant',
-        content: `Tracked ${receipts.length} receipts totaling $${total.toLocaleString('en-US', { minimumFractionDigits: 2 })} across your accounts:\n\n${topLines}`,
+        content: `${receipts.length} receipts, $${total.toLocaleString('en-US', { minimumFractionDigits: 2 })} in all.`,
         citations: receipts.slice(0, 5).map((t) => ({
           threadId: t.id,
           subject: t.subject,
@@ -952,19 +970,15 @@ export const staticDemoApi = {
         .filter((t) => t.bucket === 'decision')
         .sort((a, b) => b.urgencyScore - a.urgencyScore)
         .slice(0, 5);
-      const lines = top
-        .map(
-          (t, i) =>
-            `${i + 1}. ${t.subject} (${t.deadlineLabel || 'Priority'})\n   ${t.distilledAsk || t.snippet}`
-        )
-        .join('\n\n');
+      const dueToday = top.filter((t) => /^today/i.test(t.deadlineLabel || '')).length;
+      const word = (n: number) => ['No', 'One', 'Two', 'Three', 'Four', 'Five'][n] ?? String(n);
+      const needs = `${word(top.length)} ${top.length === 1 ? 'email needs' : 'emails need'} you.`;
+      const due = dueToday > 0 ? ` ${word(dueToday)} ${dueToday === 1 ? 'is' : 'are'} due today.` : '';
       return {
         id: uid('chat'),
         role: 'assistant',
         content:
-          top.length > 0
-            ? `Here are your top ${top.length} priority cards right now:\n\n${lines}`
-            : 'All priority decision cards are cleared!',
+          top.length > 0 ? needs + due : 'Nothing needs you right now.',
         citations: top.map((t) => ({
           threadId: t.id,
           subject: t.subject,
@@ -982,10 +996,8 @@ export const staticDemoApi = {
       role: 'assistant',
       content:
         matches.length > 0
-          ? `Found ${matches.length} relevant emails across your merged accounts:\n\n${matches
-              .map((t) => `- ${t.subject} (${t.accountLabel}): ${t.distilledAsk || t.snippet}`)
-              .join('\n')}`
-          : `No direct matches for "${q}" in the demo deck. Try asking about your top priorities, receipts, or archiving newsletters.`,
+          ? `Found ${matches.length} ${matches.length === 1 ? 'email' : 'emails'}.`
+          : `No emails match "${q}".`,
       citations: matches.map((t) => ({
         threadId: t.id,
         subject: t.subject,
@@ -1013,7 +1025,7 @@ export const staticDemoApi = {
       accountId: thread.accountId,
       toEmails: recipient ? [recipient] : [],
       subject: thread.subject.startsWith('Re:') ? thread.subject : `Re: ${thread.subject}`,
-      bodyText: buildToneDraftBody(thread, tone, payload.instruction),
+      bodyText: buildReplyBody(thread, tone, payload.instruction),
       tone,
       status: 'pending_approval',
       scheduledFor: null,

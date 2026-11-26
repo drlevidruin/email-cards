@@ -1,63 +1,52 @@
 # Email Cards
 
-Email Cards is a calm, bright, zero-distraction Tinder-style Gmail client for macOS and mobile web. It turns multi-account inbox triage into one clear card at a time, backed by a local SQLite database, real multi-account Gmail sync, a Claude AI inbox assistant, and a built-in Shabbos and Yom Tov Outbound Guard.
+Email Cards is an email client that shows one email at a time as a card you swipe. Every card says what you need to do about it, and offers replies you can send in one tap.
 
-## Live Phone & Browser Demo
+## Demo
 
-Try the interactive demo directly on your phone or desktop (runs completely in-browser with local storage persistence):
+https://drlevidruin.github.io/email-cards/
 
-- Live Demo: [https://drlevidruin.github.io/email-cards/](https://drlevidruin.github.io/email-cards/)
+The demo runs in the browser on sample mail and keeps its state in local storage. Menu, then Reset puts it back.
 
-## 4-Way Card Gestures
+## How it works
 
-Focus Mode hides clutter so you can clear email one card at a time:
+Mail is sorted into six stacks:
 
-- **Swipe Left (`ArrowLeft`)**: Archive (or Mute on First-Time Senders)
-- **Swipe Right (`ArrowRight`)**: Reply (opens the full thread & 1-click Claude reply drawer; Approves First-Time Senders)
-- **Swipe Up (`ArrowUp`)**: Bookmark / Star for quick revisiting
-- **Swipe Down (`ArrowDown`)**: Snooze for later (or route First-Time Senders to Newsletters)
-- **Undo (`Z`)**: Immediately puts the previous card back on top of the deck
+- Needs you: mail that waits on a decision or a reply from you.
+- New senders: people writing to you for the first time, held until you allow them.
+- Newsletters: bulk and feed mail.
+- Receipts: receipts and invoices.
+- Bookmarked: cards you saved to come back to.
+- Later: cards you pushed back, which return at the time you chose.
 
-Tap **Menu** in the top-left corner anytime to switch accounts, jump to **Browse** or **Drafts**, open **Search** (`Cmd+K`), chat with **Ask Claude** (`Cmd+J`), connect live Gmail accounts, or configure Settings.
+You clear a stack one card at a time with four moves:
 
-## Running Locally on macOS (Live Gmail + Claude AI)
+| Move | Swipe | Key |
+| --- | --- | --- |
+| Done | Left | Left arrow |
+| Later | Down | Down arrow |
+| Bookmark | Up | Up arrow |
+| Reply | Right | Right arrow or Enter |
 
-### 1. Install Dependencies
+In New senders the moves are Block (left), Newsletters (down) and Allow (right).
+
+Every card states its Goal, the one thing the email wants from you, in large type. The subject is a small grey line above it. Each card also offers built-in replies. Tap one, or press 1, 2 or 3, to open a drafted reply you can edit before sending.
+
+Goals, in the Menu, lists what you owe and what you are waiting on, with your bookmarked cards.
+
+Undo brings back the last card. Press Z, or tap Undo in the message that appears after a move.
+
+## Status
+
+This version is the demo of the new design. The client was rebuilt on 2026-11-25. The local server (Gmail sync, database, Shabbos and Yom Tov hold) is unchanged from the first version. The screens for connecting Gmail and for the Claude key are not rebuilt yet, so running it against real mail is the next step, not this one.
+
+## Develop
 
 ```bash
 npm run install:all
-```
-
-### 2. Launch Locally
-
-Double-click `start-prism.command` in Finder, or run:
-
-```bash
-npm run dev
-```
-
-- Web UI: `http://localhost:5173`
-- Local API server: `http://localhost:3456`
-- Local SQLite database: `~/.prism-mail/prism.db`
-
-### 3. Connect Real Gmail Accounts
-
-Open **Menu -> + Gmail** to connect unlimited Gmail accounts:
-
-- **Quick Connect (App Password, 30 seconds)**: Enable 2-Step Verification on your Google Account, generate a 16-character App Password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), and connect over TLS (`imap.gmail.com:993` and `smtp.gmail.com:465`).
-- **Google OAuth2 (Full Gmail REST API)**: Enable the Gmail API in Google Cloud Console, add Redirect URI `http://localhost:3456/api/auth/google/callback`, paste your Client ID and Client Secret once in **Connect Gmail -> Google OAuth2**, and sign in with Google.
-
-### 4. Enable Claude AI & Shabbos Outbound Guard
-
-Open **Menu -> Settings**:
-
-- **Claude AI**: Paste your Anthropic API key (`sk-ant-...`) and choose Claude Sonnet 4, Opus 4, or Haiku 3.5. Bulk actions always require a dry-run preview with instant undo, and AI drafts always land in **Drafts** rather than auto-sending.
-- **Shabbos & Yom Tov Outbound Guard**: Automatically holds any email sent or scheduled during Friday candle-lighting through Saturday Havdalah (and major Yom Tov dates) in your timezone, releasing it after Havdalah unless explicitly overridden.
-
-## Building for GitHub Pages
-
-```bash
+VITE_STATIC_DEMO=true npm --prefix client run dev
+npm run typecheck
 npm run build:pages
 ```
 
-Outputs a static, self-contained bundle to `client/dist` configured for `/email-cards/`.
+`VITE_STATIC_DEMO=true` runs the client on sample mail with no server. `npm run build:pages` builds the demo for GitHub Pages. A push to `main` deploys the demo to GitHub Pages.

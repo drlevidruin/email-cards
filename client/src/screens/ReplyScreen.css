@@ -1,0 +1,15 @@
+.reply { height: 100dvh; background: var(--surface); }
+.reply--phone { position: fixed; top: 0; left: 0; right: 0; padding-top: env(safe-area-inset-top); animation: reply-up 250ms var(--ease); overflow: hidden; }
+.reply--phone .composer { height: 100%; }
+@keyframes reply-up { from { transform: translateY(40px); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .reply--phone { animation: none; } }
+
+.reply--desk { display: flex; align-items: center; justify-content: center; background: var(--canvas); }
+.reply__card {
+  display: flex; overflow: hidden;
+  width: min(1080px, 100vw - 96px); height: min(680px, 100dvh - 232px);
+  border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card);
+}
+.reply__left { flex: none; width: 420px; min-width: 0; }
+.reply__right { flex: 1; min-width: 0; overflow-y: auto; padding: 32px; border-left: 1px solid var(--line); }
+.reply--kb .composer__ask { margin-bottom: 12px; }
