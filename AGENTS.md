@@ -1,5 +1,12 @@
 # Email Cards: notes for any agent working here
 
+## Handoff, 2026-11-26 (Claude, round 9E): Undo you can count on
+
+- A toast can be `sticky` (`storeTypes.ts`): no timer; it clears on the next message, on Undo, or on `hashchange`. `archiveAll` sets it through `CommitSpec.sticky`, so `Archived 9 receipts` with Undo stays up until the person acts or leaves the pile. Undo and Z still reverse the whole bulk archive in one step.
+- Every other undoable toast draws `.toast__time`, a 2px line in white at 40 percent that runs out over `TOAST_MS` (6000, the same constant as the timer). Not on sticky toasts, and hidden under reduced motion. The toast is keyed by id, so the line restarts with each new message.
+- The blank field's focus is a 1.5px emerald edge drawn with `box-shadow` on the field, with no outline ring.
+- Sample data: Jordan's thread is `Solis Health: Packaging Press Proof & Serif Lockup`, matching the solishealth.com address, in both data files.
+
 ## Handoff, 2026-11-26 (Claude, round 9D): only the deck is paper
 
 - Today: the deck card is one white card with a shadow and no stack edges. The three pile tiles and `Sorted for you` are gone. New senders, Newsletters, Receipts, To-do and Drafts are rows on the canvas (`TodayCard`, `.today__links`), each hidden at zero. `Stack.tsx`, `FinishPile` and `CountUp` are deleted. The only edges left are the live deck's card behind the top card (`Deck.tsx`).

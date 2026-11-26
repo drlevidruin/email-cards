@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
 import { useStore } from '../store';
+import { TOAST_MS } from '../storeTypes';
 import './Toast.css';
 
 interface Spot {
@@ -84,6 +85,7 @@ export function Toast() {
             Undo
           </button>
         )}
+        {toast.undoable && !toast.sticky && <span className="toast__time" style={{ '--toast-ms': `${TOAST_MS}ms` } as CSSProperties} />}
       </div>
     </div>
   );

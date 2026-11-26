@@ -21,6 +21,8 @@ interface CommitSpec {
   local: (s: Snap) => Snap;
   call: () => Promise<unknown>;
   toast: string;
+  /** Keep the message up with no timer. */
+  sticky?: boolean;
   undoFallback?: () => Promise<unknown>;
   /** Promises this action resolves; a failed save puts them back. */
   commitmentIds?: string[];
@@ -36,7 +38,7 @@ export interface Core {
   setData: Dispatch<SetStateAction<Data | null>>;
   setCanUndo: (v: boolean) => void;
   setExiting: (e: Exiting | null) => void;
-  showToast: (text: string, undoable?: boolean) => void;
+  showToast: (text: string, undoable?: boolean, sticky?: boolean) => void;
   bump: () => void;
   lastStack: StackId;
 }
@@ -94,7 +96,7 @@ export function useCardActions(core: Core) {
           },
         };
         setCanUndo(true);
-        showToast(spec.toast, true);
+        showToast(spec.toast, true, spec.sticky);
       } catch {
         if (sess) {
           spec.ids.forEach((id) => sess.dismissed.delete(id));
@@ -236,6 +238,7 @@ export function useCardActions(core: Core) {
           threads: s.threads.map((x) => (ids.includes(x.id) ? { ...x, isArchived: true, bucket: 'archived' } : x)),
         }),
         call: () => api.bulkArchiveThreads(ids),
+        sticky: true,
         toast: `Archived ${ids.length} ${stack === 'receipts' ? 'receipts' : 'newsletters'}`,
       });
     },

@@ -21,6 +21,22 @@
   box-shadow: var(--shadow-float);
   pointer-events: auto;
   animation: toast-in 200ms var(--ease);
+  position: relative;
+  overflow: hidden;
+}
+.toast__time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.4);
+  transform-origin: left center;
+  animation: toast-time var(--toast-ms) linear forwards;
+}
+@keyframes toast-time {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 .toast__text { flex: 1; min-width: 0; }
 .toast__undo {
@@ -39,5 +55,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation-name: toast-fade; }
+  .toast__time { display: none; }
   @keyframes toast-fade { from { opacity: 0; } to { opacity: 1; } }
 }

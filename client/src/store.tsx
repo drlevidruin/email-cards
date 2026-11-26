@@ -5,7 +5,7 @@ import type { StackId } from './lib/stacks';
 import { pruneThreadCache } from './lib/threadCache';
 import { logUndone, resetToday, seedSample } from './lib/progress';
 import { NOT_SAVED, useCardActions } from './storeActions';
-import type { CountKey, Data, Exiting, Session, Toast, UndoEntry } from './storeTypes';
+import { TOAST_MS, type CountKey, type Data, type Exiting, type Session, type Toast, type UndoEntry } from './storeTypes';
 
 export type { CountKey, Data, Session, Toast };
 
@@ -104,7 +104,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast((t) => (t && t.id === toast.id ? null : t)), 6000);
+    if (toast.sticky) {
+      const leave = () => setToast((t) => (t && t.id === toast.id ? null : t));
+      window.addEventListener('hashchange', leave);
+      return () => window.removeEventListener('hashchange', leave);
+    }
+    const timer = window.setTimeout(() => setToast((t) => (t && t.id === toast.id ? null : t)), TOAST_MS);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
@@ -123,9 +128,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return s;
   }, []);
 
-  const showToast = useCallback((text: string, undoable = false) => {
+  const showToast = useCallback((text: string, undoable = false, sticky = false) => {
     toastId.current += 1;
-    setToast({ id: toastId.current, text, undoable });
+    setToast({ id: toastId.current, text, undoable, sticky });
   }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);

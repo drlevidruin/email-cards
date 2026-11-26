@@ -256,7 +256,7 @@ export function buildDemoDataset(): DemoDataset {
     attachments: [],
   });
 
-  // DEC-03 (Studio): Solis Brand Identity Final Typography Lock
+  // DEC-03 (Studio): Solis Health Final Typography Lock
   addMsg({
     id: 'msg_dec03_1',
     threadId: 'thr_dec_03',
@@ -264,7 +264,7 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Jordan Okafor',
     fromEmail: 'jordan@solishealth.com',
     toEmails: ['alex@meridianstudio.co'],
-    subject: 'Solis Brand Identity: Packaging Press Proof & Serif Lockup',
+    subject: 'Solis Health: Packaging Press Proof & Serif Lockup',
     snippet: 'Our executive team loved both typography directions. Leaning strongly toward Option B with the tighter wordmark.',
     bodyText:
       'Hi Alex,\n\nOur leadership team reviewed the two typography boards this morning and loved the restraint of both directions. Everyone is leaning strongly toward Option B (the editorial serif paired with the geometric mono dosage table).\n\nBefore we hand files to the packaging printer, can Meridian confirm that the commercial font license covers 5,000 retail cartons plus web display?\n\nThanks,\nJordan Okafor\nVP Brand, Solis Health',
@@ -287,7 +287,7 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Alex Chen',
     fromEmail: 'alex@meridianstudio.co',
     toEmails: ['jordan@solishealth.com'],
-    subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
+    subject: 'Re: Solis Health: Packaging Press Proof & Serif Lockup',
     snippet: 'Confirmed: we just purchased the Monotype commercial license covering print packaging and 500k monthly web views.',
     bodyText:
       'Confirmed: we purchased the Monotype commercial license this morning (Order #MT-20918), which covers retail packaging up to 50,000 units and 500k monthly web pageviews.\n\nDoing one last kerning pass on the 6pt ingredient panel today.\n\nAlex',
@@ -303,7 +303,7 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Jordan Okafor',
     fromEmail: 'jordan@solishealth.com',
     toEmails: ['alex@meridianstudio.co'],
-    subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
+    subject: 'Re: Solis Health: Packaging Press Proof & Serif Lockup',
     snippet: 'Printer needs final mechanical sign-off by tomorrow noon to hold our November press slot. Ready to greenlight Option B?',
     bodyText:
       'Awesome, thank you for sorting the font license so quickly.\n\nOur printer in Portland just told us they need final mechanical sign-off by noon tomorrow to keep our November press slot (otherwise we slip two weeks). Can you review the updated die-line PDF attached and reply to greenlight Option B?\n\nBest,\nJordan',
@@ -1120,7 +1120,7 @@ export function buildDemoDataset(): DemoDataset {
     {
       id: 'thr_dec_03',
       ...meta('acc_studio'),
-      subject: 'Solis Brand Identity: Packaging Press Proof & Serif Lockup',
+      subject: 'Solis Health: Packaging Press Proof & Serif Lockup',
       snippet: 'Printer needs final mechanical sign-off by tomorrow noon to hold our November press slot. Ready to greenlight Option B?',
       participants: [
         { name: 'Jordan Okafor', email: 'jordan@solishealth.com' },
@@ -2506,7 +2506,7 @@ export function buildDemoDataset(): DemoDataset {
       threadId: 'thr_dec_03',
       accountId: 'acc_studio',
       toEmails: ['jordan@solishealth.com'],
-      subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
+      subject: 'Re: Solis Health: Packaging Press Proof & Serif Lockup',
       bodyText:
         'Hi Jordan,\n\nI approve Option B and the updated die-line for the November press run. Please go ahead before tomorrow\'s noon cutoff.\n\nBest,\nAlex',
       tone: 'direct',

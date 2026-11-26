@@ -16,7 +16,12 @@ export interface Toast {
   id: number;
   text: string;
   undoable: boolean;
+  /** Stays up with no timer until a new message, Undo, or leaving the screen. */
+  sticky?: boolean;
 }
+
+/** How long an ordinary message stays up. The timer and the Undo time line both read this. */
+export const TOAST_MS = 6000;
 
 export interface Exiting {
   thread: EmailThread;
