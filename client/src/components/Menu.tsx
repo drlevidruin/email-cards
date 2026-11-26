@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useDialog } from './useDialog';
 import { Check, X } from 'lucide-react';
 import { api, isStaticDemoMode } from '../lib/api';
+import { snapshotLabel } from '../lib/snapshot';
 import { goalCount } from '../lib/goals';
 import { STACKS, stackCounts, type StackId } from '../lib/stacks';
 import { navigate } from '../router';
@@ -100,7 +101,7 @@ export function Menu({ current, onClose }: Props) {
         </ul>
         {(data.settings.demoMode || isStaticDemoMode()) && (
           <div className="menu__demo">
-            <span>Demo data</span>
+            <span>{snapshotLabel() ?? 'Demo data'}</span>
             <button className="btn btn--text" onClick={() => void reset()}>
               Reset
             </button>

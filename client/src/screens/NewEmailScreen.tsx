@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { sentToast } from '../lib/snapshot';
 import { firstName } from '../lib/utils';
 import { goBack, useRoute } from '../router';
 import { useStore } from '../store';
@@ -78,7 +79,7 @@ export function NewEmailScreen() {
       const res = await api.sendDraft(d.id);
       sent.current = true;
       void store.refresh();
-      store.showToast(res.status === 'held_shabbos' || res.heldByShabbos ? 'Held until after Shabbos' : `Sent to ${firstName(parse(to)[0])}`);
+      store.showToast(sentToast(res.status === 'held_shabbos' || res.heldByShabbos ? 'Held until after Shabbos' : `Sent to ${firstName(parse(to)[0])}`));
       goBack();
     } catch {
       setSending(false);

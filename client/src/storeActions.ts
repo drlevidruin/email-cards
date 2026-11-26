@@ -1,5 +1,6 @@
 import { useCallback, useMemo, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { api } from './lib/api';
+import { sentToast } from './lib/snapshot';
 import type { EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
 import type { CountKey, Data, Exiting, Session, Snap, UndoEntry } from './storeTypes';
@@ -196,7 +197,7 @@ export function useCardActions(core: Core) {
       }
       undoRef.current = null;
       setCanUndo(false);
-      showToast(held ? 'Held until after Shabbos' : `Sent to ${name}`);
+      showToast(sentToast(held ? 'Held until after Shabbos' : `Sent to ${name}`));
     },
     [lastStack, patchSnap, session, showToast, setExiting, undoRef, setCanUndo]
   );

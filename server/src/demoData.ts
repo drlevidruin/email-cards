@@ -20,6 +20,8 @@ export interface DemoDataset {
   drafts: DraftItem[];
   rules: AgentRule[];
   customViews: CustomView[];
+  snapshotLabel?: string;
+  snapshotId?: string;
 }
 
 function hoursAgo(h: number): string {

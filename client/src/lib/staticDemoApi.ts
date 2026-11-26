@@ -30,8 +30,9 @@ import type {
   ThreadDetailPayload,
 } from './types';
 import { buildDemoDataset } from './staticDemoData';
+import { isSnapshot, ownerName, snapshotData, snapshotStoreKey } from './snapshot';
 
-const STORAGE_KEY = 'email_cards_static_demo_v3';
+const storageKey = () => (isSnapshot() ? snapshotStoreKey() : 'email_cards_static_demo_v3');
 
 interface UndoRecord {
   id: string;
@@ -111,7 +112,7 @@ function recomputeUnreadCounts(store: DemoStore): void {
 }
 
 function createFreshStore(): DemoStore {
-  const data = buildDemoDataset();
+  const data = deepClone(snapshotData() ?? buildDemoDataset());
   const store: DemoStore = {
     accounts: data.accounts,
     threads: data.threads,
@@ -143,7 +144,7 @@ let cachedStore: DemoStore | null = null;
 function loadStore(): DemoStore {
   if (cachedStore) return cachedStore;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey());
     if (raw) {
       const parsed = JSON.parse(raw) as DemoStore;
       if (parsed && Array.isArray(parsed.accounts) && Array.isArray(parsed.threads)) {
@@ -170,7 +171,7 @@ function saveStore(store: DemoStore): void {
   recomputeUnreadCounts(store);
   cachedStore = store;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    window.localStorage.setItem(storageKey(), JSON.stringify(store));
   } catch {
     // Ignore storage quota issues in private browsing
   }
@@ -233,27 +234,27 @@ function buildToneDraftBody(
   if (instruction && instruction.trim()) {
     const note = instruction.trim();
     if (tone === 'executive') {
-      return `Hi ${firstName},\n\n${note}.\n\nLet me know if anything else is needed to keep this moving.\n\nBest,\nAlex`;
+      return `Hi ${firstName},\n\n${note}.\n\nLet me know if anything else is needed to keep this moving.\n\nBest,\n${ownerName('Alex')}`;
     }
     if (tone === 'warm') {
-      return `Hi ${firstName},\n\nThanks so much for sending this over. ${note}. Happy to coordinate further if helpful!\n\nWarmly,\nAlex`;
+      return `Hi ${firstName},\n\nThanks so much for sending this over. ${note}. Happy to coordinate further if helpful!\n\nWarmly,\n${ownerName('Alex')}`;
     }
     if (tone === 'decline') {
-      return `Hi ${firstName},\n\nThank you for thinking of me. Unfortunately I have to pass for now (${note}), though I appreciate you reaching out.\n\nBest,\nAlex`;
+      return `Hi ${firstName},\n\nThank you for thinking of me. Unfortunately I have to pass for now (${note}), though I appreciate you reaching out.\n\nBest,\n${ownerName('Alex')}`;
     }
-    return `Hi ${firstName},\n\nQuick reply on "${thread.subject}": ${note}.\n\nThanks,\nAlex`;
+    return `Hi ${firstName},\n\nQuick reply on "${thread.subject}": ${note}.\n\nThanks,\n${ownerName('Alex')}`;
   }
 
   switch (tone) {
     case 'warm':
-      return `Hi ${firstName},\n\nThanks so much for the clear update on "${thread.subject}". I reviewed everything on my side and we are good to move forward.\n\nLet me know what works best for next steps!\n\nWarmly,\nAlex`;
+      return `Hi ${firstName},\n\nThanks so much for the clear update on "${thread.subject}". I reviewed everything on my side and we are good to move forward.\n\nLet me know what works best for next steps!\n\nWarmly,\n${ownerName('Alex')}`;
     case 'executive':
-      return `Hi ${firstName},\n\nApproved on my end regarding ${ask.slice(0, 120)}${ask.length > 120 ? '...' : ''}\n\nPlease proceed and send over final confirmation.\n\nBest,\nAlex`;
+      return `Hi ${firstName},\n\nApproved on my end regarding ${ask.slice(0, 120)}${ask.length > 120 ? '...' : ''}\n\nPlease proceed and send over final confirmation.\n\nBest,\n${ownerName('Alex')}`;
     case 'decline':
-      return `Hi ${firstName},\n\nThank you for reaching out about "${thread.subject}". My schedule and commitments are full right now, so I will need to pass on this one.\n\nWishing you all the best with it!\n\nBest,\nAlex`;
+      return `Hi ${firstName},\n\nThank you for reaching out about "${thread.subject}". My schedule and commitments are full right now, so I will need to pass on this one.\n\nWishing you all the best with it!\n\nBest,\n${ownerName('Alex')}`;
     case 'direct':
     default:
-      return `Hi ${firstName},\n\nThanks for the note on "${thread.subject}". Confirmed on my end, please go ahead and lock next steps.\n\nBest,\nAlex`;
+      return `Hi ${firstName},\n\nThanks for the note on "${thread.subject}". Confirmed on my end, please go ahead and lock next steps.\n\nBest,\n${ownerName('Alex')}`;
   }
 }
 
@@ -270,7 +271,7 @@ function buildReplyBody(thread: EmailThread, tone: DraftTone, instruction?: stri
     const written = thread.quickActions.find((a) => a.draftHint === text && a.draftBody);
     if (written) return written.draftBody as string;
     const sentence = text.charAt(0).toUpperCase() + text.slice(1);
-    return `Hi ${firstNameOf(thread)},\n\n${/[.!?]$/.test(sentence) ? sentence : sentence + '.'}\n\nBest,\nAlex`;
+    return `Hi ${firstNameOf(thread)},\n\n${/[.!?]$/.test(sentence) ? sentence : sentence + '.'}\n\nBest,\n${ownerName('Alex')}`;
   }
   return buildToneDraftBody(thread, tone);
 }

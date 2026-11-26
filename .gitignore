@@ -19,3 +19,6 @@ server/data/
 # macOS & logs
 .DS_Store
 *.log
+
+# The private snapshot is published as a release file, never committed
+client/public/snapshot.bin

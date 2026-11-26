@@ -2,5 +2,8 @@ import ReactDOM from 'react-dom/client';
 import './styles/tokens.css';
 import './styles/base.css';
 import { App } from './App';
+import { loadSnapshot } from './lib/snapshot';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<App />);
+void loadSnapshot().catch(() => null).then(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(<App />);
+});

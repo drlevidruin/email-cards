@@ -52,3 +52,14 @@ Email, one card at a time. Levi's words: "one card at a time nothing else on scr
 ## Leaving a note back
 
 If you change something the other agent should know about, add a dated entry under a `## Handoff` heading at the top of this file, newest first, and keep it to what changed and why.
+
+## Private snapshot mode
+
+The public site shows sample mail. A link ending `#k=<key>` shows one private dataset instead (`client/src/lib/snapshot.ts`).
+
+- The dataset is one file, `snapshot.bin`, encrypted with AES-256-GCM by `tools/encrypt-snapshot.mjs`. The key lives only in the link and in a key file outside this repo.
+- `snapshot.bin` is never committed (it is in `.gitignore`). It is published as the file of the GitHub release `snapshot-data`, and the Pages workflow copies it into the build when that release exists.
+- To publish or replace one: encrypt, then `gh release upload snapshot-data snapshot.bin --clobber` (or `gh release create snapshot-data snapshot.bin` the first time), then run the Pages workflow.
+- To take it down: delete the release and its tag, then run the Pages workflow. The site then answers 404 for the file, and the app clears what it saved on a device the next time it opens there. Settings has `Remove` for doing that by hand.
+- In this mode nothing is sent. Send toasts read `Snapshot. Nothing was sent.`
+- Never commit a readable dataset or a key, and never paste either into an issue, a log or a chat with an outside service.

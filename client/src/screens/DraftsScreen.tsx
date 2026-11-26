@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import { sentToast } from '../lib/snapshot';
 import { counterpart } from '../lib/stacks';
 import type { DraftItem } from '../lib/types';
 import { firstName } from '../lib/utils';
@@ -32,7 +33,7 @@ export function DraftsScreen() {
     setBusy(d.id);
     try {
       const res = await api.sendDraft(d.id);
-      store.showToast(res.status === 'held_shabbos' || res.heldByShabbos ? 'Held until after Shabbos' : `Sent to ${who(d)}`);
+      store.showToast(sentToast(res.status === 'held_shabbos' || res.heldByShabbos ? 'Held until after Shabbos' : `Sent to ${who(d)}`));
       await store.refresh();
     } catch {
       store.showToast(NOT_SAVED);

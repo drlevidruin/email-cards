@@ -1,4 +1,5 @@
 import { api, isStaticDemoMode } from '../lib/api';
+import { forgetSnapshot, isSnapshot, snapshotLabel } from '../lib/snapshot';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
@@ -38,11 +39,17 @@ export function SettingsScreen() {
       await api.resetDemo();
       store.resetSessions();
       await store.reload();
-      store.showToast('Demo reset');
+      store.showToast(isSnapshot() ? 'Snapshot reset' : 'Demo reset');
       navigate('/cards/needs-you');
     } catch {
       store.showToast(NOT_SAVED);
     }
+  };
+
+  const removeSnapshot = () => {
+    forgetSnapshot();
+    window.location.hash = '#/';
+    window.location.reload();
   };
 
   return (
@@ -82,11 +89,19 @@ export function SettingsScreen() {
             <h2 className="list-heading">Demo</h2>
             <ul className="list">
               <li className="list__row settings__row">
-                <span className="settings__label">Demo data</span>
+                <span className="settings__label">{snapshotLabel() ?? 'Demo data'}</span>
                 <button className="btn btn--secondary btn--small" onClick={() => void reset()}>
                   Reset
                 </button>
               </li>
+              {isSnapshot() && (
+                <li className="list__row settings__row">
+                  <span className="settings__label">Saved on this device</span>
+                  <button className="btn btn--secondary btn--small" onClick={removeSnapshot}>
+                    Remove
+                  </button>
+                </li>
+              )}
             </ul>
           </>
         )}

@@ -37,6 +37,11 @@ jobs:
           VITE_BASE_PATH: "/email-cards/"
         run: npm --prefix client run build
 
+      - name: Add the private snapshot when one is published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download snapshot-data --repo "$GITHUB_REPOSITORY" --pattern snapshot.bin --dir client/dist || echo "No snapshot published"
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
