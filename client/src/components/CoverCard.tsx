@@ -3,6 +3,7 @@ import type { EmailThread } from '../lib/types';
 import { cleanSubject, counterpart } from '../lib/stacks';
 import { estimateMinutes } from '../lib/progress';
 import { formatCurrency } from '../lib/utils';
+import { downloadText, receiptsCsv } from '../lib/csv';
 import './CoverCard.css';
 
 interface Props {
@@ -121,11 +122,24 @@ export function CoverCard({ kind, threads, onArchiveAll, onOneByOne }: Props) {
       </div>
       <div className="cover__actions">
         <button className="btn btn--primary cover__btn" onClick={onArchiveAll}>
-          Archive all
+          Archive all {threads.length}
         </button>
-        <button className="btn btn--secondary cover__btn" onClick={onOneByOne}>
-          One at a time
-        </button>
+        <div className="cover__pair">
+          <button className="btn btn--secondary cover__btn" onClick={onOneByOne}>
+            One at a time
+          </button>
+          {receipts && (
+            <button
+              className="btn btn--secondary cover__btn"
+              onClick={() => {
+                const { name, text } = receiptsCsv(threads);
+                downloadText(name, text);
+              }}
+            >
+              Export CSV
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

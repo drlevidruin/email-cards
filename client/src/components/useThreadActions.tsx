@@ -44,5 +44,5 @@ export function useThreadActions(thread: EmailThread | undefined, leaveAfterMove
     if (leaveAfterMove) goBack();
   };
 
-  return { act, sheetOpen: later, sheet: later ? <LaterSheet onPick={pick} onClose={() => setLater(false)} /> : null };
+  return { act, sheetOpen: later, sheet: later ? <LaterSheet onPick={pick} onClose={() => setLater(false)} due={thread?.deadlineLabel} /> : null };
 }

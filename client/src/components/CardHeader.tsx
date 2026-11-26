@@ -5,6 +5,7 @@ import './CardHeader.css';
 
 interface Props {
   name: string;
+  email?: string;
   account?: GmailAccount;
   /** How long ago, such as 2h. */
   age?: string;
@@ -12,10 +13,10 @@ interface Props {
 }
 
 /** The sender's monogram and name, with the account and age under it and the due date at the right. */
-export function CardHeader({ name, account, age, due }: Props) {
+export function CardHeader({ name, email, account, age, due }: Props) {
   return (
     <div className="cardhead">
-      <Avatar name={name} card />
+      <Avatar name={name} email={email} card />
       <div className="cardhead__who">
         <div className="cardhead__name t-callout">{name}</div>
         <div className="cardhead__meta t-footnote">

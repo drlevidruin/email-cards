@@ -31,7 +31,8 @@ function TodoRead({ threadId }: { threadId: string }) {
   useEffect(() => {
     if (status === 'ready' && !thread) navigate('/goals', { replace: true });
   }, [status, thread]);
-  return thread ? <Reader thread={thread} stack={null} /> : null;
+  const promise = data?.commitments.find((c) => c.threadId === threadId && c.direction === 'you_promised' && c.status !== 'resolved')?.promiseQuote;
+  return thread ? <Reader thread={thread} stack={null} promise={promise} /> : null;
 }
 
 export function ReadScreen({ threadId }: { threadId: string }) {

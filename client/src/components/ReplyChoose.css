@@ -13,9 +13,9 @@
 }
 .choose__card:active { background: var(--surface-2); }
 .choose__body {
-  color: var(--ink-2); overflow-wrap: anywhere;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
+  display: block; max-height: 60px; overflow: hidden; color: var(--ink-2); overflow-wrap: anywhere;
 }
+.choose__body.is-cut { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent); }
 .choose__card--own { flex-direction: row; align-items: center; gap: 10px; color: var(--ink-2); }
 .choose__card--own .t-headline { color: var(--ink); }
 
@@ -29,3 +29,18 @@
   flex: 1; width: 100%; min-height: 0; resize: none; border: 0; padding: 16px 0; outline: none;
   background: transparent; color: var(--ink-body); user-select: text; -webkit-user-select: text;
 }
+.edit__commits { flex: none; margin: 12px 16px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.edit__commits-label { font-weight: 600; color: var(--ink-3); }
+.edit__commit { display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; color: var(--ink-2); overflow-wrap: anywhere; }
+.edit__dot { flex: none; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--ink-3); }
+.edit__quote { min-width: 0; }
+.edit__more { display: none; flex: none; color: var(--ink-3); font-weight: 600; }
+/* A phone with the keyboard up: the first promise on one line, cut with an ellipsis, and how many more */
+@media (max-height: 699px) {
+  .edit__commits { margin: 8px 16px; padding: 8px 12px; }
+  .edit__commit:not(:first-child) { display: none; }
+  .edit__commit { align-items: center; }
+  .edit__quote { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .edit__more { display: inline; }
+}
+.choose__blank { color: var(--ink-3); }

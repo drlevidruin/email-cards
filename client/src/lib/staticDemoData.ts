@@ -30,7 +30,7 @@ function hoursAgo(h: number): string {
 
 /**
  * A time for a message the user sent: about `h` hours ago, but inside working hours (9 AM to 6 PM local),
- * after the message before it (`afterH` hours ago) and before the one after it (`beforeH`).
+ * after the message before it (`afterH` hours ago) and before the one after it (`beforeH`). Never Friday from 4 PM through Saturday.
  */
 function workTime(h: number, afterH?: number, beforeH?: number): string {
   const now = Date.now();
@@ -42,14 +42,18 @@ function workTime(h: number, afterH?: number, beforeH?: number): string {
     for (const sign of k === 0 ? [1] : [1, -1]) {
       const t = nominal + sign * k * 10 * MIN;
       const hour = new Date(t).getHours();
-      if (t >= lo && t <= hi && hour >= 9 && hour < 18) return new Date(t).toISOString();
+      const wd = new Date(t).getDay();
+      // Never on Shabbos: Friday from 4 PM through Saturday
+      const rest = wd === 6 || (wd === 5 && hour >= 16);
+      if (t >= lo && t <= hi && hour >= 9 && hour < 18 && !rest) return new Date(t).toISOString();
     }
   }
   return new Date(nominal).toISOString();
 }
 
-function hoursFromNow(h: number): string {
-  return new Date(Date.now() + h * 3600 * 1000).toISOString();
+/** An exact local time in the sample's year, so a deadline label and its `deadlineAt` can never disagree. Month is 1 to 12. */
+function onDay(month: number, day: number, hour: number, minute = 0): string {
+  return new Date(2026, month - 1, day, hour, minute, 0, 0).toISOString();
 }
 
 export function buildDemoDataset(): DemoDataset {
@@ -109,7 +113,12 @@ export function buildDemoDataset(): DemoDataset {
   const messages: EmailMessage[] = [];
   // The user's own earlier mail, sent in working hours
   const wait01At = workTime(96);
-  const wait02At = workTime(74);
+  const wait02At = workTime(94);
+  // Owen and Rachel write on Monday; the user answers each the same day
+  const wait04In = hoursAgo(27);
+  const wait04At = workTime(23, 27);
+  const wait05In = hoursAgo(26);
+  const wait05At = workTime(21, 26);
   const wait03At = workTime(120);
   const addMsg = (m: EmailMessage) => {
     messages.push(m);
@@ -129,9 +138,9 @@ export function buildDemoDataset(): DemoDataset {
     fromEmail: 'maya@atelierloft.co',
     toEmails: ['alex@meridianstudio.co'],
     subject: 'Atelier Loft Keynote Venue: Addendum B & AV Rider',
-    snippet: 'Sharing the revised venue agreement for December 12 in San Francisco with the updated house lighting schedule.',
+    snippet: 'Sharing the revised venue agreement for December 10 in San Francisco with the updated house lighting schedule.',
     bodyText:
-      'Hi Alex,\n\nSharing the revised venue agreement for Meridian Studio\'s December 12 product keynote at Atelier Loft in San Francisco. We held the main gallery plus the rooftop mezzanine as discussed.\n\nTwo quick updates from our operations lead:\n1. Load-in can start at 7:00 AM instead of 8:30 AM at no extra charge.\n2. The house AV rig covers dual 4K laser projection, but custom directional stage wash lighting is billed under Addendum B.\n\nLet me know if you want us to keep the $4,200 AV cap in place.\n\nBest,\nMaya Lindholm\nEvents Director, Atelier Loft',
+      'Hi Alex,\n\nSharing the revised venue agreement for Meridian Studio\'s December 10 product keynote at Atelier Loft in San Francisco. We held the main gallery plus the rooftop mezzanine as discussed.\n\nTwo quick updates from our operations lead:\n1. Load-in can start at 7:00 AM instead of 8:30 AM at no extra charge.\n2. The house AV rig covers dual 4K laser projection, but custom directional stage wash lighting is billed under Addendum B.\n\nLet me know if you want us to keep the $4,200 AV cap in place.\n\nBest,\nMaya Lindholm\nEvents Director, Atelier Loft',
     sentAt: hoursAgo(28),
     isUnread: false,
     isOutbound: false,
@@ -170,7 +179,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Re: Atelier Loft Keynote Venue: Addendum B & AV Rider',
     snippet: 'Confirmed no union surcharge for external lighting under 6 fixtures. Need your sign-off on Addendum B before 4:00 PM today.',
     bodyText:
-      'Hi Alex,\n\nGood news: our house engineer confirmed zero union surcharge as long as Lumina AV stays under 6 fixtures and ties into the balcony breaker.\n\nOne time-sensitive item: another tech company placed a backup hold on December 12. Could you confirm the $4,200 AV lighting cap and reply with approval on Addendum B by 4:00 PM today so I can lock the main gallery and release the backup bidder?\n\nAlso happy to coordinate dinner drop-off access if your investor group is heading nearby afterward.\n\nWarmly,\nMaya',
+      'Hi Alex,\n\nGood news: our house engineer confirmed zero union surcharge as long as Lumina AV stays under 6 fixtures and ties into the balcony breaker.\n\nOne time-sensitive item: another tech company placed a backup hold on December 10. Could you confirm the $4,200 AV lighting cap and reply with approval on Addendum B by 4:00 PM today so I can lock the main gallery and release the backup bidder?\n\nAlso happy to coordinate dinner drop-off access if your investor group is heading nearby afterward.\n\nWarmly,\nMaya',
     sentAt: hoursAgo(1.4),
     isUnread: true,
     isOutbound: false,
@@ -403,7 +412,7 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Hannah Kim',
     fromEmail: 'hannah.kim@fastmail.com',
     toEmails: ['alex.chen.home@gmail.com'],
-    subject: 'Stowe Ski Cabin (Jan 16-19): Arrival Time & Lift Pass Group Code',
+    subject: 'Stowe Ski Cabin (Jan 15-18): Arrival Time & Lift Pass Group Code',
     snippet: 'Timberline Chalet confirmed our reservation! Need everyone\'s arrival night before Friday 6 PM for the 20% lift pass discount.',
     bodyText:
       'Hey Alex!\n\nTimberline Chalet confirmed our 4-bedroom house in Stowe (Receipt #STW-9914). Everyone is super excited.\n\nTwo quick logistics before Friday 6:00 PM:\n1. Are you driving up Thursday night or Friday morning?\n2. Do you want in on the 3-day group lift pass code (saves $92 per person)?\n\nReply when you have a sec and I will lock the spreadsheet!\n\nHannah',
@@ -425,10 +434,10 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Alex Chen',
     fromEmail: 'alex@meridianstudio.co',
     toEmails: ['marcus@luminaav.io'],
-    subject: 'Atelier Loft Dec 12 Keynote: Revised Modular Stage Lighting Quote',
+    subject: 'Atelier Loft Dec 10 Keynote: Revised Modular Stage Lighting Quote',
     snippet: 'Hey Marcus, can you send the revised 6-fixture directional wash quote under our $4,200 cap so we can attach to Addendum B?',
     bodyText:
-      'Hey Marcus,\n\nAtelier Loft confirmed zero union surcharge if we stay at or under 6 directional wash fixtures and tie into the balcony circuit.\n\nCould you send over the revised itemized quote under $4,200 so I can sign off with Maya?\n\nThanks,\nAlex',
+      'Hey Marcus,\n\nQuick one on the stage wash lighting for the Atelier Loft keynote on December 10.\n\nCould you send over the revised itemized quote under $4,200 so I can sign off with Maya?\n\nThanks,\nAlex',
     sentAt: wait01At,
     isUnread: false,
     isOutbound: true,
@@ -478,6 +487,23 @@ export function buildDemoDataset(): DemoDataset {
     ],
   });
 
+  // The message where the user made the WAIT-04 promise
+  addMsg({
+    id: 'msg_wait04_0',
+    threadId: 'thr_wait_04',
+    accountId: 'acc_studio',
+    fromName: 'Alex Chen',
+    fromEmail: 'alex@meridianstudio.co',
+    toEmails: ['owen@meridianstudio.co'],
+    subject: 'Senior Motion Designer Finalists: Candidate Scorecards & Reel Notes',
+    snippet: 'I will send you my scorecard notes before Thursday morning.',
+    bodyText: 'Hi Owen,\n\nHappy to. I will send you my scorecard notes on Lina and Theo before Thursday morning.\n\nAlex',
+    sentAt: wait04At,
+    isUnread: false,
+    isOutbound: true,
+    attachments: [],
+  });
+
   // WAIT-04 (Studio): Senior Motion Designer Scorecards (you_promised, 2 days)
   addMsg({
     id: 'msg_wait04_1',
@@ -489,10 +515,27 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Senior Motion Designer Finalists: Candidate Scorecards & Reel Notes',
     snippet: 'Loved both final portfolios (Lina and Theo). You mentioned sharing your written rubric notes by Thursday morning.',
     bodyText:
-      'Hey Alex,\n\nBoth finalists crushed the live Cinema4D + Rive walkthrough yesterday. Lina\'s kinetic typography fits our Solis and robotics hardware stories really well, while Theo has stronger interactive shader chops.\n\nWhenever you get a moment before Thursday morning, drop your scorecard notes in the doc so we can extend an offer before competing timelines close.\n\nThanks!\nOwen',
-    sentAt: hoursAgo(48),
+      'Hey Alex,\n\nBoth finalists crushed the live Cinema4D + Rive walkthrough on Friday. Lina\'s kinetic typography fits our Solis and robotics hardware stories really well, while Theo has stronger interactive shader chops.\n\nWhenever you get a moment before Thursday morning, drop your scorecard notes in the doc so we can extend an offer before competing timelines close.\n\nThanks!\nOwen',
+    sentAt: wait04In,
     isUnread: false,
     isOutbound: false,
+    attachments: [],
+  });
+
+  // The message where the user made the WAIT-05 promise
+  addMsg({
+    id: 'msg_wait05_0',
+    threadId: 'thr_wait_05',
+    accountId: 'acc_personal',
+    fromName: 'Alex Chen',
+    fromEmail: 'alex.chen.home@gmail.com',
+    toEmails: ['rachel@harborcpa.com'],
+    subject: 'Q4 Estimated Tax Safe Harbor & Advisory Expense Summary',
+    snippet: 'I will upload the K-1 summary and the receipts to your portal by Friday.',
+    bodyText: 'Hi Rachel,\n\nSounds good. I will upload the K-1 summary and the AWS and Anthropic statements to your portal by Friday.\n\nAlex',
+    sentAt: wait05At,
+    isUnread: false,
+    isOutbound: true,
     attachments: [],
   });
 
@@ -508,13 +551,13 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Please upload your Q3 K-1 packet plus your Studio and Ventures software receipts (AWS, Anthropic) by Friday.',
     bodyText:
       'Hi Alex,\n\nTo finalize your Q4 safe-harbor estimated payment without overpaying, please upload two items to the secure portal by Friday:\n1. Northstar Ventures Q3 K-1 summary sheet\n2. Q4 cloud & AI infrastructure receipts (AWS and Anthropic statements)\n\nOnce uploaded I will turn around the voucher amounts within 24 hours.\n\nBest,\nRachel Goldstein, CPA\nHarbor Tax Advisory',
-    sentAt: hoursAgo(72),
+    sentAt: wait05In,
     isUnread: false,
     isOutbound: false,
     attachments: [],
   });
 
-  // WAIT-06 (Ventures): Founder Dinner Dec 12 After Keynote (cross-account link!)
+  // WAIT-06 (Ventures): Founder Dinner Dec 10 After Keynote (cross-account link!)
   addMsg({
     id: 'msg_wait06_1',
     threadId: 'thr_wait_06',
@@ -522,10 +565,10 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Mateo Rivera',
     fromEmail: 'mateo@northstarventures.io',
     toEmails: ['alex@northstarventures.io'],
-    subject: 'SF Founder Dinner (Dec 12, 7:30 PM) - Private Room Near Atelier Loft',
+    subject: 'SF Founder Dinner (Dec 10, 7:30 PM) - Private Room Near Atelier Loft',
     snippet: 'Booked the private dining room at Bar Sprezzatura, 6 minutes from Atelier Loft. 14 founders confirmed including Priya.',
     bodyText:
-      'Alex,\n\nLocked the private room at Bar Sprezzatura for Thursday, December 12 at 7:30 PM so you can walk straight over after the Atelier Loft keynote wraps.\n\n14 portfolio founders and co-investors are confirmed, including Priya (Kestrel AI) and Daniel Park. Since your Delta flight lands Wednesday afternoon, we can do a quick walk-through Thursday morning.\n\nMateo',
+      'Alex,\n\nLocked the private room at Bar Sprezzatura for Thursday, December 10 at 7:30 PM so you can walk straight over after the Atelier Loft keynote wraps.\n\n14 portfolio founders and co-investors are confirmed, including Priya (Kestrel AI) and Daniel Park. Since your Delta flight lands Wednesday afternoon, we can do a quick walk-through Thursday morning.\n\nMateo',
     sentAt: hoursAgo(16),
     isUnread: false,
     isOutbound: false,
@@ -543,8 +586,8 @@ export function buildDemoDataset(): DemoDataset {
     subject: 'Q1 Studio Offsite: Hudson Valley vs Sea Ranch Shortlist',
     snippet: 'Put together a quick Notion comparison for our February 3-day creative retreat with travel estimates.',
     bodyText:
-      'Team,\n\nNarrowed our February 3-day creative retreat down to two standout properties:\n1. Troutbeck (Hudson Valley) - easy train access for East Coast team, great fireplace library.\n2. Sea Ranch Lodge (Sonoma Coast) - unreal architectural light, pairs well if we are already on the West Coast.\n\nNo rush this week; let\'s pick a winner over Monday coffee.\n\nDevon',
-    sentAt: hoursAgo(38),
+      'Team,\n\nNarrowed our February 3-day creative retreat down to two standout properties:\n1. Troutbeck (Hudson Valley) - easy train access for East Coast team, great fireplace library.\n2. Sea Ranch Lodge (Sonoma Coast) - unreal architectural light, pairs well if we are already on the West Coast.\n\nNo rush this week; let\'s pick a winner over coffee next Monday.\n\nDevon',
+    sentAt: hoursAgo(26),
     isUnread: false,
     isOutbound: false,
     attachments: [],
@@ -791,10 +834,10 @@ export function buildDemoDataset(): DemoDataset {
     fromName: 'Delta Air Lines',
     fromEmail: 'confirmations@delta-air.example',
     toEmails: ['alex.chen.home@gmail.com'],
-    subject: 'Flight Confirmation DL-8K49MP: JFK to SFO (Dec 11 - Dec 14)',
-    snippet: 'Confirmed! Nonstop JFK -> SFO departing Dec 11 at 1:15 PM (Seat 4A). Total paid: $628.40 USD.',
+    subject: 'Flight Confirmation DL-8K49MP: JFK to SFO (Dec 9 - Dec 13)',
+    snippet: 'Confirmed! Nonstop JFK -> SFO departing Dec 9 at 1:15 PM (Seat 4A). Total paid: $628.40 USD.',
     bodyText:
-      'Delta Air Lines E-Ticket & Itinerary\n\nConfirmation Code: DL-8K49MP\nPassenger: Alex Chen\nTotal Charged: $628.40 USD\n\nOutbound: Thu Dec 11 | DL 402 | New York (JFK) 1:15 PM -> San Francisco (SFO) 4:48 PM | Seat 4A\nReturn: Sun Dec 14 | DL 419 | San Francisco (SFO) 11:30 AM -> New York (JFK) 8:10 PM | Seat 5C\n\nOnline check-in opens 24 hours before each flight in the Fly Delta app.',
+      'Delta Air Lines E-Ticket & Itinerary\n\nConfirmation Code: DL-8K49MP\nPassenger: Alex Chen\nTotal Charged: $628.40 USD\n\nOutbound: Wed Dec 9 | DL 402 | New York (JFK) 1:15 PM -> San Francisco (SFO) 4:48 PM | Seat 4A\nReturn: Sun Dec 13 | DL 419 | San Francisco (SFO) 11:30 AM -> New York (JFK) 8:10 PM | Seat 5C\n\nOnline check-in opens 24 hours before each flight in the Fly Delta app.',
     sentAt: hoursAgo(20),
     isUnread: false,
     isOutbound: false,
@@ -888,9 +931,9 @@ export function buildDemoDataset(): DemoDataset {
     fromEmail: 'reservations@timberlinestowe.example',
     toEmails: ['alex.chen.home@gmail.com'],
     subject: 'Reservation Receipt #STW-9914: Stowe Timberline Chalet ($1,240.00)',
-    snippet: 'Deposit received for Jan 16-19 mountain chalet stay in Stowe, VT. Your share recorded: $1,240.00.',
+    snippet: 'Deposit received for Jan 15-18 mountain chalet stay in Stowe, VT. Your share recorded: $1,240.00.',
     bodyText:
-      'Timberline Chalet Stowe - Reservation Confirmation\n\nBooking Reference: STW-9914\nCheck-in: Thu Jan 16, 4:00 PM | Check-out: Sun Jan 19, 11:00 AM\nGroup Lead: Hannah Kim & Alex Chen\nDeposit Paid: $1,240.00 USD\n\nKeypad check-in code will be sent 48 hours prior to arrival.',
+      'Timberline Chalet Stowe - Reservation Confirmation\n\nBooking Reference: STW-9914\nCheck-in: Fri Jan 15, 4:00 PM | Check-out: Mon Jan 18, 11:00 AM\nGroup Lead: Hannah Kim & Alex Chen\nDeposit Paid: $1,240.00 USD\n\nKeypad check-in code will be sent 48 hours prior to arrival.',
     sentAt: hoursAgo(64),
     isUnread: false,
     isOutbound: false,
@@ -939,7 +982,7 @@ export function buildDemoDataset(): DemoDataset {
     snippet: 'Commercial print & web font license issued for Solis Health packaging (50k units + 500k monthly pageviews).',
     bodyText:
       'Monotype Foundry - Commercial License Certificate\n\nOrder Number: MT-20918\nLicensee: Meridian Studio (for Client: Solis Health)\nTypeface Family: Editorial Display Serif Pro (5 weights)\nTotal Paid: $420.00 USD\n\nLicense PDF and WOFF2/OTF archive certificate attached.',
-    sentAt: hoursAgo(13),
+    sentAt: hoursAgo(29),
     isUnread: false,
     isOutbound: false,
     attachments: [
@@ -1000,28 +1043,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Keynote', 'Contract', 'San Francisco'],
       bucket: 'decision',
       urgencyScore: 96,
-      distilledAsk: 'Sign the venue addendum',
+      distilledAsk: 'Approve Addendum B and the $4,200 cap',
       goalQuote: 'Could you confirm the $4,200 AV lighting cap and reply with approval on Addendum B by 4:00 PM today so I can lock the main gallery and release the backup bidder?',
       aiSummaryBullets: [
-        'The venue holds a backup booking for Dec 12.',
+        'The venue holds a backup booking for Dec 10.',
         'Sign by 4 PM today or lose the date.',
       ],
-      deadlineAt: hoursFromNow(3),
+      deadlineAt: onDay(11, 24, 16),
       deadlineLabel: 'Today 4:00 PM',
       quickActions: [
         {
           id: 'qa_dec01_1',
           label: 'Approve Addendum B',
           kind: 'approve',
-          draftHint: 'Approve Addendum B with the $4,200 AV lighting cap and lock Dec 12',
-          draftBody: 'Hi Maya,\n\nI approve Addendum B with the $4,200 AV lighting cap. Please release the backup hold and lock the main gallery for Dec 12. Send over the countersigned copy when it is ready.\n\nBest,\nAlex',
+          draftHint: 'Approve Addendum B with the $4,200 AV lighting cap',
+          draftBody: 'Hi Maya,\n\nI approve Addendum B with the $4,200 AV lighting cap. Please lock the main gallery for Dec 10 and release the backup bidder.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec01_2',
-          label: 'Ask about dinner access',
+          label: 'Approve, add dinner access',
           kind: 'reply',
-          draftHint: 'Approve Addendum B and ask about evening drop-off access before our 7:30 PM founder dinner',
-          draftBody: 'Hi Maya,\n\nAddendum B is approved with the $4,200 AV lighting cap. One question before we lock it in: can we get evening drop-off access to the gallery before our 7:30 PM founder dinner? Let me know what the house team needs from us.\n\nBest,\nAlex',
+          draftHint: 'Approve Addendum B and take the dinner drop-off access Maya offered',
+          draftBody: 'Hi Maya,\n\nI approve Addendum B with the $4,200 AV lighting cap. Yes please to the dinner drop-off access you mentioned. Please lock the main gallery for Dec 10.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1046,28 +1089,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Investment', 'SAFE', 'Kestrel AI'],
       bucket: 'decision',
       urgencyScore: 93,
-      distilledAsk: 'Confirm your $75,000 investment',
+      distilledAsk: 'Choose full $75k, partial or pass',
       goalQuote: 'Please reply with "Full $75k", a partial amount, or "Pass" before 5:30 PM today so we keep your slot intact.',
       aiSummaryBullets: [
         'Kestrel AI is raising more than it planned.',
         'Say yes, partial, or pass by 5:30 PM.',
       ],
-      deadlineAt: hoursFromNow(4.5),
+      deadlineAt: onDay(11, 24, 17, 30),
       deadlineLabel: 'Today 5:30 PM',
       quickActions: [
         {
           id: 'qa_dec02_1',
           label: 'Confirm full $75k',
           kind: 'approve',
-          draftHint: 'Confirm Northstar Ventures is taking the full $75,000 pro-rata allocation and request wire instructions',
-          draftBody: 'Hi Priya,\n\nNorthstar Ventures is taking the full $75,000 pro-rata allocation on the $24M post-money SAFE. Please send wire instructions and the closing packet before the 5:30 PM cutoff. Congratulations on reaching $1.4M ARR.\n\nBest,\nAlex',
+          draftHint: 'Confirm Northstar Ventures is taking the full $75,000 pro-rata allocation',
+          draftBody: 'Hi Priya,\n\nWe are taking the full $75,000 pro-rata allocation on the $24M post-money SAFE. Please keep our slot in the signature packet before the 5:30 PM lock.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec02_2',
           label: 'Ask for more time',
           kind: 'reply',
-          draftHint: 'Ask Priya if counsel can hold the slot until tomorrow 10 AM while Tessa confirms Q4 reserve liquidity',
-          draftBody: 'Hi Priya,\n\nWe want to take our full pro-rata, but I need until tomorrow at 10 AM to confirm Q4 reserve liquidity with Tessa. Can counsel hold our signature slot until then? If that is not possible, tell me today and I will decide before 5:30 PM.\n\nBest,\nAlex',
+          draftHint: 'Ask Priya if counsel can hold the slot while I confirm Q4 reserve liquidity with Tessa',
+          draftBody: 'Hi Priya,\n\nI am still confirming Q4 reserve liquidity with Tessa. Can counsel hold our slot until [the time you need]? If that is not possible, tell me today.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1092,28 +1135,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Client', 'Solis Health', 'Print'],
       bucket: 'decision',
       urgencyScore: 89,
-      distilledAsk: 'Approve the packaging proof',
+      distilledAsk: 'Greenlight Option B on the die\u2011line',
       goalQuote: 'Can you review the updated die-line PDF attached and reply to greenlight Option B?',
       aiSummaryBullets: [
         'Leadership picked Option B.',
         'Miss noon tomorrow and printing slips two weeks.',
       ],
-      deadlineAt: hoursFromNow(22),
+      deadlineAt: onDay(11, 25, 12),
       deadlineLabel: 'Tomorrow noon',
       quickActions: [
         {
           id: 'qa_dec03_1',
           label: 'Approved, go ahead',
           kind: 'approve',
-          draftHint: 'Confirm final kerning check passed and approve Option B die-line for the November press run',
-          draftBody: 'Hi Jordan,\n\nThe final kerning check passed and I approve Option B and the packaging die-line for the November press run. Please send the final PDF to the printer before tomorrow\'s noon cutoff. Thank you for holding the slot.\n\nBest,\nAlex',
+          draftHint: 'Approve Option B and the updated die-line for the November press run',
+          draftBody: 'Hi Jordan,\n\nI approve Option B and the updated die-line for the November press run. Please go ahead before tomorrow\'s noon cutoff.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec03_2',
-          label: 'Fix the kerning first',
+          label: 'Ask for a change',
           kind: 'reply',
-          draftHint: 'Ask for the kerning fix on the ingredient table before approving',
-          draftBody: 'Hi Jordan,\n\nOption B looks right, but the spacing on the 6pt ingredient table needs a small fix first. Can you send a corrected proof before tomorrow\'s noon cutoff? I will approve it as soon as I see it.\n\nBest,\nAlex',
+          draftHint: 'Ask for a change to the die-line before approving',
+          draftBody: 'Hi Jordan,\n\nBefore I approve Option B, I need one change to the die-line: [the change you need]. Can you send a corrected PDF before tomorrow\'s noon cutoff?\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1138,28 +1181,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Home', 'Remodel', 'Contract'],
       bucket: 'decision',
       urgencyScore: 86,
-      distilledAsk: 'Approve the $2,850 beam change',
+      distilledAsk: 'Approve the $2,850 lintel change order',
       goalQuote: 'Following up quickly: if you approve the $2,850 steel lintel change order by tomorrow at 3:00 PM, I can stamp and upload Sheet S2 before the Thursday morning city intake cutoff and keep our January demo date intact.',
       aiSummaryBullets: [
         'The city cleared everything except one beam.',
         'The upgrade costs $2,850 more.',
       ],
-      deadlineAt: hoursFromNow(25),
+      deadlineAt: onDay(11, 25, 15),
       deadlineLabel: 'Tomorrow 3:00 PM',
       quickActions: [
         {
           id: 'qa_dec04_1',
-          label: 'Approve $2,850 beam',
+          label: 'Approve the $2,850 lintel',
           kind: 'approve',
-          draftHint: 'Reply Approved for W10x22 flush steel beam ($2,850 delta) to keep Thursday city intake',
-          draftBody: 'Hi Elena,\n\nApproved. Please go ahead with the W10x22 flush steel lintel change order at $2,850 and upload it for Thursday\'s city review, so we keep the January demo start.\n\nBest,\nAlex',
+          draftHint: 'Reply Approved for the W10x22 flush beam at $2,850',
+          draftBody: 'Hi Elena,\n\nApproved for W10x22 flush beam. Please go ahead with the $2,850 steel lintel change order and upload Sheet S2 before Thursday morning\'s city intake cutoff.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec04_2',
-          label: 'Ask about lead time',
+          label: 'Approve, ask lead time',
           kind: 'reply',
-          draftHint: 'Approve the flush beam and ask whether steel fabrication affects the January demo date',
-          draftBody: 'Hi Elena,\n\nI approve the W10x22 flush steel lintel at $2,850. Before you upload it, does steel fabrication lead time affect the January demo date? If it does, tell me what we should adjust.\n\nBest,\nAlex',
+          draftHint: 'Approve the flush beam and ask whether steel lead time affects the January demo date',
+          draftBody: 'Hi Elena,\n\nApproved for W10x22 flush beam at $2,850. Does steel fabrication lead time affect the January demo date?\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1184,28 +1227,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Client', 'Kestrel AI', 'Engineering'],
       bucket: 'decision',
       urgencyScore: 84,
-      distilledAsk: 'Choose the website hero build',
+      distilledAsk: 'Pick which build to present Thursday',
       goalQuote: 'Which build should we present at Thursday\'s 2:00 PM check-in with Priya?',
       aiSummaryBullets: [
         'Build B ships Friday and works on every phone.',
-        'Build A looks better but ships Tuesday.',
+        'Build A looks better but needs two more days.',
       ],
-      deadlineAt: hoursFromNow(46),
+      deadlineAt: onDay(11, 26, 14),
       deadlineLabel: 'Thu 2:00 PM',
       quickActions: [
         {
           id: 'qa_dec05_1',
           label: 'Go with Build B',
           kind: 'approve',
-          draftHint: 'Go with Build B CSS shader to hit Friday launch cleanly, then layer WebGL as a v1.1 enhancement',
-          draftBody: 'Hi Devon,\n\nLet\'s go with Build B, the CSS shader. It ships Friday and avoids the mobile Safari risk before Priya\'s launch. We can layer the WebGL prism on later as a v1.1 enhancement.\n\nBest,\nAlex',
+          draftHint: 'Go with Build B, the CSS shader, to ship Friday',
+          draftBody: 'Hi Devon,\n\nLet\'s go with Build B, the CSS shader. It ships Friday and has zero mobile risk.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec05_2',
           label: 'Go with Build A',
           kind: 'reply',
-          draftHint: 'Go with Build A WebGL prism on desktop with static fallback on mobile Safari',
-          draftBody: 'Hi Devon,\n\nI would like to go with Build A, the WebGL prism, on desktop. Please add a static fallback for mobile Safari. We can talk through the Tuesday ship date at Thursday\'s 2 PM review.\n\nBest,\nAlex',
+          draftHint: 'Go with Build A, the WebGL prism',
+          draftBody: 'Hi Devon,\n\nLet\'s go with Build A, the WebGL prism, at Thursday\'s 2:00 PM check-in with Priya. I know it needs 2 extra days for the mobile Safari fallback.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1230,28 +1273,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Warm Intro', 'Robotics', 'Advisory'],
       bucket: 'decision',
       urgencyScore: 79,
-      distilledAsk: 'Offer two times for Samira\'s call',
+      distilledAsk: 'Send two 30\u2011minute slots next week',
       goalQuote: 'Can you send two 30-minute slots next week so I can lock the intro?',
       aiSummaryBullets: [
         'Daniel wants to introduce you to Samira.',
         'She is raising a $16M round in January.',
       ],
-      deadlineAt: hoursFromNow(70),
+      deadlineAt: onDay(11, 27, 11),
       deadlineLabel: 'Fri 11:00 AM',
       quickActions: [
         {
           id: 'qa_dec06_1',
-          label: 'Offer Tuesday or Wednesday',
+          label: 'Offer two times',
           kind: 'schedule',
-          draftHint: 'Thank Daniel and offer Tuesday 11:00 AM ET or Wednesday 2:30 PM ET for Samira',
-          draftBody: 'Hi Daniel,\n\nThank you for the intro to Samira Patel. I can do Tuesday at 11:00 AM ET or Wednesday at 2:30 PM ET next week, 30 minutes either way. Let me know which works for her.\n\nBest,\nAlex',
+          draftHint: 'Offer Daniel two 30-minute slots next week for Samira',
+          draftBody: 'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week at [first time] or [second time].\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec06_2',
-          label: 'Ask for her deck',
+          label: 'Send times later',
           kind: 'reply',
-          draftHint: 'Say yes and ask Samira to share her deck first',
-          draftBody: 'Hi Daniel,\n\nThank you for the intro to Samira. I am very interested. I will review her teaser tonight and then send a time for next week. If she can share the deck beforehand, that would help.\n\nBest,\nAlex',
+          draftHint: 'Tell Daniel I will send two 30-minute slots for next week by a day I choose',
+          draftBody: 'Hi Daniel,\n\nHappy to meet Samira. I will send you two 30-minute slots for next week by [day].\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1261,7 +1304,7 @@ export function buildDemoDataset(): DemoDataset {
     {
       id: 'thr_dec_07',
       ...meta('acc_personal'),
-      subject: 'Stowe Ski Cabin (Jan 16-19): Arrival Time & Lift Pass Group Code',
+      subject: 'Stowe Ski Cabin (Jan 15-18): Arrival Time & Lift Pass Group Code',
       snippet: 'Confirm Thursday night vs Friday morning arrival and whether you want the 3-day group lift pass discount before Friday 6 PM.',
       participants: [
         { name: 'Hannah Kim', email: 'hannah.kim@fastmail.com' },
@@ -1276,28 +1319,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Travel', 'Friends', 'Stowe'],
       bucket: 'decision',
       urgencyScore: 74,
-      distilledAsk: 'Pick your arrival night and lift pass',
-      goalQuote: 'Are you driving up Thursday night or Friday morning?',
+      distilledAsk: 'Pick your arrival and lift pass',
+      goalQuote: '1. Are you driving up Thursday night or Friday morning?\n2. Do you want in on the 3-day group lift pass code (saves $92 per person)?',
       aiSummaryBullets: [
-        'The chalet is booked for Jan 16 to 19.',
+        'The chalet is booked for Jan 15 to 18.',
         'Hannah needs answers by Friday evening.',
       ],
-      deadlineAt: hoursFromNow(76),
+      deadlineAt: onDay(11, 27, 18),
       deadlineLabel: 'Fri 6:00 PM',
       quickActions: [
         {
           id: 'qa_dec07_1',
-          label: 'Thursday, with lift pass',
+          label: 'Thursday night, with lift pass',
           kind: 'reply',
-          draftHint: 'Confirm Thursday evening arrival and count me in for the 3-day group lift pass',
-          draftBody: 'Hi Hannah,\n\nCount me in for arriving Thursday evening at the cabin. I would also like the 3-day group lift pass. Let me know what I owe for the grocery split.\n\nBest,\nAlex',
+          draftHint: 'Confirm Thursday night arrival and the 3-day group lift pass',
+          draftBody: 'Hi Hannah,\n\nI am driving up Thursday night, and I am in for the 3-day group lift pass.\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec07_2',
           label: 'Arrive Friday morning',
           kind: 'reply',
-          draftHint: 'Confirm Friday morning arrival and 2-day lift pass',
-          draftBody: 'Hi Hannah,\n\nI will arrive Friday morning instead of Thursday night. Please put me down for the 2-day lift pass. Thank you for organizing the trip.\n\nBest,\nAlex',
+          draftHint: 'Confirm Friday morning arrival and ask about the lift pass',
+          draftBody: 'Hi Hannah,\n\nI am driving up Friday morning instead of Thursday night. For the 3-day group lift pass: [in or out].\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1309,7 +1352,7 @@ export function buildDemoDataset(): DemoDataset {
     {
       id: 'thr_wait_01',
       ...meta('acc_studio'),
-      subject: 'Atelier Loft Dec 12 Keynote: Revised Modular Stage Lighting Quote',
+      subject: 'Atelier Loft Dec 10 Keynote: Revised Modular Stage Lighting Quote',
       snippet: 'Waiting on Marcus Reid (Lumina AV) for the itemized 6-fixture stage wash quote under $4,200.',
       participants: [
         { name: 'Alex Chen', email: 'alex@meridianstudio.co' },
@@ -1324,7 +1367,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Keynote', 'Vendor'],
       bucket: 'waiting',
       urgencyScore: 72,
-      distilledAsk: 'Nudge Marcus for the lighting quote',
+      distilledAsk: 'Nudge Marcus for the itemized quote',
       goalQuote: 'Could you send over the revised itemized quote under $4,200 so I can sign off with Maya?',
       aiSummaryBullets: [
         'You need it to finish the venue addendum.',
@@ -1337,15 +1380,15 @@ export function buildDemoDataset(): DemoDataset {
           id: 'qa_wait01_1',
           label: 'Send a polite nudge',
           kind: 'nudge',
-          draftHint: 'Politely nudge Marcus for the 6-fixture lighting quote today so we can finalize Atelier Loft',
-          draftBody: 'Hi Marcus,\n\nA quick follow-up on the itemized 6-fixture stage wash quote under $4,200. We need it to finalize Addendum B with Atelier Loft for Dec 12. Could you send it today?\n\nBest,\nAlex',
+          draftHint: 'Nudge Marcus for the revised itemized quote under $4,200',
+          draftBody: 'Hi Marcus,\n\nA quick follow-up on the revised itemized quote under $4,200. I need it to sign off with Maya. Could you send it over?\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait01_2',
-          label: 'Ask for a call',
+          label: 'Offer a call',
           kind: 'reply',
-          draftHint: 'Ask Marcus for a 15 minute call today to go through the lighting quote',
-          draftBody: 'Hi Marcus,\n\nI have not seen the revised lighting quote yet and the Atelier Loft deadline is close. Do you have 15 minutes today for a quick call to go through it? I can work around your schedule.\n\nBest,\nAlex',
+          draftHint: 'Ask Marcus for a short call about the lighting quote',
+          draftBody: 'Hi Marcus,\n\nI have not seen the revised lighting quote yet. Do you have time for a short call on [day and time] to go through it?\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1370,28 +1413,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['LP Reporting', 'Finance'],
       bucket: 'waiting',
       urgencyScore: 68,
-      distilledAsk: 'Nudge Tessa for the Q4 numbers',
+      distilledAsk: 'Nudge Tessa for the net IRR table',
       goalQuote: 'Once Carta\'s Q4 cap table export lands, could you share the finalized net IRR table and remaining dry powder figure so I can finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check?',
       aiSummaryBullets: [
         'The data she needed has arrived.',
         'It decides today\'s $75,000 investment.',
       ],
       deadlineAt: null,
-      deadlineLabel: 'Waiting 3 days',
+      deadlineLabel: 'Waiting 4 days',
       quickActions: [
         {
           id: 'qa_wait02_1',
           label: 'Nudge Tessa',
           kind: 'nudge',
-          draftHint: 'Let Tessa know Carta Q4 export landed and ask for reserve liquidity ahead of Kestrel 5:30 PM cutoff',
-          draftBody: 'Hi Tessa,\n\nThe Carta Q4 export has landed, so you should be unblocked. Could you send the net IRR table and the reserve liquidity number before the 5:30 PM Kestrel cutoff? It decides our $75,000 pro-rata.\n\nBest,\nAlex',
+          draftHint: 'Nudge Tessa for the net IRR table and the dry powder figure',
+          draftBody: 'Hi Tessa,\n\nA quick follow-up: could you send the finalized net IRR table and the remaining dry powder figure? I need them to finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check.\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait02_2',
-          label: 'Ask for reserves only',
+          label: 'Ask for dry powder first',
           kind: 'reply',
-          draftHint: 'Ask Tessa to send only the reserve liquidity number today and the rest tomorrow',
-          draftBody: 'Hi Tessa,\n\nIf the full IRR table will take longer, just send the reserve liquidity number today. It is the only figure I need for the Kestrel pro-rata decision. The rest can follow tomorrow.\n\nBest,\nAlex',
+          draftHint: 'Ask Tessa to send just the remaining dry powder figure first',
+          draftBody: 'Hi Tessa,\n\nIf the full IRR table will take longer, could you send just the remaining dry powder figure first? I need it to confirm Kestrel AI\'s $75k bridge check.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1416,7 +1459,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Legal', 'Contract', 'Solis Health'],
       bucket: 'waiting',
       urgencyScore: 65,
-      distilledAsk: 'Nudge Claire for the contract redline',
+      distilledAsk: 'Nudge Claire for the clean markup',
       goalQuote: 'Let me know once you have clean markup we can return to Jordan\'s team.',
       aiSummaryBullets: [
         'All terms are already agreed.',
@@ -1429,15 +1472,15 @@ export function buildDemoDataset(): DemoDataset {
           id: 'qa_wait03_1',
           label: 'Nudge Claire',
           kind: 'nudge',
-          draftHint: 'Check in with Claire on Section 9 redline turnaround for Solis Health MSA',
-          draftBody: 'Hi Claire,\n\nChecking in on the clean Section 9 indemnity redline for the Solis Health MSA. It has been five days and the Solis print run starts this week. Could you return it by tomorrow?\n\nBest,\nAlex',
+          draftHint: 'Nudge Claire for the clean markup of the Section 9 redline',
+          draftBody: 'Hi Claire,\n\nChecking in on the clean markup for Solis Health\'s Section 9 redline. Could you send it when it is ready so I can return it to Jordan\'s team?\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait03_2',
           label: 'Offer a quick call',
           kind: 'reply',
-          draftHint: 'Offer Claire a short call to walk through the Section 9 indemnity points',
-          draftBody: 'Hi Claire,\n\nIf it would help, I can walk through the Section 9 indemnity points with you on a short call. All commercial terms and SOW milestones are already agreed, and I would like to close the MSA alongside the print run.\n\nBest,\nAlex',
+          draftHint: 'Offer Claire a short call to walk through Section 9',
+          draftBody: 'Hi Claire,\n\nIf it would help, I can walk through the Section 9 redline with you on a short call. Everything else in the SOW is aligned.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1453,8 +1496,8 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Owen Alvarez', email: 'owen@meridianstudio.co' },
         { name: 'Alex Chen', email: 'alex@meridianstudio.co' },
       ],
-      messageCount: 1,
-      lastMessageAt: hoursAgo(48),
+      messageCount: 2,
+      lastMessageAt: wait04At,
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1462,28 +1505,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Hiring', 'Team'],
       bucket: 'waiting',
       urgencyScore: 61,
-      distilledAsk: 'Send Owen your interview scorecards',
+      distilledAsk: 'Add your scorecard notes to the doc',
       goalQuote: 'Whenever you get a moment before Thursday morning, drop your scorecard notes in the doc so we can extend an offer before competing timelines close.',
       aiSummaryBullets: [
         'Owen wants to make an offer this week.',
         'Lina is strong on type, Theo on shaders.',
       ],
-      deadlineAt: hoursFromNow(40),
+      deadlineAt: onDay(11, 26, 9),
       deadlineLabel: 'Due Thursday morning',
       quickActions: [
         {
           id: 'qa_wait04_1',
           label: 'Send scorecard notes',
           kind: 'reply',
-          draftHint: 'Share quick scorecard favoring Lina for kinetic craft and confirm Thursday morning debrief',
-          draftBody: 'Hi Owen,\n\nHere is where I landed. Lina is my pick for kinetic editorial typography, and Theo is strong on real-time shaders. I would extend an offer to Lina this week. Can we debrief Thursday morning?\n\nBest,\nAlex',
+          draftHint: 'Send Owen the scorecard notes for Lina and Theo',
+          draftBody: 'Hi Owen,\n\nHere are my scorecard notes. Lina: [your notes on Lina]. Theo: [your notes on Theo].\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait04_2',
-          label: 'Move the debrief',
+          label: 'Ask for more time',
           kind: 'reply',
-          draftHint: 'Ask Owen to move the debrief to Thursday afternoon so I can finish the scorecards',
-          draftBody: 'Hi Owen,\n\nI need a little more time on the scorecards for Lina and Theo. Can we move the debrief to Thursday afternoon? I will send my written notes before then.\n\nBest,\nAlex',
+          draftHint: 'Ask Owen for more time on the scorecard notes',
+          draftBody: 'Hi Owen,\n\nI need a little more time on the scorecard notes. Can I add them to the doc by [day and time] instead of Thursday morning?\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1499,8 +1542,8 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Rachel Goldstein, CPA', email: 'rachel@harborcpa.com' },
         { name: 'Alex Chen', email: 'alex.chen.home@gmail.com' },
       ],
-      messageCount: 1,
-      lastMessageAt: hoursAgo(72),
+      messageCount: 2,
+      lastMessageAt: wait05At,
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1508,28 +1551,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Taxes', 'Finance'],
       bucket: 'waiting',
       urgencyScore: 58,
-      distilledAsk: 'Upload your tax documents by Friday',
+      distilledAsk: 'Upload two items to the portal by Friday',
       goalQuote: 'To finalize your Q4 safe-harbor estimated payment without overpaying, please upload two items to the secure portal by Friday:',
       aiSummaryBullets: [
         'Your receipts are already saved.',
         'Rachel returns vouchers within a day.',
       ],
-      deadlineAt: hoursFromNow(68),
+      deadlineAt: onDay(11, 27, 17),
       deadlineLabel: 'Due Friday',
       quickActions: [
         {
           id: 'qa_wait05_1',
           label: 'Confirm the upload',
           kind: 'reply',
-          draftHint: 'Let Rachel know the K-1 summary plus AWS and Anthropic PDFs will be uploaded by Thursday evening',
-          draftBody: 'Hi Rachel,\n\nI will upload the Northstar Q3 K-1 summary and the AWS and Anthropic receipts to the Harbor portal by Thursday evening, ahead of your Friday deadline. Let me know if anything else is missing.\n\nBest,\nAlex',
+          draftHint: 'Tell Rachel the K-1 summary and the AWS and Anthropic statements will be uploaded by Friday',
+          draftBody: 'Hi Rachel,\n\nI will upload the Northstar Ventures Q3 K-1 summary sheet and the AWS and Anthropic statements to the secure portal by Friday.\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait05_2',
-          label: 'Ask about the totals',
+          label: 'Ask what to include',
           kind: 'reply',
-          draftHint: 'Ask Rachel to confirm the AWS and Anthropic totals before I upload',
-          draftBody: 'Hi Rachel,\n\nBefore I upload, can you confirm that the AWS total of $1,850 and the Anthropic total of $142 are the figures you need for the safe-harbor vouchers? I will send everything as soon as I hear back.\n\nBest,\nAlex',
+          draftHint: 'Ask Rachel which AWS and Anthropic statements to include',
+          draftBody: 'Hi Rachel,\n\nBefore I upload, can you confirm which AWS and Anthropic statements you need? I will send them as soon as I hear back.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1539,7 +1582,7 @@ export function buildDemoDataset(): DemoDataset {
     {
       id: 'thr_wait_06',
       ...meta('acc_ventures'),
-      subject: 'SF Founder Dinner (Dec 12, 7:30 PM) - Private Room Near Atelier Loft',
+      subject: 'SF Founder Dinner (Dec 10, 7:30 PM) - Private Room Near Atelier Loft',
       snippet: 'Private room confirmed at Bar Sprezzatura, 6 min walk from Atelier Loft. 14 founders confirmed including Priya.',
       participants: [
         { name: 'Mateo Rivera', email: 'mateo@northstarventures.io' },
@@ -1554,28 +1597,28 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['San Francisco', 'Keynote', 'Events'],
       bucket: 'waiting',
       urgencyScore: 52,
-      distilledAsk: 'Confirm 14 guests and the walk-through',
+      distilledAsk: 'Confirm the Thursday walk-through',
       goalQuote: '14 portfolio founders and co-investors are confirmed, including Priya (Kestrel AI) and Daniel Park. Since your Delta flight lands Wednesday afternoon, we can do a quick walk-through Thursday morning.',
       aiSummaryBullets: [
         'The dinner room is minutes from the keynote.',
         'Priya and Daniel are both coming.',
       ],
       deadlineAt: null,
-      deadlineLabel: 'Dec 12',
+      deadlineLabel: 'Dec 10',
       quickActions: [
         {
           id: 'qa_wait06_1',
           label: 'Confirm walk-through',
           kind: 'reply',
-          draftHint: 'Thank Mateo and confirm Thursday 10 AM walk-through before keynote setup',
-          draftBody: 'Hi Mateo,\n\nThank you for locking the private room at Bar Sprezzatura. The headcount of 14 founders works for me, and I will be there for the Thursday 10 AM walk-through before keynote setup.\n\nBest,\nAlex',
+          draftHint: 'Thank Mateo and confirm the Thursday morning walk-through',
+          draftBody: 'Hi Mateo,\n\nThank you for locking the private room at Bar Sprezzatura. I can do the Thursday morning walk-through at [time].\n\nBest,\nAlex',
         },
         {
           id: 'qa_wait06_2',
-          label: 'Ask about seating',
+          label: 'Ask for seating and menu',
           kind: 'reply',
-          draftHint: 'Ask Mateo for the seating plan and menu before the Thursday walk-through',
-          draftBody: 'Hi Mateo,\n\nThe headcount of 14 is confirmed on my side. Can you share the seating plan and menu before the walk-through on Thursday at 10 AM? I want to plan the walk over from Atelier Loft.\n\nBest,\nAlex',
+          draftHint: 'Ask Mateo for the seating plan and menu before the walk-through',
+          draftBody: 'Hi Mateo,\n\nThanks for the update on the 14 founders and co-investors. Can you share the seating plan and menu before the Thursday morning walk-through?\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1592,7 +1635,7 @@ export function buildDemoDataset(): DemoDataset {
         { name: 'Alex Chen', email: 'alex@meridianstudio.co' },
       ],
       messageCount: 1,
-      lastMessageAt: hoursAgo(38),
+      lastMessageAt: hoursAgo(26),
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -1600,8 +1643,8 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Team', 'Offsite'],
       bucket: 'waiting',
       urgencyScore: 46,
-      distilledAsk: 'Pick the team offsite location',
-      goalQuote: 'No rush this week; let\'s pick a winner over Monday coffee.',
+      distilledAsk: 'Pick Troutbeck or Sea Ranch',
+      goalQuote: 'No rush this week; let\'s pick a winner over coffee next Monday.',
       aiSummaryBullets: [
         'Troutbeck is easy to reach by train.',
         'Sea Ranch suits West Coast client visits.',
@@ -1613,15 +1656,15 @@ export function buildDemoDataset(): DemoDataset {
           id: 'qa_ref01_1',
           label: 'Vote for Sea Ranch',
           kind: 'reply',
-          draftHint: 'Vote for Sea Ranch Lodge and confirm we will finalize Monday morning',
-          draftBody: 'Hi Devon,\n\nMy vote is Sea Ranch Lodge. It pairs well with our West Coast client visits. Let\'s finalize it Monday morning at team coffee.\n\nBest,\nAlex',
+          draftHint: 'Vote for Sea Ranch Lodge',
+          draftBody: 'Hi Devon,\n\nMy vote is Sea Ranch Lodge, for the architectural light. Let\'s pick a winner over coffee next Monday.\n\nBest,\nAlex',
         },
         {
           id: 'qa_ref01_2',
           label: 'Vote for Troutbeck',
           kind: 'reply',
-          draftHint: 'Vote for Troutbeck and confirm we will finalize Monday morning',
-          draftBody: 'Hi Devon,\n\nMy vote is Troutbeck. The rail access makes it easy for the East Coast team. Let\'s finalize it Monday morning at team coffee.\n\nBest,\nAlex',
+          draftHint: 'Vote for Troutbeck',
+          draftBody: 'Hi Devon,\n\nMy vote is Troutbeck, for the easy train access. Let\'s pick a winner over coffee next Monday.\n\nBest,\nAlex',
         },
       ],
       receiptInfo: null,
@@ -1645,7 +1688,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Screener', 'Robotics'],
       bucket: 'screener',
       urgencyScore: 76,
-      distilledAsk: 'Review the Veridian teaser',
+      distilledAsk: 'Give Samira 20 minutes of feedback',
       goalQuote: 'I would love to share a 2-page technical overview and get 20 minutes of your candid feedback on our Series A narrative.',
       aiSummaryBullets: [
         'Daniel Park sent her your way.',
@@ -1654,7 +1697,13 @@ export function buildDemoDataset(): DemoDataset {
       deadlineAt: null,
       deadlineLabel: null,
       quickActions: [
-        { id: 'qa_scr01_1', label: 'Suggest a meeting', kind: 'approve', draftHint: 'Welcome Samira, thank her for the teaser, and suggest meeting next Tuesday' },
+        {
+          id: 'qa_scr01_1',
+          label: 'Suggest a time',
+          kind: 'approve',
+          draftHint: 'Thank Samira and suggest a time to talk about her overview',
+          draftBody: 'Hi Samira,\n\nThank you for reaching out. I would be glad to talk about your overview. Does [day and time] work for you?\n\nBest,\nAlex',
+        },
       ],
       receiptInfo: null,
       relatedThreadIds: ['thr_dec_06'],
@@ -1675,7 +1724,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Screener', 'Speaking'],
       bucket: 'screener',
       urgencyScore: 48,
-      distilledAsk: 'Accept the keynote intro call',
+      distilledAsk: 'Take a 10\u2011minute call next week',
       goalQuote: 'Would you be open to a quick 10-minute call next week?',
       aiSummaryBullets: [
         'A 900-person design conference in San Francisco.',
@@ -1684,7 +1733,13 @@ export function buildDemoDataset(): DemoDataset {
       deadlineAt: null,
       deadlineLabel: null,
       quickActions: [
-        { id: 'qa_scr02_1', label: 'Accept intro call', kind: 'schedule', draftHint: 'Thank Nadia for the keynote invite and share two brief slots next week' },
+        {
+          id: 'qa_scr02_1',
+          label: 'Accept intro call',
+          kind: 'schedule',
+          draftHint: 'Thank Nadia for the invitation and offer a time for the 10-minute call next week',
+          draftBody: 'Hi Nadia,\n\nThank you for the invitation. I would be glad to have a quick call next week. Does [day and time] work for you?\n\nBest,\nAlex',
+        },
       ],
       receiptInfo: null,
       relatedThreadIds: [],
@@ -1971,8 +2026,8 @@ export function buildDemoDataset(): DemoDataset {
     {
       id: 'thr_rec_02',
       ...meta('acc_personal'),
-      subject: 'Flight Confirmation DL-8K49MP: JFK to SFO (Dec 11 - Dec 14)',
-      snippet: 'Delta nonstop JFK -> SFO (Seat 4A) departing Thu Dec 11 at 1:15 PM. Total paid: $628.40 USD.',
+      subject: 'Flight Confirmation DL-8K49MP: JFK to SFO (Dec 9 - Dec 13)',
+      snippet: 'Delta nonstop JFK -> SFO (Seat 4A) departing Wed Dec 9 at 1:15 PM. Total paid: $628.40 USD.',
       participants: [{ name: 'Delta Air Lines', email: 'confirmations@delta-air.example' }],
       messageCount: 1,
       lastMessageAt: hoursAgo(20),
@@ -1983,14 +2038,14 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Travel', 'San Francisco', 'Receipt'],
       bucket: 'paper_trail',
       urgencyScore: 48,
-      distilledAsk: 'Check in for your Dec 11 flight',
+      distilledAsk: 'Check in 24 hours before the flight',
       goalQuote: 'Online check-in opens 24 hours before each flight in the Fly Delta app.',
       aiSummaryBullets: [
-        'Round trip JFK to SFO, Dec 11 to 14.',
+        'Round trip JFK to SFO, Dec 9 to 13.',
         'It lines up with the keynote and dinner.',
       ],
-      deadlineAt: null,
-      deadlineLabel: 'Dec 10 6:00 AM',
+      deadlineAt: onDay(12, 8, 13, 15),
+      deadlineLabel: 'Dec 8 1:15 PM',
       quickActions: [{ id: 'qa_rec02_1', label: 'Archive', kind: 'archive' }],
       receiptInfo: {
         vendor: 'Delta Air Lines',
@@ -2104,7 +2159,7 @@ export function buildDemoDataset(): DemoDataset {
       id: 'thr_rec_06',
       ...meta('acc_personal'),
       subject: 'Reservation Receipt #STW-9914: Stowe Timberline Chalet ($1,240.00)',
-      snippet: 'Deposit receipt for Jan 16-19 Stowe mountain chalet reservation ($1,240.00 USD).',
+      snippet: 'Deposit receipt for Jan 15-18 Stowe mountain chalet reservation ($1,240.00 USD).',
       participants: [{ name: 'Timberline Chalet Stowe', email: 'reservations@timberlinestowe.example' }],
       messageCount: 1,
       lastMessageAt: hoursAgo(64),
@@ -2117,11 +2172,11 @@ export function buildDemoDataset(): DemoDataset {
       urgencyScore: 35,
       distilledAsk: null,
       aiSummaryBullets: [
-        'Paid the $1,240 deposit for Jan 16 to 19.',
+        'Paid the $1,240 deposit for Jan 15 to 18.',
         'The door code arrives two days before.',
       ],
       deadlineAt: null,
-      deadlineLabel: 'Jan 16',
+      deadlineLabel: 'Jan 15',
       quickActions: [{ id: 'qa_rec06_1', label: 'Archive', kind: 'archive' }],
       receiptInfo: {
         vendor: 'Timberline Chalet Stowe',
@@ -2172,7 +2227,7 @@ export function buildDemoDataset(): DemoDataset {
       snippet: 'Monotype commercial print & web font license for Solis Health packaging ($420.00 USD).',
       participants: [{ name: 'Monotype Foundry', email: 'orders@monotype-store.example' }],
       messageCount: 1,
-      lastMessageAt: hoursAgo(13),
+      lastMessageAt: hoursAgo(29),
       isUnread: false,
       isStarred: false,
       isArchived: false,
@@ -2246,11 +2301,12 @@ export function buildDemoDataset(): DemoDataset {
       counterpartyName: 'Owen Alvarez',
       counterpartyEmail: 'owen@meridianstudio.co',
       summary: 'Send Owen the interview scorecards',
+      promiseQuote: 'I will send you my scorecard notes on Lina and Theo before Thursday morning.',
       dueLabel: 'Due Thu AM',
-      daysOpen: 2,
+      daysOpen: 1,
       status: 'open',
       suggestedNudgeDraft:
-        'Hey Owen,\n\nSharing my scorecard notes ahead of Thursday morning: I am leaning strongly toward Lina for her kinetic editorial typography and polish, which maps directly onto Solis and our Q1 hardware clients. Let\'s lock our offer plan at 9:30 AM tomorrow.\n\nBest,\nAlex',
+        'Hi Owen,\n\nA quick update on my scorecard notes for Lina and Theo: I will send them before Thursday morning.\n\nBest,\nAlex',
     },
     {
       id: 'com_02',
@@ -2262,11 +2318,12 @@ export function buildDemoDataset(): DemoDataset {
       counterpartyName: 'Rachel Goldstein, CPA',
       counterpartyEmail: 'rachel@harborcpa.com',
       summary: 'Upload tax papers to Rachel\'s portal',
+      promiseQuote: 'I will upload the K-1 summary and the AWS and Anthropic statements to your portal by Friday.',
       dueLabel: 'Due Friday',
-      daysOpen: 3,
+      daysOpen: 1,
       status: 'open',
       suggestedNudgeDraft:
-        'Hi Rachel,\n\nQuick update: I pulled the November AWS (#AWS-2026-1142) and Anthropic (#ANT-904821) statements and will upload them alongside the Q3 K-1 summary to the portal tomorrow evening.\n\nBest,\nAlex',
+        'Hi Rachel,\n\nA quick update on the K-1 summary and the AWS and Anthropic statements: I will upload them to your portal by Friday.\n\nBest,\nAlex',
     },
     {
       id: 'com_03',
@@ -2282,7 +2339,7 @@ export function buildDemoDataset(): DemoDataset {
       daysOpen: 4,
       status: 'open',
       suggestedNudgeDraft:
-        'Hey Marcus,\n\nQuick check-in on the revised 6-fixture lighting quote for Atelier Loft (Dec 12). Maya needs our Addendum B sign-off by 4:00 PM today, so even a quick email confirmation that we are under $4,200 would be huge.\n\nThanks!\nAlex',
+        'Hi Marcus,\n\nA quick follow-up on the revised itemized quote under $4,200. I need it to sign off with Maya. Could you send it over?\n\nBest,\nAlex',
     },
     {
       id: 'com_04',
@@ -2294,11 +2351,11 @@ export function buildDemoDataset(): DemoDataset {
       counterpartyName: 'Tessa Holloway',
       counterpartyEmail: 'tessa@northstarventures.io',
       summary: 'The Q4 numbers',
-      dueLabel: '3 days waiting',
-      daysOpen: 3,
+      dueLabel: '4 days waiting',
+      daysOpen: 4,
       status: 'open',
       suggestedNudgeDraft:
-        'Hi Tessa,\n\nSaw that Carta\'s Q4 cap table export just arrived (#CRT-88412). Could you confirm our available reserve balance before 4:30 PM today so I can lock Kestrel AI\'s $75k pro-rata check?\n\nThanks,\nAlex',
+        'Hi Tessa,\n\nA quick follow-up: could you send the finalized net IRR table and the remaining dry powder figure? I need them to finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check.\n\nBest,\nAlex',
     },
     {
       id: 'com_05',
@@ -2314,7 +2371,7 @@ export function buildDemoDataset(): DemoDataset {
       daysOpen: 5,
       status: 'open',
       suggestedNudgeDraft:
-        'Hi Claire,\n\nChecking in gently on the Solis Health MSA Section 9 redline. We are greenlighting their packaging press proof tomorrow, so getting clean markup over to their counsel this week would keep everything aligned.\n\nBest,\nAlex',
+        'Hi Claire,\n\nChecking in on the clean markup for Solis Health\'s Section 9 redline. Could you send it when it is ready so I can return it to Jordan\'s team?\n\nBest,\nAlex',
     },
   ];
 
@@ -2451,7 +2508,7 @@ export function buildDemoDataset(): DemoDataset {
       toEmails: ['jordan@solishealth.com'],
       subject: 'Re: Solis Brand Identity: Packaging Press Proof & Serif Lockup',
       bodyText:
-        'Hi Jordan,\n\nFinal kerning check on the 6pt ingredient panel looks crisp. Meridian formally approves the Option B serif lockup and attached die-line mechanical for the 5,000-unit November press run.\n\nExcited to see these come off the press!\n\nBest,\nAlex Chen\nPrincipal, Meridian Studio',
+        'Hi Jordan,\n\nI approve Option B and the updated die-line for the November press run. Please go ahead before tomorrow\'s noon cutoff.\n\nBest,\nAlex',
       tone: 'direct',
       status: 'pending_approval',
       scheduledFor: null,
@@ -2465,7 +2522,7 @@ export function buildDemoDataset(): DemoDataset {
       toEmails: ['dpark@summitpartners.vc'],
       subject: 'Re: Intro: Samira Patel (Veridian Robotics) - Series A Advisory',
       bodyText:
-        'Daniel,\n\nWould love to connect with Samira, especially after seeing their live warehouse traction. I can do Tuesday at 11:00 AM ET or Wednesday at 2:30 PM ET for a 30-minute conversation.\n\nAppreciate you thinking of me!\n\nBest,\nAlex',
+        'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week at [first time] or [second time].\n\nBest,\nAlex',
       tone: 'warm',
       status: 'pending_approval',
       scheduledFor: null,
@@ -2531,11 +2588,11 @@ export function buildDemoDataset(): DemoDataset {
     },
     {
       id: 'view_02',
-      name: 'SF Keynote Trip (Dec 11-14)',
+      name: 'SF Keynote Trip (Dec 9-13)',
       icon: 'plane',
       queryDescription:
         'Merged cross-account view for the San Francisco keynote venue, AV quote, Delta flight, and founder dinner.',
-      filterSpec: { keywords: ['Atelier Loft', 'SFO', 'Dec 12', 'Sprezzatura', 'Lumina AV'] },
+      filterSpec: { keywords: ['Atelier Loft', 'SFO', 'Dec 10', 'Sprezzatura', 'Lumina AV'] },
       threadIds: ['thr_dec_01', 'thr_rec_02', 'thr_wait_06', 'thr_wait_01'],
       createdAt: hoursAgo(45),
     },

@@ -19,7 +19,7 @@ export function ScreenerCard({ sender, account, overlay }: Props) {
   const first = newestMessage(full);
   return (
     <article className="card">
-      <CardHeader name={sender.name} account={account} />
+      <CardHeader name={sender.name} email={sender.email} account={account} />
       <SenderHero sender={sender} />
       <hr className="card__rule" />
       <h2 className="card__subject t-headline">{full ? full.subject : sender.sampleSubject}</h2>

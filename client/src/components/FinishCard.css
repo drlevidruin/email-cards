@@ -10,8 +10,8 @@
 .finish__row svg { flex: none; color: var(--ink-4); }
 .finish__week { flex: none; margin-top: 14px; padding: 0 4px; }
 .finish__action { flex: none; display: flex; align-items: flex-end; padding-top: 12px; }
-.finish__primary { width: 100%; height: 52px; border-radius: var(--radius-m); background: var(--accent); color: #fff; font-size: 17px; font-weight: 600; box-shadow: var(--shadow-primary); }
-.finish__primary:active { background: var(--accent-press); }
+.finish__primary { width: 100%; height: 52px; border-radius: var(--radius-m); background: var(--ink); color: #fff; font-size: 17px; font-weight: 600; }
+.finish__primary:active { background: #000; }
 .finish__primary-count { font-weight: 400; opacity: 0.85; }
 .finish__list { flex: none; margin-top: 14px; }
 .finish__list > li + li { position: relative; }
@@ -19,7 +19,7 @@
 .finish__row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 0 16px; text-align: left; }
 @media (max-height: 720px) {
   .finish__kicker { margin-top: 10px; }
-  .finish__body .ring { transform: scale(0.85); margin: -10px 0; }
+  .finish__body .pile { margin: 8px 0 16px; }
   .finish__stats { margin-top: 4px; }
   .finish__week { margin-top: 8px; }
   .finish__list { margin-top: 8px; }

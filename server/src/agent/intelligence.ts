@@ -1241,7 +1241,7 @@ export async function draftReplyForThread(
         maxTokens: 650,
         temperature: 0.4,
         system:
-          'You draft ready-to-send email replies for Prism Mail. Output ONLY the plain-text email body (no subject line, no preamble, no markdown fences). Strict style invariant: NEVER use em dashes or en dashes; use colons, commas, or hyphens instead.',
+          'You draft ready-to-send email replies for Prism Mail. Output ONLY the plain-text email body (no subject line, no preamble, no markdown fences). Use only facts stated in the thread or in the user\'s instruction. Never claim the user checked, did or confirmed anything the thread does not show. Where a needed detail is unknown, write a bracketed blank such as [date] instead of guessing. Strict style invariant: NEVER use em dashes or en dashes; use colons, commas, or hyphens instead.',
         messages: [
           {
             role: 'user',
@@ -1396,7 +1396,7 @@ export async function summarizeThread(
         maxTokens: 700,
         temperature: 0.2,
         system:
-          'You analyze an email thread and return ONLY valid JSON: {"distilledAsk": string | null, "aiSummaryBullets": string[], "tasks": [{"title": string, "dueLabel": string | null, "priority": "high" | "medium" | "low"}]}. Keep distilledAsk to 1 crisp sentence describing what the user needs to decide or do (or null if pure FYI). Provide 2 to 4 concise bullets. Extract only genuine actionable tasks. Never use em dashes.',
+          'You analyze an email thread and return ONLY valid JSON: {"distilledAsk": string | null, "aiSummaryBullets": string[], "tasks": [{"title": string, "dueLabel": string | null, "priority": "high" | "medium" | "low"}]}. Write distilledAsk as the goal of the email in the sender\'s own words: an imperative under 40 characters that names the specific choice (for example "Choose full $75k, partial or pass"), and nothing the thread does not say. Use null if the email is pure FYI. Provide 2 to 4 concise bullets. Extract only genuine actionable tasks. Never use em dashes.',
         messages: [
           {
             role: 'user',

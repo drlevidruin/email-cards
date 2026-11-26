@@ -12,6 +12,8 @@ interface Move {
   stack: StackId;
   account: string;
   reply: boolean;
+  /** What was done with the card: Done, To-do, Later, Allowed, Blocked or Newsletters. Missing on older logs, which read as Done. */
+  kind?: string;
   at: number;
 }
 
@@ -27,7 +29,12 @@ interface Day {
 interface Log {
   days: Record<string, Day>;
   seeded: boolean;
+  /** The first card was nudged (older logs). Counts as the right move taught. */
   nudged: boolean;
+  /** Moves the first-session nudges have shown: right, left, up, down. */
+  taught: string[];
+  /** The id of the browser session the log was first used in. Teaching nudges show only in that session. */
+  firstSession: string;
 }
 
 const KEY = 'email_cards_progress_v1';
@@ -59,17 +66,20 @@ const today = () => dayKey(new Date());
 function read(): Log {
   const key = storageKey();
   if (cache && cacheKey === key) return cache;
-  let log: Log = { days: {}, seeded: false, nudged: false };
+  let log: Log = { days: {}, seeded: false, nudged: false, taught: [], firstSession: '' };
   try {
     const raw = window.localStorage.getItem(key);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Log>;
       if (parsed && typeof parsed === 'object' && parsed.days) {
         const days: Record<string, Day> = {};
+        const latest = today();
         for (const [k, v] of Object.entries(parsed.days)) {
+          // Progress saved before the demo clock was pinned can hold days after today: ignore them
+          if (k > latest) continue;
           days[k] = { moves: Array.isArray(v?.moves) ? v.moves : [], clear: !!v?.clear, starts: v?.starts ?? {} };
         }
-        log = { days, seeded: !!parsed.seeded, nudged: !!parsed.nudged };
+        log = { days, seeded: !!parsed.seeded, nudged: !!parsed.nudged, taught: Array.isArray(parsed.taught) ? parsed.taught : [], firstSession: typeof parsed.firstSession === 'string' ? parsed.firstSession : '' };
       }
     }
   } catch {
@@ -85,7 +95,7 @@ function write(): void {
   const t = today();
   for (const k of Object.keys(log.days)) if (k !== t) log.days[k] = { moves: [], clear: log.days[k].clear, starts: {} };
   try {
-    window.localStorage.setItem(storageKey(), JSON.stringify({ days: log.days, seeded: log.seeded, nudged: log.nudged }));
+    window.localStorage.setItem(storageKey(), JSON.stringify({ days: log.days, seeded: log.seeded, nudged: log.nudged, taught: log.taught, firstSession: log.firstSession }));
   } catch {
     // Storage may be blocked; the log still works until the page closes
   }
@@ -153,6 +163,7 @@ export interface MoveSpec {
   stack: StackId;
   account: string;
   reply?: boolean;
+  kind?: string;
 }
 
 export function logMoves(specs: MoveSpec[]): void {
@@ -161,7 +172,7 @@ export function logMoves(specs: MoveSpec[]): void {
   const now = Date.now();
   for (const s of specs) {
     if (!d.starts[s.stack]) d.starts[s.stack] = now;
-    d.moves.push({ id: s.id, stack: s.stack, account: s.account, reply: !!s.reply, at: now });
+    d.moves.push({ id: s.id, stack: s.stack, account: s.account, reply: !!s.reply, kind: s.kind, at: now });
   }
   write();
 }
@@ -219,48 +230,84 @@ export function resetToday(): void {
   write();
 }
 
-export function nudgeSeen(): boolean {
-  return read().nudged;
+/** The moves the first-session nudges have already shown. Someone who saw the old single nudge has had the right move. */
+export function taughtMoves(): string[] {
+  const log = read();
+  return log.nudged && !log.taught.includes('right') ? ['right', ...log.taught] : log.taught;
 }
 
-export function markNudged(): void {
-  read().nudged = true;
+const SESSION_KEY = 'email_cards_session';
+
+/** An id for this browser session (a tab), kept in sessionStorage. */
+function sessionId(): string {
+  try {
+    let id = window.sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = Math.random().toString(36).slice(2, 10);
+      window.sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return 'none';
+  }
+}
+
+/** True in the session the log was first used in (or before any session has been saved). Later sessions do not match it. */
+export function isFirstSession(): boolean {
+  const first = read().firstSession;
+  return !first || first === sessionId();
+}
+
+/** Save this session's id as the first one, unless an earlier session already holds that place. */
+export function claimFirstSession(): void {
+  const log = read();
+  if (log.firstSession) return;
+  log.firstSession = sessionId();
   write();
 }
 
-/** Days in a row on which Needs you reached zero, counting back from today (or from yesterday while today is open). Saturdays count for nothing and against nothing. */
-export function streak(): number {
+export function markTaught(dir: string): void {
   const log = read();
-  let d = new Date();
-  if (!log.days[dayKey(d)]?.clear) d = shift(d, -1);
-  let n = 0;
-  for (let i = 0; i < 400; i += 1) {
-    if (isSaturday(d)) {
-      d = shift(d, -1);
-      continue;
-    }
-    if (!log.days[dayKey(d)]?.clear) break;
-    n += 1;
-    d = shift(d, -1);
-  }
-  return n;
+  if (!log.taught.includes(dir)) log.taught = [...log.taught, dir];
+  if (dir === 'right') log.nudged = true;
+  write();
 }
 
-export type WeekDot = { letter: string; state: 'clear' | 'today' | 'today-clear' | 'open' | 'future' | 'rest' };
+/** The cards handled in a stack today, newest first, each with what was done to it. */
+export function recentMoves(stack: StackId, account: string, n: number): { id: string; kind: string }[] {
+  return todayMoves(stack, account)
+    .sort((a, b) => b.at - a.at)
+    .slice(0, n)
+    .map((m) => ({ id: m.id, kind: m.kind ?? 'Done' }));
+}
 
-/** This week, Sunday first. Saturday is a rest day: the streak skips it. */
-export function week(): WeekDot[] {
+/** How many of each move today in a stack, in the order they first happened: `[['Done', 2], ['Later', 1]]`. */
+export function moveCounts(stack: StackId, account: string): [string, number][] {
+  const out = new Map<string, number>();
+  for (const m of todayMoves(stack, account).sort((a, b) => a.at - b.at)) out.set(m.kind ?? 'Done', (out.get(m.kind ?? 'Done') ?? 0) + 1);
+  return [...out.entries()];
+}
+
+export type WeekDot = { letter: string; state: 'clear' | 'today' | 'today-clear' | 'open' | 'rest' };
+
+/** The last seven days ending today, oldest first. A day counts when Needs you reached zero that day. Saturday is a rest day: it shows as a dash and is left out of the count and the total. */
+export function lastSeven(): { dots: WeekDot[]; clear: number; days: number } {
   const log = read();
   const now = new Date();
   const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  return letters.map((letter, i) => {
-    if (i === 6) return { letter, state: 'rest' };
-    const d = shift(now, i - now.getDay());
-    const clear = !!log.days[dayKey(d)]?.clear;
-    if (i === now.getDay()) return { letter, state: clear ? 'today-clear' : 'today' };
-    if (i > now.getDay()) return { letter, state: 'future' };
-    return { letter, state: clear ? 'clear' : 'open' };
+  let clear = 0;
+  let days = 0;
+  const dots = Array.from({ length: 7 }, (_, i): WeekDot => {
+    const d = shift(now, i - 6);
+    const letter = letters[d.getDay()];
+    if (isSaturday(d)) return { letter, state: 'rest' };
+    days += 1;
+    const isClear = !!log.days[dayKey(d)]?.clear;
+    if (isClear) clear += 1;
+    if (i === 6) return { letter, state: isClear ? 'today-clear' : 'today' };
+    return { letter, state: isClear ? 'clear' : 'open' };
   });
+  return { dots, clear, days };
 }
 
 export function estimateMinutes(stack: StackId, left: number): number {

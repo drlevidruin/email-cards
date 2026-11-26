@@ -1,12 +1,12 @@
 import { ChevronRight } from 'lucide-react';
 import { navigate } from '../router';
-import { minutesToday, repliesToday, handledToday, useProgressLog } from '../lib/progress';
+import { minutesToday, moveCounts, repliesToday, handledToday, useProgressLog } from '../lib/progress';
 import type { NextRow } from '../lib/finish';
 import type { StackId } from '../lib/stacks';
 import { dueBits, todoCounts } from '../lib/todo';
 import { useStore } from '../store';
 import { CountUp } from './CountUp';
-import { Ring } from './Ring';
+import { FinishPile } from './FinishPile';
 import { StreakStrip } from './StreakStrip';
 import './FinishCard.css';
 
@@ -16,7 +16,7 @@ interface Props {
   stack: StackId;
   account: string;
   kicker: string;
-  /** The user's own last move emptied the stack: the ring closes, the check draws. Otherwise it shows finished at rest. */
+  /** The user's own last move emptied the stack: the pile settles in and the check pops. Otherwise it shows finished at rest. */
   celebrate: boolean;
   /** Needs you is empty in every account, so the streak is real. */
   dayClear: boolean;
@@ -39,7 +39,7 @@ function pace(handled: number, mins: number): string | null {
   return secs < 90 ? `About ${secs} seconds a card` : `About ${Math.round(secs / 60)} min a card`;
 }
 
-/** What shows when a stack is empty: the ring closes, the honest count of what is still on your list, and the way on. */
+/** What shows when a stack is empty: the pile you just cleared, the honest count of what is still on your list, and the way on. */
 export function FinishCard({ stack, account, kicker, celebrate, dayClear, next }: Props) {
   useProgressLog();
   const { data } = useStore();
@@ -50,11 +50,12 @@ export function FinishCard({ stack, account, kicker, celebrate, dayClear, next }
   const bits = counts ? dueBits(counts) : '';
   const [first, ...rest] = next;
   const speed = pace(handled, mins);
+  const moves = moveCounts(stack, account);
   const todoRow = !!counts && counts.open > 0;
   return (
     <section className="finish">
       <div className="finish__body">
-        <Ring from={handled > 1 ? (handled - 1) / handled : 0} celebrate={celebrate} />
+        <FinishPile stack={stack} account={account} celebrate={celebrate} />
         <p className="t-footnote finish__kicker">{kicker}</p>
         <h1 className="t-title finish__title">All clear</h1>
         {handled > 0 && (
@@ -66,12 +67,11 @@ export function FinishCard({ stack, account, kicker, celebrate, dayClear, next }
           </p>
         )}
         {speed && <p className="t-footnote finish__pace">{speed}</p>}
+        {moves.length > 0 && <p className="t-footnote finish__pace">{moves.map(([k, n]) => `${n} ${k}`).join(' \u00B7 ')}</p>}
       </div>
-      {stack === 'needs-you' && dayClear && (
-        <div className="finish__week">
-          <StreakStrip pop={celebrate} />
-        </div>
-      )}
+      <div className="finish__week">
+        <StreakStrip pop={celebrate && stack === 'needs-you' && dayClear} />
+      </div>
       {(todoRow || rest.length > 0) && (
         <ul className="finish__group finish__list">
           {todoRow && (

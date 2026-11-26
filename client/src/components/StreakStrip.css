@@ -1,4 +1,4 @@
-.streak { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.streak { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .streak__dots { display: flex; gap: 14px; }
 .streak__day { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 16px; }
 .streak__dot { box-sizing: border-box; width: 10px; height: 10px; border-radius: 50%; }
@@ -7,7 +7,7 @@
 .streak__dot--open, .streak__dot--future { background: var(--line); }
 .streak__dot--rest { width: 8px; height: 2px; margin: 4px 0; border-radius: 1px; background: var(--line-strong); }
 .streak__dot.is-pop { animation: dot-pop 300ms var(--ease) both; }
-.streak__letter { line-height: 16px; color: var(--ink-4); font-weight: 400; }
+.streak__letter { line-height: 16px; color: var(--ink-3); font-weight: 400; }
 .streak__count { color: var(--ink-3); white-space: nowrap; }
 @keyframes dot-pop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .streak__dot.is-pop { animation: none; } }

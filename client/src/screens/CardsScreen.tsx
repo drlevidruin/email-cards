@@ -3,7 +3,7 @@ import { Menu as MenuIcon, Search } from 'lucide-react';
 import { useStore } from '../store';
 import { navigate } from '../router';
 import { finishInfo } from '../lib/finish';
-import { handledToday, markClear, markNudged, markStart, nudgeSeen, useProgressLog } from '../lib/progress';
+import { claimFirstSession, handledToday, isFirstSession, markClear, markStart, markTaught, taughtMoves, useProgressLog } from '../lib/progress';
 import { applySkips, buildStack, stackCounts, stackLabel, type DeckItem, type StackId } from '../lib/stacks';
 import { loadThread } from '../lib/threadCache';
 import { describeWake, type LaterOption } from '../lib/time';
@@ -79,6 +79,11 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
       : { right: 'Done', left: 'Later', up: 'To-do', down: 'Skip' };
 
   const overlay = menu || !!laterFor || !!covered;
+  // First session: the first four cards each show one move, in turn
+  // Only the session the log was first used in teaches; a later visit never nudges
+  const taught = taughtMoves();
+  const teach = isFirstSession() ? (['right', 'left', 'up', 'down'] as Dir[]).find((d) => enabled.includes(d) && !taught.includes(d)) ?? null : null;
+  useEffect(() => claimFirstSession(), []);
   const multi = (data?.accounts.length ?? 0) > 1 && account === 'all';
 
   // Load the first three cards' emails ahead of time, so a card shows its whole email at once.
@@ -114,7 +119,7 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
       session.skipped = [...session.skipped.filter((s) => s !== id), id];
       store.touch();
       // Skip has its own Undo, so Z after a Skip brings the skipped card back, not the move before it
-      store.offerUndo('Skipped', async () => {
+      store.offerUndo('Moved to the end of the pile', async () => {
         session.skipped = session.skipped.filter((s) => s !== id);
         store.touch();
       });
@@ -239,17 +244,16 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
         onActive={onActive}
         onExitDone={store.clearExiting}
         goalFirst={onTodo}
-        nudge={!nudgeSeen() && !overlay}
-        onNudged={markNudged}
+        nudge={overlay ? null : teach}
+        onNudged={markTaught}
       />
     );
   }
 
   const showBar = status === 'ready' && !finished && !cover && !today && !covered;
   const showCount = status === 'ready' && !finished && !cover && !today && total > 0;
-  const live = status === 'ready' && !finished && !cover && !today;
   return (
-    <div className={`cards${live ? ' cards--live' : ''}`}>
+    <div className="cards">
       <div className="cards__col">
         <TopBar
           left={
@@ -274,16 +278,16 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
             </span>
           )}
         </TopBar>
-        <SegmentBar handled={shown} total={total} />
-        <div className={`cards__deck${today || finished ? ' cards__deck--today' : ''}`}>{content}</div>
+        <SegmentBar handled={shown} total={total} hidden={today} full={finished} />
+        <div className={`cards__deck${today || finished || cover ? ' cards__deck--today' : ''}`}>{content}</div>
         {showBar ? (
           <ActionBar variant={variant} active={active} past={past} onAction={onBar} />
         ) : (
-          !today && !finished && <div className="cards__bar-space" />
+          !today && !finished && !cover && <div className="cards__bar-space" />
         )}
       </div>
       {menu && !desktop && <Menu current={stack} onClose={() => setMenu(false)} />}
-      {laterFor && <LaterSheet onPick={pickLater} onClose={closeLater} />}
+      {laterFor && <LaterSheet onPick={pickLater} onClose={closeLater} due={laterFor.type === 'thread' ? laterFor.thread.deadlineLabel : null} />}
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { buildTodo } from '../lib/todo';
 import { useDeckItems } from '../lib/useDeckItems';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { Avatar } from './Avatar';
 import './SidePanel.css';
 
 const SHOWN = 6;
@@ -63,7 +62,6 @@ function Rows({ lines, list, clip }: { lines: Line[]; list: RefObject<HTMLUListE
     <ul className="side__list" ref={list} style={clip === null ? undefined : { maxHeight: clip }}>
       {lines.map((l) => (
         <li key={l.key} className="side__row">
-          <Avatar name={l.who} card />
           <span className="side__text">
             <span className="t-callout side__title">{l.title}</span>
             <span className="t-footnote side__meta">

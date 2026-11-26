@@ -31,11 +31,11 @@ interface Props {
   onOpen: (item: DeckItem) => void;
   onActive: (dir: Dir | null, past?: boolean) => void;
   onExitDone: () => void;
-  /** Once, on the very first card ever: it slides a little to the right and back, to show the swipe. */
   /** The To-do deck: cards show their Goal first. */
   goalFirst?: boolean;
-  nudge?: boolean;
-  onNudged?: () => void;
+  /** First session only: the move this card shows by sliding a little that way and back, with its pill. */
+  nudge?: Dir | null;
+  onNudged?: (dir: Dir) => void;
 }
 
 const SPRING = { type: 'spring', stiffness: 500, damping: 40 } as const;
@@ -113,14 +113,14 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
     (dir: Dir) => {
       if (!top || busy.current || !enabled.includes(dir)) return;
       if (!flyDirs.includes(dir)) {
-        // Later: the card waits, a little off to the side, while the time sheet is open
-        void animate(x, -(card.current?.offsetWidth ?? 300) * 0.3, SPRING);
+        // Later: the card springs back to the middle, the way a cancelled drag does, and waits under the sheet
+        springBack();
         onDirection(dir, top);
         return;
       }
       void flyOut(dir, () => onDirection(dir, top));
     },
-    [top, enabled, flyDirs, flyOut, onDirection, x]
+    [top, enabled, flyDirs, flyOut, onDirection, springBack]
   );
 
   useImperativeHandle(ref, () => ({ trigger, flyOut: (d, a) => void flyOut(d, a), release: springBack }), [trigger, flyOut, springBack]);
@@ -132,20 +132,48 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
     }
   }, [exitingId, topId, flyOut, onExitDone]);
 
-  const touched = useRef(false);
+  // Each of the first four cards nudges once, 1.2s after it settles. Any touch or key cancels it, and a cancelled
+  // nudge stays cancelled for that card. Once the card has slid out it always slides back, unless a drag has started.
+  const nudgedCard = useRef<string | null>(null);
+  const cancelledCard = useRef<string | null>(null);
+  const nudgeStop = useRef<(() => void) | null>(null);
+  const isDragging = useRef<() => boolean>(() => false);
   useEffect(() => {
-    if (!nudge || !topId || reduced) return;
+    if (!nudge || !topId || reduced || nudgedCard.current === topId || cancelledCard.current === topId) return;
+    const cancel = () => {
+      cancelledCard.current = topId;
+    };
+    window.addEventListener('keydown', cancel, true);
+    window.addEventListener('pointerdown', cancel, true);
     const t = window.setTimeout(async () => {
-      if (busy.current || touched.current) return;
-      onNudged?.();
-      nudging.set(1);
-      await animate(x, 44, { duration: 0.45, ease: EASE });
-      if (!busy.current && !touched.current) await animate(x, 0, { duration: 0.45, ease: EASE });
+      if (busy.current || cancelledCard.current === topId) return;
+      nudgedCard.current = topId;
+      onNudged?.(nudge);
+      const axis = nudge === 'left' || nudge === 'right' ? x : y;
+      const sign = nudge === 'left' || nudge === 'up' ? -1 : 1;
+      // Resolves true when the slide finishes, false when a touch on the card stops it
+      const slide = (to: number) =>
+        new Promise<boolean>((done) => {
+          const ctl = animate(axis, to, { duration: 0.45, ease: EASE });
+          nudgeStop.current = () => {
+            ctl.stop();
+            done(false);
+          };
+          void ctl.then(() => done(true));
+        });
+      nudging.set(FORCE[nudge]);
+      const out = await slide(sign * 44);
+      if (out && !busy.current && !isDragging.current()) await slide(0);
+      nudgeStop.current = null;
       nudging.set(0);
-    }, 900);
-    return () => window.clearTimeout(t);
+    }, 1200);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('keydown', cancel, true);
+      window.removeEventListener('pointerdown', cancel, true);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nudge, topId, reduced, x, nudging]);
+  }, [nudge, topId, reduced, x, y, nudging]);
 
   const gesture = useCardGesture({
     x,
@@ -154,14 +182,23 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
     el: card,
     enabled,
     blocked: () => {
-      touched.current = true;
+      // A touch on the card ends a nudge in flight; the drag or the tap takes over from where it is
+      cancelledCard.current = topRef.current?.id ?? null;
+      nudgeStop.current?.();
+      nudgeStop.current = null;
+      nudging.set(0);
       return busy.current;
     },
     onActive,
     onCommit: trigger,
     onSpring: springBack,
-    onTap: () => top && onOpen(top),
+    onTap: () => {
+      // A tap that stopped a nudge halfway must not leave the card off center
+      if (x.get() || y.get()) springBack();
+      if (top) onOpen(top);
+    },
   });
+  isDragging.current = gesture.isDragging;
 
   // A new top card starts from rest; reset before paint so it never shows at the old offset, and drop any drag still live.
   const resetGesture = useRef(gesture.reset);

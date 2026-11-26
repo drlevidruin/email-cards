@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, CalendarRange, ChevronRight, Sunrise, Sunset, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, CalendarRange, ChevronRight, Sunrise, Sunset, type LucideIcon } from 'lucide-react';
 import { describeWake, laterOptions, type LaterOption } from '../lib/time';
 import { Sheet } from './Sheet';
 
 interface Props {
   onPick: (option: LaterOption) => void;
   onClose: () => void;
+  /** The card's deadline, such as `Today 4:00 PM`. */
+  due?: string | null;
 }
 
-const ICONS: Record<string, LucideIcon> = { today: Sunset, tomorrow: Sunrise, monday: CalendarDays, 'next-week': CalendarRange };
+const ICONS: Record<string, LucideIcon> = { 'before-due': CalendarClock, today: Sunset, tomorrow: Sunrise, monday: CalendarDays, 'next-week': CalendarRange };
 
 /** `6:00 PM` when the label already names the day (Later today, Tomorrow, Monday); `Dec 3 8:00 AM` for Next week. */
 function timeOf(o: LaterOption, now: Date): string {
@@ -22,9 +24,9 @@ function localValue(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-export function LaterSheet({ onPick, onClose }: Props) {
+export function LaterSheet({ onPick, onClose, due }: Props) {
   const now = useMemo(() => new Date(), []);
-  const options = useMemo(() => laterOptions(now), [now]);
+  const options = useMemo(() => laterOptions(now, due), [now, due]);
   const [custom, setCustom] = useState(false);
   const [value, setValue] = useState(() => localValue(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 8)));
 
@@ -57,7 +59,10 @@ export function LaterSheet({ onPick, onClose }: Props) {
               <Icon size={22} strokeWidth={1.75} />
               <span className="latertile__text">
                 <span className="t-callout latertile__label">{o.label}</span>
-                <span className="t-footnote latertile__time">{timeOf(o, now)}</span>
+                <span className="t-footnote latertile__time">
+                  {o.showDay ? o.when : timeOf(o, now)}
+                  {o.afterDue && <span className="latertile__late">{"after it's due"}</span>}
+                </span>
               </span>
             </button>
           );

@@ -1,49 +1,54 @@
+/* A floating glass bar: each button is an icon and its label side by side; the one that finishes the card is a filled emerald capsule. */
 .actionbar {
   flex: none;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
-  height: 76px;
-  margin: 0 12px calc(12px + env(safe-area-inset-bottom));
-  padding: 0 6px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.82);
+  display: flex;
+  gap: 6px;
+  height: 64px;
+  margin: 0 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.86);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   backdrop-filter: saturate(180%) blur(20px);
   box-shadow: var(--shadow-float);
 }
 .actionbar__btn {
+  flex: 1 1 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
+  height: 48px;
+  padding: 0 4px;
+  border-radius: 15px;
   color: var(--ink-2);
-  transition: transform 120ms var(--ease), color 120ms;
+  transition: transform 120ms var(--ease), background 120ms, color 120ms;
 }
-.actionbar__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  transition: background 120ms, box-shadow 120ms;
-}
-.actionbar__label { white-space: nowrap; }
-.actionbar__btn { --tone: var(--ink-2); }
-.actionbar__btn--primary { --tone: var(--accent); color: var(--ink); }
-.actionbar__btn--danger { --tone: var(--danger); }
-.actionbar__btn--primary .actionbar__icon { background: var(--accent); color: #fff; box-shadow: var(--shadow-primary); }
-/* Dragging toward a button: its icon turns ink. Past the commit point it sits in a filled circle in the badge's color. */
+.actionbar__btn svg { flex: none; }
+.actionbar__label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.actionbar__btn:active { transform: scale(0.97); }
+.actionbar__btn--primary { border-radius: var(--radius-pill); background: var(--accent); color: #fff; }
+.actionbar__btn--primary:active { background: var(--accent-press); }
+.actionbar__btn--primary .keycap { border-color: rgba(255, 255, 255, 0.45); background: transparent; color: #fff; }
+/* Dragging toward a button: its icon and label turn ink (Done lightens to a soft emerald so ink reads on it).
+   Past the commit point, where the pill fills, the button fills the same way: emerald for Done, ink for the rest. */
+.actionbar__btn { --tone: var(--ink); }
+.actionbar__btn--primary { --tone: var(--accent); }
 .actionbar__btn.is-active { color: var(--ink); }
-.actionbar__btn.is-past .actionbar__icon { background: var(--tone); color: #fff; }
-.actionbar__btn--primary.is-past .actionbar__icon { background: var(--accent-press); }
-.actionbar__btn.is-on .actionbar__icon { color: var(--accent); }
-.actionbar__btn:active { transform: scale(0.94); }
+.actionbar__btn--primary.is-active { background: var(--accent-soft); color: var(--ink); }
+.actionbar__btn.is-past, .actionbar__btn--primary.is-past { background: var(--tone); color: #fff; animation: badge-pop 150ms var(--ease); }
+.actionbar__btn.is-on { background: var(--surface-2); color: var(--ink); }
+
+@media (max-width: 380px) {
+  .actionbar { gap: 2px; margin-left: 10px; margin-right: 10px; padding: 8px 6px; }
+  .actionbar__btn { gap: 4px; padding: 0 2px; }
+  .actionbar__label { gap: 4px; }
+  .actionbar__btn > svg, .actionbar__label > svg { width: 18px; height: 18px; }
+}
 
 @media (min-width: 1024px) {
   .actionbar { width: 100%; margin: 16px 0 0; }
-  .actionbar__label { display: inline-flex; align-items: center; gap: 6px; }
+  .actionbar__btn:hover { background: var(--surface-2); }
+  .actionbar__btn--primary:hover { background: var(--accent-press); }
 }

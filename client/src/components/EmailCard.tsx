@@ -25,7 +25,7 @@ export function EmailCard({ thread, account, overlay, goalFirst }: Props) {
   const kind = heroKind(thread, goalFirst);
   return (
     <article className="card">
-      <CardHeader name={counterpart(thread).name} account={account} age={relativeTime(thread.lastMessageAt)} due={thread.deadlineLabel} />
+      <CardHeader name={counterpart(thread).name} email={counterpart(thread).email} account={account} age={relativeTime(thread.lastMessageAt)} due={thread.deadlineLabel} />
       <Hero thread={thread} goalFirst={goalFirst} />
       <hr className="card__rule" />
       {kind !== 'subject' && <h2 className="card__subject t-headline">{cleanSubject(thread.subject)}</h2>}

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
+import { commitmentsIn, openBlanks } from '../lib/commitments';
 import './ReplyChoose.css';
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
   to: { name: string; email: string };
   subject: string;
   body: string;
+  /** The blanks the draft itself put in, word for word. Only these hold Send back. */
+  blanks: string[];
   drafting: boolean;
   sending: boolean;
   desktop: boolean;
@@ -16,8 +19,15 @@ interface Props {
 }
 
 /** The whole reply, with its greeting and sign-off, ready to change. Send is the only way anything leaves. */
-export function ReplyEdit({ first, to, subject, body, drafting, sending, desktop, onBody, onBack, onSend }: Props) {
+export function ReplyEdit({ first, to, subject, body, blanks: draftBlanks, drafting, sending, desktop, onBody, onBack, onSend }: Props) {
   const box = useRef<HTMLTextAreaElement>(null);
+  const blanks = openBlanks(body, draftBlanks);
+  // What the reply commits you to, recomputed 300ms after typing stops
+  const [commits, setCommits] = useState(() => commitmentsIn(body));
+  useEffect(() => {
+    const t = window.setTimeout(() => setCommits(commitmentsIn(body)), 300);
+    return () => window.clearTimeout(t);
+  }, [body]);
   // On a phone the keyboard would hide the text you should read, so only an empty editor takes focus there
   useEffect(() => {
     const el = box.current;
@@ -34,8 +44,17 @@ export function ReplyEdit({ first, to, subject, body, drafting, sending, desktop
           Replies
         </button>
         <h1 className="t-headline composer__title">Reply to {first}</h1>
-        <button className="composer__send" disabled={!body.trim() || drafting || sending} onClick={onSend}>
-          <span className="composer__send-pill t-callout">Send</span>
+        <button className="composer__send" disabled={!body.trim() || drafting || sending || blanks > 0} onClick={onSend}>
+          <span className="composer__send-pill t-callout">
+            {blanks > 0 ? (
+              <>
+                <span className="pill__long">{`Fill in ${blanks} ${blanks === 1 ? 'blank' : 'blanks'}`}</span>
+                <span className="pill__short">{`${blanks} ${blanks === 1 ? 'blank' : 'blanks'}`}</span>
+              </>
+            ) : (
+              'Send'
+            )}
+          </span>
         </button>
       </header>
       <div className="edit__rows">
@@ -50,6 +69,20 @@ export function ReplyEdit({ first, to, subject, body, drafting, sending, desktop
           <span className="edit__value">{subject}</span>
         </div>
       </div>
+      {commits.length > 0 && !drafting && (
+        <div className="edit__commits">
+          <div className="t-footnote edit__commits-label">You're committing to</div>
+          <ul>
+            {commits.map((c, i) => (
+              <li key={c} className="t-footnote edit__commit">
+                <span className="edit__dot" />
+                <span className="edit__quote">{`\u201C${c}\u201D`}</span>
+                {i === 0 && commits.length > 1 && <span className="edit__more">{`+${commits.length - 1}`}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="edit__body">
         {drafting ? (
           <div className="composer__bars">

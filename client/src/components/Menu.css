@@ -19,11 +19,11 @@
 .menu__icon { flex: none; display: flex; width: 22px; justify-content: center; color: var(--ink-3); }
 .menu__row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; color: var(--ink); }
 .menu__row.is-current .menu__row-label { font-weight: 600; }
-.menu__row.is-current::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.menu__row.is-current::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink); }
 .menu__count { margin-left: auto; color: var(--ink-3); }
 .menu__dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .menu__dot--all { background: var(--ink-4); }
-.menu__check { flex: none; color: var(--accent); }
+.menu__check { flex: none; color: var(--ink); }
 .menu__demo { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 0 0 16px; color: var(--ink-3); }
 
 @keyframes menu-in { from { transform: translateX(-100%); } to { transform: none; } }

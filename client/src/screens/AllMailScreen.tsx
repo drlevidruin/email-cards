@@ -85,7 +85,7 @@ export function AllMailScreen() {
               {g.rows.map((t) => (
                 <li key={t.id}>
                   <button className={`mail__row${t.isUnread ? ' is-unread' : ''}`} onClick={() => navigate(`/read/${t.id}`)}>
-                    <Avatar name={counterpart(t).name} card />
+                    <Avatar name={counterpart(t).name} email={counterpart(t).email} card />
                     <span className="mail__main">
                       <span className="mail__line">
                         <span className="t-callout mail__from">{counterpart(t).name}</span>

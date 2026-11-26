@@ -1,4 +1,4 @@
-import { Ban, Check, Clock, ListChecks, Newspaper, Reply, type LucideIcon } from 'lucide-react';
+import { Ban, Check, Clock, ListChecks, ListPlus, Newspaper, Reply, type LucideIcon } from 'lucide-react';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import './ActionBar.css';
 
@@ -18,13 +18,13 @@ interface Item {
 const BUTTONS: Record<BarVariant, Item[]> = {
   default: [
     { action: 'later', label: 'Later', Icon: Clock },
-    { action: 'todo', label: 'To-do', Icon: ListChecks },
+    { action: 'todo', label: 'To-do', Icon: ListPlus },
     { action: 'reply', label: 'Reply', Icon: Reply },
     { action: 'done', label: 'Done', Icon: Check, primary: true },
   ],
   plain: [
     { action: 'later', label: 'Later', Icon: Clock },
-    { action: 'todo', label: 'To-do', Icon: ListChecks },
+    { action: 'todo', label: 'To-do', Icon: ListPlus },
     { action: 'done', label: 'Done', Icon: Check, primary: true },
   ],
   todo: [
@@ -34,7 +34,7 @@ const BUTTONS: Record<BarVariant, Item[]> = {
   ],
   senders: [
     { action: 'block', label: 'Block', Icon: Ban },
-    { action: 'newsletters', label: 'Newsletters', Icon: Newspaper },
+    { action: 'newsletters', label: 'Newsletter', Icon: Newspaper },
     { action: 'allow', label: 'Allow', Icon: Check, primary: true },
   ],
 };
@@ -63,10 +63,10 @@ interface Props {
   variant: BarVariant;
   /** The direction a card is being dragged toward, if any. */
   active: Dir | null;
-  /** The drag is past the commit point: the button fills in its action's color. */
+  /** The drag is past the commit point: the button deepens. */
   past?: boolean;
   onAction: (action: BarAction) => void;
-  /** The email is already on To-do: the button says so, in the accent, and pressing it takes the email off. */
+  /** The email is already on To-do: the button says so and pressing it takes the email off. */
   todoOn?: boolean;
 }
 
@@ -75,19 +75,20 @@ export function ActionBar({ variant, active, past, onAction, todoOn }: Props) {
   const desktop = useIsDesktop();
   return (
     <div className={`actionbar actionbar--${variant} no-select`}>
-      {BUTTONS[variant].map(({ action, label: base, Icon, primary }) => {
+      {BUTTONS[variant].map(({ action, label, Icon: Rest, primary }) => {
+        // On To-do, the button keeps its label and shows a checked list
         const on = action === 'todo' && !!todoOn;
-        const label = on ? 'On To-do' : base;
+        const Icon = on ? ListChecks : Rest;
         return (
         <button
           key={action}
-          className={`actionbar__btn${on ? ' is-on' : ''}${primary ? ' actionbar__btn--primary' : ''}${action === 'block' ? ' actionbar__btn--danger' : ''}${lit === action ? (past ? ' is-active is-past' : ' is-active') : ''}`}
+          className={`actionbar__btn${on ? ' is-on' : ''}${primary ? ' actionbar__btn--primary' : ''}${lit === action ? (past ? ' is-active is-past' : ' is-active') : ''}`}
+          aria-pressed={action === 'todo' ? on : undefined}
+          aria-label={on ? 'On To-do' : undefined}
           onClick={() => onAction(action)}
         >
-          <span className="actionbar__icon">
-            <Icon size={22} strokeWidth={1.75} />
-          </span>
-          <span className="actionbar__label t-caption">
+          <Icon size={20} strokeWidth={1.75} />
+          <span className="actionbar__label t-callout">
             {label}
             {desktop && <kbd className="keycap actionbar__cap">{BAR_KEY[action]}</kbd>}
           </span>

@@ -1,6 +1,7 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { useTransform, type MotionValue } from 'framer-motion';
 import type { Dir } from '../components/ActionBar';
+import { FORCE } from '../components/SwipeBadge';
 
 export const LOCK_PX = 10;
 export const FLICK_PX_PER_S = 700;
@@ -13,7 +14,7 @@ type Axis = 'x' | 'y';
 interface Options {
   x: MotionValue<number>;
   y: MotionValue<number>;
-  /** The first-card nudge: the Done pill shows outlined, never filled. */
+  /** While a teaching nudge runs: the number of the direction being shown (FORCE), else 0. The pill shows outlined, never filled. */
   nudging: MotionValue<number>;
   el: RefObject<HTMLElement | null>;
   enabled: Dir[];
@@ -41,10 +42,12 @@ export function useCardGesture(o: Options) {
   const st = useRef<{ id: number; sx: number; sy: number; axis: Axis | null; trail: { t: number; x: number; y: number }[] } | null>(null);
   const dragged = useRef(false);
 
-  const right = useTransform([x, nudging], ([v, n]: number[]) => (n ? 0.8 * clamp01(v / 6) : clamp01(v / (dims.current.w * H_COMMIT))));
-  const left = useTransform(x, (v) => clamp01(-v / (dims.current.w * H_COMMIT)));
-  const up = useTransform(y, (v) => clamp01(-v / (dims.current.h * V_COMMIT)));
-  const down = useTransform(y, (v) => clamp01(v / (dims.current.h * V_COMMIT)));
+  const toward = (v: number, n: number, dir: Dir, sign: number, full: number) =>
+    n ? (n === FORCE[dir] ? 0.8 * clamp01((sign * v) / 6) : 0) : clamp01((sign * v) / full);
+  const right = useTransform([x, nudging], ([v, n]: number[]) => toward(v, n, 'right', 1, dims.current.w * H_COMMIT));
+  const left = useTransform([x, nudging], ([v, n]: number[]) => toward(v, n, 'left', -1, dims.current.w * H_COMMIT));
+  const up = useTransform([y, nudging], ([v, n]: number[]) => toward(v, n, 'up', -1, dims.current.h * V_COMMIT));
+  const down = useTransform([y, nudging], ([v, n]: number[]) => toward(v, n, 'down', 1, dims.current.h * V_COMMIT));
 
   const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
     if (st.current || blocked() || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -115,8 +118,12 @@ export function useCardGesture(o: Options) {
     dragged.current = false;
   };
 
+  /** A drag has started (the pointer has travelled 10px) and has not ended. */
+  const isDragging = () => !!st.current?.axis;
+
   return {
     reset,
+    isDragging,
     progress: { right, left, up, down } as Record<Dir, MotionValue<number>>,
     handlers: {
       onPointerDown,

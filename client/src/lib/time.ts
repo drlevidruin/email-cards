@@ -20,6 +20,10 @@ export interface LaterOption {
   at: Date;
   /** Result time as shown in the sheet, such as "Today 6:00 PM". */
   when: string;
+  /** The tile's time line names the day too, as `Tomorrow 9:00 AM`. */
+  showDay?: boolean;
+  /** The time falls after the card's deadline. */
+  afterDue?: boolean;
 }
 
 function at(base: Date, addDays: number, hour: number): Date {
@@ -39,15 +43,34 @@ export function describeWake(target: Date, now = new Date()): string {
   return `${target.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${clock(target)}`;
 }
 
-export function laterOptions(now: Date): LaterOption[] {
-  const candidates: { id: string; label: string; at: Date }[] = [];
+
+/** The tiles in the Later sheet. A card with a deadline more than 2 hours away leads with `Before it's due`, in place of the weekday tile. */
+export function laterOptions(now: Date, due?: string | null): LaterOption[] {
+  const candidates: { id: string; label: string; at: Date; showDay?: boolean }[] = [];
   const hour = now.getHours() + now.getMinutes() / 60;
+  const dueAt = dueTime(due, now);
+  const hasDue = Number.isFinite(dueAt);
+  const early = hasDue && dueAt - now.getTime() > 2 * 3600000;
+  if (early) {
+    // 3 hours before, down to the hour or half hour, never sooner than an hour from now
+    // Rounded on the local clock, so zones with a 30 or 45 minute offset still land on :00 or :30
+    const down = new Date(dueAt - 3 * 3600000);
+    down.setMinutes(down.getMinutes() < 30 ? 0 : 30, 0, 0);
+    const soonest = new Date(now.getTime() + 3600000);
+    let t = down;
+    if (t.getTime() < soonest.getTime()) {
+      t = new Date(soonest);
+      const over = t.getMinutes() % 30 !== 0 || t.getSeconds() !== 0 || t.getMilliseconds() !== 0;
+      if (over) t.setMinutes(t.getMinutes() < 30 ? 30 : 60, 0, 0);
+    }
+    candidates.push({ id: 'before-due', label: "Before it's due", at: t, showDay: true });
+  }
   if (hour < 20) {
     candidates.push({ id: 'today', label: 'Later today', at: at(now, 0, hour >= 15 ? 21 : 18) });
   }
   candidates.push({ id: 'tomorrow', label: 'Tomorrow', at: at(now, 1, 8) });
   const day = now.getDay();
-  if ((day + 1) % 7 !== 1) {
+  if (!early && (day + 1) % 7 !== 1) {
     const untilMonday = ((8 - day) % 7) || 7;
     candidates.push({ id: 'monday', label: 'Monday', at: at(now, untilMonday, 8) });
   }
@@ -60,7 +83,7 @@ export function laterOptions(now: Date): LaterOption[] {
     if (t <= now.getTime() || seen.has(t)) continue;
     seen.add(t);
     const w = describeWake(c.at, now);
-    out.push({ ...c, when: w.charAt(0).toUpperCase() + w.slice(1) });
+    out.push({ ...c, when: w.charAt(0).toUpperCase() + w.slice(1), afterDue: (hasDue || isOverdue(due)) && t > dueAt });
   }
   return out;
 }
@@ -80,6 +103,7 @@ const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', '
 /** The hour a label names: `4:00 PM`, `noon`, or a rough one for `morning`, `AM`, `PM`. */
 function hourOf(text: string): number {
   if (/noon/i.test(text)) return 12;
+  if (/midnight/i.test(text)) return 0;
   const m = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i.exec(text);
   if (m) {
     const h = (Number(m[1]) % 12) + (m[3].toLowerCase() === 'pm' ? 12 : 0);
@@ -129,3 +153,14 @@ export function isUrgent(label?: string | null, now = new Date()): boolean {
 
 /** A due label without its leading `Due`, for tight rows: `Today 4:00 PM`. */
 export const shortDue = (label: string) => label.replace(/^due\s+/i, '').replace(/^./, (c) => c.toUpperCase());
+
+/** A due label as two lines for an agenda row: the day (`Tomorrow`, `Thu`, `Dec 12`) and the time (`noon`, `3:00 PM`). */
+export function dueParts(label?: string | null): { day: string; time: string } | null {
+  if (!label) return null;
+  const text = label.replace(/^due\s+/i, '').trim();
+  const m = /^(today|tomorrow|overdue|waiting|(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*|[a-z]{3,9}\s+\d{1,2})\b[,\s]*(.*)$/i.exec(text);
+  if (!m) return { day: text.replace(/^./, (c) => c.toUpperCase()), time: '' };
+  const raw = m[1];
+  const day = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*$/i.test(raw) ? raw.slice(0, 3).replace(/^./, (c) => c.toUpperCase()) : raw.replace(/^./, (c) => c.toUpperCase());
+  return { day, time: m[2].trim() };
+}

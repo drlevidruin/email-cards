@@ -11,6 +11,8 @@ interface Props {
   hideSubject?: boolean;
   /** The Goal's source sentence; marked in the newest message. */
   quote?: string | null;
+  /** A promise sentence: opens and marks the user's sent message that holds it. */
+  promise?: string | null;
 }
 
 function Marked({ text, quote }: { text: string; quote?: string | null }) {
@@ -25,7 +27,7 @@ function Marked({ text, quote }: { text: string; quote?: string | null }) {
   );
 }
 
-export function ThreadView({ threadId, hideSubject, quote }: Props) {
+export function ThreadView({ threadId, hideSubject, quote, promise }: Props) {
   const [thread, setThread] = useState<EmailThread | null>(null);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -51,12 +53,16 @@ export function ThreadView({ threadId, hideSubject, quote }: Props) {
     (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
   );
 
+  const promiseAt = promise
+    ? messages.findIndex((m) => m.isOutbound && findQuote(m.bodyText, promise))
+    : -1;
+
   return (
     <div className="tv">
       {!hideSubject && <h2 className="tv__subject">{thread.subject}</h2>}
       {messages.length === 0 && <p className="tv__body">{thread.snippet}</p>}
       {messages.map((m, i) => {
-        const expanded = i === messages.length - 1 || open.has(m.id);
+        const expanded = i === messages.length - 1 || i === promiseAt || open.has(m.id);
         if (!expanded) {
           return (
             <button
@@ -80,7 +86,7 @@ export function ThreadView({ threadId, hideSubject, quote }: Props) {
             </div>
             <div className="tv__to">to {m.toEmails.join(', ')}</div>
             <div className="tv__body">
-              <Marked text={m.bodyText} quote={i === messages.length - 1 ? quote : null} />
+              <Marked text={m.bodyText} quote={i === promiseAt ? promise : i === messages.length - 1 && promiseAt < 0 ? quote : null} />
             </div>
             {m.attachments.length > 0 && (
               <ul className="tv__files">

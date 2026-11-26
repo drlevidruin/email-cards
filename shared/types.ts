@@ -123,6 +123,8 @@ export interface CommitmentItem {
   counterpartyName: string;
   counterpartyEmail: string;
   summary: string;
+  /** For a promise: the sentence in the user's own sent message where it was made. */
+  promiseQuote?: string;
   dueLabel: string;
   daysOpen: number;
   status: 'open' | 'nudged' | 'resolved';
@@ -287,6 +289,8 @@ export interface AgentChatMessage {
     subject: string;
     accountLabel: string;
   }[];
+  /** Cards left out of the list above, and where they open. */
+  more?: { count: number; path: string };
   proposal?: ActionProposal;
   createdDraft?: DraftItem;
   createdView?: CustomView;

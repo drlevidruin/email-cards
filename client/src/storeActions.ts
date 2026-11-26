@@ -6,6 +6,9 @@ import type { EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
 import type { CountKey, Data, Exiting, Session, Snap, UndoEntry } from './storeTypes';
 
+/** What the finish card calls each move. */
+const KIND: Record<CountKey, string> = { replied: 'Done', done: 'Done', later: 'Later', bookmarked: 'To-do', blocked: 'Blocked', allowed: 'Allowed', moved: 'Moved' };
+
 export const NOT_SAVED = 'That did not save. Try again.';
 
 interface CommitSpec {
@@ -66,7 +69,7 @@ export function useCardActions(core: Core) {
         const stack = spec.stack;
         const accountOf = (id: string) =>
           prev.threads.find((t) => t.id === id)?.accountId ?? prev.screener.find((x) => x.email === id)?.accountId ?? '';
-        logMoves(spec.ids.map((id) => ({ id, stack, account: accountOf(id) })));
+        logMoves(spec.ids.map((id) => ({ id, stack, account: accountOf(id), kind: KIND[spec.count] })));
         // A short tap on the phones that have one; it does nothing on an iPhone
         if (['done', 'later', 'allowed', 'blocked'].includes(spec.count)) navigator.vibrate?.(8);
       }
@@ -232,7 +235,7 @@ export function useCardActions(core: Core) {
         const sess = session(lastStack);
         sess.dismissed.add(t.id);
         sess.counts.replied += 1;
-        logMoves([{ id: t.id, stack: lastStack, account: t.accountId, reply: true }]);
+        logMoves([{ id: t.id, stack: lastStack, account: t.accountId, reply: true, kind: 'Done' }]);
         patchSnap((s) => ({ ...s, threads: s.threads.map((x) => (x.id === t.id ? { ...x, isArchived: true, bucket: 'archived' } : x)) }));
         if (!keepCard) setExiting({ thread: t });
       }

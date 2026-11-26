@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ArrowUp, PenLine } from 'lucide-react';
 import type { QuickActionChip } from '../lib/types';
 import { stripReply } from '../lib/replyText';
+import { blanksOf } from '../lib/commitments';
 import { goBack } from '../router';
 import { Avatar } from './Avatar';
 import './ReplyChoose.css';
@@ -20,6 +21,26 @@ interface Props {
   onAsk: (instruction: string) => void;
 }
 
+/** A suggestion's text: three lines at most, fading out over the last line when it runs longer. */
+function Suggestion({ text, blanks }: { text: string; blanks: number }) {
+  const el = useRef<HTMLSpanElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const measure = () => el.current && setCut(el.current.scrollHeight > el.current.clientHeight + 1);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [text]);
+  return (
+    <>
+      <span ref={el} className={`t-subhead choose__body${cut ? ' is-cut' : ''}`}>
+        {text}
+      </span>
+      {blanks > 0 && <span className="t-footnote choose__blank">{`${blanks} ${blanks === 1 ? 'blank' : 'blanks'} to fill`}</span>}
+    </>
+  );
+}
+
 /** Every suggested reply, in full, before anything is chosen. Choosing one opens it to edit; nothing is sent from here. */
 export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, onYours, onOwn, onAsk }: Props) {
   const [ask, setAsk] = useState('');
@@ -34,7 +55,7 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
       </header>
       <div className="choose__scroll">
         <div className="choose__to">
-          <Avatar name={to.name} card />
+          <Avatar name={to.name} email={to.email} card />
           <div className="choose__who">
             <div className="t-callout choose__name">{to.name}</div>
             <div className="t-footnote choose__addr">{to.email}</div>
@@ -58,7 +79,7 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
               <li>
                 <button className="choose__card" onClick={onYours}>
                   <span className="t-headline">Your draft</span>
-                  <span className="t-subhead choose__body">{stripReply(yours)}</span>
+                  <Suggestion text={stripReply(yours)} blanks={0} />
                 </button>
               </li>
             )}
@@ -66,7 +87,7 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
               <li key={c.id}>
                 <button className="choose__card" onClick={() => onPick(c)}>
                   <span className="t-headline">{c.label}</span>
-                  <span className="t-subhead choose__body">{c.draftBody ? stripReply(c.draftBody) : c.draftHint}</span>
+                  <Suggestion text={c.draftBody ? stripReply(c.draftBody) : c.draftHint ?? ''} blanks={c.draftBody ? blanksOf(c.draftBody).length : 0} />
                 </button>
               </li>
             ))}
@@ -88,10 +109,12 @@ export function ReplyChoose({ first, to, goal, chips, yours, drafting, onPick, o
           onAsk(text);
         }}
       >
-        <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Tell Claude what to say" aria-label="Tell Claude what to say" />
-        <button type="submit" className="composer__ask-go" aria-label="Write reply" disabled={!text}>
-          <ArrowUp size={20} strokeWidth={1.75} />
-        </button>
+        <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Or tell Claude what to say" aria-label="Tell Claude what to say" />
+        {text && (
+          <button type="submit" className="composer__ask-go" aria-label="Write reply">
+            <ArrowUp size={18} strokeWidth={1.75} />
+          </button>
+        )}
       </form>
     </div>
   );

@@ -21,10 +21,12 @@ interface Props {
   stack: StackId | null;
   /** The new sender being read, when the deck card was a sender. */
   senderEmail?: string;
+  /** The promise sentence to find in the user's sent message, from a You promised row. */
+  promise?: string | null;
 }
 
 /** The whole email, opened from a deck card. It slides up over the deck; an action here leaves with that card gone. */
-export function Reader({ thread, stack, senderEmail }: Props) {
+export function Reader({ thread, stack, senderEmail, promise }: Props) {
   const store = useStore();
   const desktop = useIsDesktop();
   const [later, setLater] = useState(false);
@@ -93,15 +95,15 @@ export function Reader({ thread, stack, senderEmail }: Props) {
           </div>
         )}
         <div className="reader__scroll">
-          <CardHeader name={sender ? sender.name : counterpart(thread).name} account={account} age={sender ? undefined : relativeTime(thread.lastMessageAt)} due={sender ? null : thread.deadlineLabel} />
+          <CardHeader name={sender ? sender.name : counterpart(thread).name} email={sender ? sender.email : counterpart(thread).email} account={account} age={sender ? undefined : relativeTime(thread.lastMessageAt)} due={sender ? null : thread.deadlineLabel} />
           {sender ? <SenderHero sender={sender} /> : <Hero thread={thread} goalFirst={onTodo} />}
           <hr className="reader__rule" />
           {(sender || kind !== 'subject') && <h2 className="reader__subject t-headline">{cleanSubject(thread.subject)}</h2>}
-          <ThreadView threadId={thread.id} hideSubject quote={sender || kind !== 'goal' ? null : thread.goalQuote} />
+          <ThreadView threadId={thread.id} hideSubject promise={promise} quote={sender || kind !== 'goal' ? null : thread.goalQuote} />
         </div>
         {!desktop && <ActionBar variant={variant} active={null} onAction={onAction} />}
       </div>
-      {later && <LaterSheet onPick={pick} onClose={() => setLater(false)} />}
+      {later && <LaterSheet onPick={pick} onClose={() => setLater(false)} due={thread.deadlineLabel} />}
     </div>
   );
 }

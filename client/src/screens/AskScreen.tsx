@@ -160,9 +160,9 @@ export function AskScreen() {
                 ) : (
                   <div key={m.id} className="ask__assistant">
                     <p className="t-body ask__text">{m.content}</p>
-                    {m.citations && m.citations.length > 0 && (
+                    {((m.citations && m.citations.length > 0) || m.more) && (
                       <ul className="list ask__cites">
-                        {m.citations.map((c) => {
+                        {(m.citations ?? []).map((c) => {
                           const row = cite(c);
                           return (
                             <li key={c.threadId}>
@@ -181,6 +181,13 @@ export function AskScreen() {
                             </li>
                           );
                         })}
+                        {m.more && (
+                          <li>
+                            <button className="list__row ask__cite" onClick={() => navigate(m.more!.path)}>
+                              <span className="t-callout ask__cite-subject">and {m.more.count} more</span>
+                            </button>
+                          </li>
+                        )}
                       </ul>
                     )}
                     {m.proposal && proposal(m.proposal)}

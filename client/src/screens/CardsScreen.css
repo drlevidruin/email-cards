@@ -12,25 +12,20 @@
 .cards__bar-space { flex: none; height: calc(88px + env(safe-area-inset-bottom)); }
 
 @media (min-width: 1024px) {
-  .cards { height: 100%; align-items: center; justify-content: center; padding: 0; }
+  /* One frame for every screen on the deck: Today, a card, the covers and the finish.
+     The card is the same height everywhere (440 at least, 620 at most, else the window less 300),
+     the bar sits 16px under its edge, and card and bar are centered together under the title row.
+     The side panel reads --stage-top too, so Up next starts level with the card's top edge. */
+  :root {
+    --deck-h: clamp(440px, calc(100dvh - 300px), 620px);
+    --stage-top: max(16px, calc((100dvh - var(--deck-h) - 153px) / 2));
+    --card-top: calc(var(--stage-top) + 73px);
+  }
+  .cards { height: 100%; align-items: center; justify-content: flex-start; padding: var(--stage-top) 0 0; }
   /* The card at a reading width: 600px, less in a narrow window, never under 440 */
   .cards__col { flex: none; width: min(600px, max(440px, 100% - 48px)); }
   .cards .topbar { padding: 0; }
   .cards .topbar__title { font-size: 15px; }
-  .cards__deck { flex: none; height: min(760px, 100dvh - 205px); padding: 0; margin-top: 12px; }
-  .cards__deck--today { height: min(760px, 100dvh - 205px); padding-bottom: 0; }
-  .cards__bar-space { height: 92px; }
-
-  /* A card on the deck: the card is as tall as its email (440 at least, the room at most) under the top bar,
-     and the action bar stays 16px above the window's bottom edge, so it never moves from card to card. */
-  .cards--live .cards__col { position: relative; flex: 1 1 auto; align-self: center; min-height: 0; }
-  .cards--live .cards__deck { display: block; flex: 1; height: auto; min-height: 0; margin-top: 12px; padding-bottom: 108px; container-type: size; }
-  .cards--live .deck { height: auto; }
-  .cards--live .deck__card--top { position: relative; inset: auto; }
-  .cards--live .deck__card--top .card { height: auto; min-height: min(440px, 100cqh); max-height: 100cqh; }
-  .cards--live .deck__card--behind .card { height: 100%; max-height: none; }
-  .cards--live .cardbody { flex: 0 1 auto; }
-  .cards--live .cardbody__box { height: auto; }
-  .cards--live .actionbar { position: absolute; left: 0; right: 0; bottom: 16px; width: auto; margin: 0; }
-  .cards--live .cards__bar-space { display: none; }
+  .cards__deck, .cards__deck--today { flex: none; height: var(--deck-h); padding: 0; margin-top: 12px; }
+  .cards__bar-space { height: 80px; }
 }

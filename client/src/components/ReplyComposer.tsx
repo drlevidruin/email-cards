@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import type { DraftItem, DraftTone, EmailThread, QuickActionChip } from '../lib/types';
 import { cleanSubject, counterpart, replyActions } from '../lib/stacks';
 import { firstName } from '../lib/utils';
+import { blanksOf, openBlanks } from '../lib/commitments';
 import { clearThreadCache } from '../lib/threadCache';
 import { goBack, navigate } from '../router';
 import { useStore } from '../store';
@@ -27,6 +28,8 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
   // Choose shows every suggested reply in full; Edit is the one reply you may change and send. A saved draft opens straight in Edit.
   const [mode, setMode] = useState<'choose' | 'edit'>(draftId ? 'edit' : 'choose');
   const [body, setBody] = useState('');
+  // The `[blanks]` the suggestion or agent draft put in, word for word. Only these hold Send back; brackets you type never do.
+  const [blanks, setBlanks] = useState<string[]>([]);
   // What you changed by hand: shown on Choose as `Your draft`, and saved to Drafts if you leave.
   const [yours, setYours] = useState('');
   const [drafting, setDrafting] = useState(false);
@@ -65,6 +68,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       draft.current = d;
       baseline.current = d.bodyText;
       setBody(d.bodyText);
+      setBlanks(blanksOf(d.bodyText));
       setMode('edit');
     } catch {
       if (mine === token.current) store.showToast(NOT_SAVED);
@@ -79,6 +83,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     if (chip.draftBody) {
       baseline.current = chip.draftBody;
       setBody(chip.draftBody);
+      setBlanks(blanksOf(chip.draftBody));
       setMode('edit');
     } else void generate({ instruction: chip.draftHint, tone: toneFor(chip.kind) });
   };
@@ -88,6 +93,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     void dropDraft();
     baseline.current = '';
     setBody(text);
+    setBlanks([]);
     setDrafting(false);
     setMode('edit');
   };
@@ -110,11 +116,12 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
           if (!d) return;
           // A nudge draft opened with fresh=1 was never saved by the user, so Cancel deletes it.
           loaded.current = !fresh;
-          if (!fresh) {
-            resumedId.current = d.id;
-            // A resumed draft is yours: Choose offers it as `Your draft`
-            setYours(d.bodyText);
-          }
+          if (!fresh) resumedId.current = d.id;
+          // Only a draft you wrote is `Your draft`; an agent draft stays the agent's until you change it
+          if (!fresh && d.createdBy === 'user') setYours(d.bodyText);
+          // An agent draft's blanks hold Send; in your own draft only the blanks a suggestion left count
+          const known = new Set(chips.flatMap((c) => blanksOf(c.draftBody ?? '')));
+          setBlanks(d.createdBy === 'user' ? blanksOf(d.bodyText).filter((b) => known.has(b)) : blanksOf(d.bodyText));
           draft.current = d;
           baseline.current = d.bodyText;
           setBody(d.bodyText);
@@ -161,7 +168,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
 
   const send = async () => {
     const text = body.trim();
-    if (!text || drafting || sending) return;
+    if (!text || drafting || sending || openBlanks(text, blanks) > 0) return;
     setSending(true);
     try {
       let d = draft.current;
@@ -237,6 +244,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
         to={to}
         subject={subject}
         body={body}
+        blanks={blanks}
         drafting={drafting}
         sending={sending}
         desktop={desktop}

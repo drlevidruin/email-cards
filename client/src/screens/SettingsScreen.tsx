@@ -75,7 +75,7 @@ export function SettingsScreen() {
         <h2 className="list-heading">Display</h2>
         <ul className="list">
           <li className="list__row settings__row">
-            <span className="settings__label" id="streak-label">Show streak</span>
+            <span className="settings__label" id="streak-label">Show your week</span>
             <button
               className={`switch${streak ? ' is-on' : ''}`}
               role="switch"

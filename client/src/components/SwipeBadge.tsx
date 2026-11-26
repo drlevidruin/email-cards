@@ -28,7 +28,7 @@ interface Props {
   labels: BadgeLabels;
   /** The direction a button or key is flying the card toward. */
   force: MotionValue<number>;
-  /** 1 while the first-card nudge runs: the wash stays faint. */
+  /** Not 0 while a teaching nudge runs: the wash stays faint. */
   nudging?: MotionValue<number>;
 }
 

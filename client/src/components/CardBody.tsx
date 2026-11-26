@@ -33,15 +33,9 @@ function starts(text: string, at: [number, number]): number[] {
   return out;
 }
 
-/** The room the text has when the foot (Read all, the file chip) is showing. On the desktop deck the card grows with its text, so the room is what is left of the deck. */
+/** The room the text has: the box's height, less the foot (Read all, the file chip) when it is not already showing. */
 function roomWithFoot(el: HTMLElement, footShown: boolean): number {
   const wrap = el.parentElement as HTMLElement;
-  const area = wrap.closest<HTMLElement>('.cards--live .cards__deck');
-  const card = wrap.closest<HTMLElement>('.card');
-  if (area && card && window.matchMedia('(min-width: 1024px)').matches) {
-    const chrome = card.offsetHeight - wrap.offsetHeight - (footShown ? FOOT : 0);
-    return area.clientHeight - parseFloat(getComputedStyle(area).paddingBottom) - chrome - FOOT;
-  }
   return wrap.clientHeight - (footShown ? 0 : FOOT);
 }
 
@@ -110,8 +104,6 @@ export function CardBody({ text, quote, attachments }: Props) {
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(el.parentElement as HTMLElement);
-    const area = el.closest('.cards--live .cards__deck');
-    if (area) watch.observe(area);
     return () => watch.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, quote, attachments.length]);

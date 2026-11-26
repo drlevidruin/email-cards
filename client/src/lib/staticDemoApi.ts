@@ -30,6 +30,10 @@ import type {
   ThreadDetailPayload,
 } from './types';
 import { buildDemoDataset } from './staticDemoData';
+import { buildTodo } from './todo';
+import { buildStack } from './stacks';
+import { dueParts, dueTime, isDueToday, isOverdue } from './time';
+import { counterpart } from './people';
 import { isSnapshot, ownerName, snapshotData, snapshotStoreKey } from './snapshot';
 
 const storageKey = () => (isSnapshot() ? snapshotStoreKey() : 'email_cards_static_demo_v3');
@@ -53,6 +57,43 @@ interface DemoStore {
   settings: AppSettings;
   undoLog: Record<string, UndoRecord>;
   proposals: Record<string, ActionProposal & { undoId?: string }>;
+}
+
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+/** One to ten as words, above that as digits. */
+function numWord(n: number, cap = false): string {
+  const w = n >= 0 && n <= 10 ? WORDS[n] : String(n);
+  return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+}
+function joinList(items: string[]): string {
+  return items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+}
+
+/** The short phrase Search uses for a thread: the thing itself, never the Goal title. */
+const PHRASES: Record<string, string> = {
+  thr_dec_01: "Maya's Addendum B",
+  thr_dec_02: "Kestrel's $75k",
+  thr_dec_03: 'Solis press proof',
+  thr_dec_04: "Elena's steel lintel",
+  thr_dec_05: "Devon's microsite call",
+  thr_dec_06: 'Samira Patel intro',
+  thr_dec_07: "Hannah's Stowe cabin",
+  thr_wait_04: "Owen's scorecard notes",
+  thr_wait_05: "Rachel's tax uploads",
+  thr_wait_06: "Mateo's dinner room",
+  thr_ref_01: 'Studio offsite pick',
+};
+function phraseOf(t: EmailThread): string {
+  return PHRASES[t.id] || `${counterpart(t).name.split(' ')[0]}'s email`;
+}
+/** A due label inside a sentence: lowercase today and tomorrow, full weekday names, `at` before a clock time. */
+function dueWords(label?: string | null): string {
+  const p = dueParts(label);
+  if (!p) return '';
+  const days: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+  const day = /^(today|tomorrow)$/i.test(p.day) ? p.day.toLowerCase() : days[p.day] || p.day;
+  if (!p.time) return day;
+  return /^(\d|noon)/i.test(p.time) ? `${day} at ${p.time}` : `${day} ${p.time}`;
 }
 
 function deepClone<T>(val: T): T {
@@ -247,7 +288,7 @@ function buildToneDraftBody(
 
   switch (tone) {
     case 'warm':
-      return `Hi ${firstName},\n\nThanks so much for the clear update on "${thread.subject}". I reviewed everything on my side and we are good to move forward.\n\nLet me know what works best for next steps!\n\nWarmly,\n${ownerName('Alex')}`;
+      return `Hi ${firstName},\n\nThanks so much for the clear update on "${thread.subject}". Let me know what works best for next steps!\n\nWarmly,\n${ownerName('Alex')}`;
     case 'executive':
       return `Hi ${firstName},\n\nApproved on my end regarding ${ask.slice(0, 120)}${ask.length > 120 ? '...' : ''}\n\nPlease proceed and send over final confirmation.\n\nBest,\n${ownerName('Alex')}`;
     case 'decline':
@@ -975,25 +1016,44 @@ export const staticDemoApi = {
 
     // 5. Priorities / deadlines / open asks
     if (lower.includes('priorit') || lower.includes('deadline') || lower.includes('ask') || lower.includes('urgent') || lower.includes('today')) {
-      const top = scoped
-        .filter((t) => t.bucket === 'decision')
-        .sort((a, b) => b.urgencyScore - a.urgencyScore)
-        .slice(0, 5);
-      const dueToday = top.filter((t) => /^today/i.test(t.deadlineLabel || '')).length;
-      const word = (n: number) => ['No', 'One', 'Two', 'Three', 'Four', 'Five'][n] ?? String(n);
-      const needs = `${word(top.length)} ${top.length === 1 ? 'email needs' : 'emails need'} you.`;
-      const due = dueToday > 0 ? ` ${word(dueToday)} ${dueToday === 1 ? 'is' : 'are'} due today.` : '';
+      const acct = payload.selectedAccountId || 'all';
+      const needs = buildStack('needs-you', store, acct);
+      const needThreads = needs.flatMap((d) => (d.type === 'thread' ? [d.thread] : []));
+      const byId = new Map(store.threads.map((t) => [t.id, t]));
+      // Everything due today, To-do rows and Needs you cards, each thread once, soonest first
+      const dueIds: string[] = [];
+      for (const r of buildTodo(store, acct).open) if (r.dueToday && !r.overdue) dueIds.push(r.threadId);
+      for (const t of needThreads) if (isDueToday(t.deadlineLabel) && !isOverdue(t.deadlineLabel) && !dueIds.includes(t.id)) dueIds.push(t.id);
+      const dueThreads = dueIds.flatMap((id) => (byId.get(id) ? [byId.get(id) as EmailThread] : []));
+      dueThreads.sort((a, b) => dueTime(a.deadlineLabel) - dueTime(b.deadlineLabel));
+      const dueList = dueThreads.map((t) => {
+        const time = dueParts(t.deadlineLabel)?.time;
+        return time ? `${phraseOf(t)} by ${time}` : phraseOf(t);
+      });
+      const next = needThreads.find((t) => !isDueToday(t.deadlineLabel) && !isOverdue(t.deadlineLabel) && !/^waiting/i.test(t.deadlineLabel || '') && dueParts(t.deadlineLabel));
+      const nextText = next ? dueWords(next.deadlineLabel) : '';
+      const n = needs.length;
+      const sentence =
+        dueList.length > 0
+          ? `${numWord(dueList.length, true)} ${dueList.length === 1 ? 'thing is' : 'things are'} due today: ${joinList(dueList)}. ${
+              n === 0 ? 'Nothing else needs you.' : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you in all.`
+            }`
+          : `Nothing is due today. ${
+              n === 0 ? 'Nothing needs you.' : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you${nextText ? `; the next is due ${nextText}` : ''}.`
+            }`;
+      const cited = [...dueThreads, ...needThreads.filter((t) => !dueIds.includes(t.id)).slice(0, 3)];
+      const more = needThreads.filter((t) => !dueIds.includes(t.id)).length - Math.min(3, needThreads.filter((t) => !dueIds.includes(t.id)).length);
       return {
         id: uid('chat'),
         role: 'assistant',
-        content:
-          top.length > 0 ? needs + due : 'Nothing needs you right now.',
-        citations: top.map((t) => ({
+        content: sentence,
+        citations: cited.map((t) => ({
           threadId: t.id,
           subject: t.subject,
           accountLabel: t.accountLabel,
         })),
-        toolTrace: [{ tool: 'search_and_filter_threads', summary: `Ranked ${top.length} decisions` }],
+        more: more > 0 ? { count: more, path: '/cards/needs-you' } : undefined,
+        toolTrace: [{ tool: 'search_and_filter_threads', summary: `Counted ${dueThreads.length} due today and ${n} needing you` }],
         timestamp: now,
       };
     }

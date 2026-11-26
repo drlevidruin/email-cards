@@ -1,10 +1,4 @@
-.segbar { flex: none; display: flex; gap: 3px; height: 3px; margin: 6px 16px 0; }
-.segbar--empty { background: transparent; }
-.segbar__seg { flex: 1; min-width: 0; border-radius: 1.5px; background: var(--line-strong); }
-.segbar__seg.is-on { background: var(--ink); }
-.segbar__seg.is-new { animation: seg-pulse 200ms var(--ease); }
-.segbar--plain { display: block; overflow: hidden; border-radius: 1.5px; background: var(--line-strong); }
-.segbar__fill { height: 100%; border-radius: 1.5px; background: var(--ink); transition: width 250ms var(--ease); }
-@keyframes seg-pulse { 0% { background: var(--ink-3); } 100% { background: var(--ink); } }
+.segbar { flex: none; height: 3px; margin: 6px 16px 0; overflow: hidden; border-radius: 2px; background: rgba(28, 25, 20, 0.08); }
+.segbar.is-hidden { visibility: hidden; }
+.segbar__fill { height: 100%; border-radius: 2px; background: var(--ink-2); transition: width 320ms var(--ease); }
 @media (min-width: 1024px) { .segbar { margin: 6px 0 0; } }
-@media (prefers-reduced-motion: reduce) { .segbar__seg.is-new { animation: none; } }

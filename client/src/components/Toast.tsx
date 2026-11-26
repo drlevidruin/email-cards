@@ -14,8 +14,8 @@ function place(): Spot {
   const bar = bars[bars.length - 1]?.getBoundingClientRect();
   const main = document.querySelector('.dshell__main')?.getBoundingClientRect();
   if (bar && bar.height > 0 && main && window.matchMedia('(min-width: 1024px)').matches) {
-    // On a laptop every toast with a bar sits in one place: centered in the content, 12px above where the deck's bar stands (76px tall, 16px off the bottom)
-    return { top: false, style: { top: 'auto', bottom: 16 + 76 + 12, left: Math.round(main.left), right: Math.round(window.innerWidth - main.right) } };
+    // On a laptop every toast with a bar sits in one place: centered in the content, 12px above where the deck's bar stands (64px tall, 16px off the bottom)
+    return { top: false, style: { top: 'auto', bottom: 16 + 64 + 12, left: Math.round(main.left), right: Math.round(window.innerWidth - main.right) } };
   }
   if (bar && bar.height > 0) {
     return {

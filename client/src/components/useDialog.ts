@@ -2,7 +2,14 @@ import { useEffect, useRef, type RefObject } from 'react';
 
 const FOCUSABLE = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** Modal focus handling: focus the first control, keep Tab inside, close on Escape, give focus back on close. */
+// Whether the last input was the keyboard. A dialog opened by touch or a click shows nothing selected; one opened by a key focuses its first control.
+let byKeyboard = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', () => { byKeyboard = true; }, true);
+  window.addEventListener('pointerdown', () => { byKeyboard = false; }, true);
+}
+
+/** Modal focus handling: focus the first control (when opened by a key), keep Tab inside, close on Escape, give focus back on close. */
 export function useDialog(ref: RefObject<HTMLElement>, onClose: () => void) {
   const close = useRef(onClose);
   close.current = onClose;
@@ -12,7 +19,7 @@ export function useDialog(ref: RefObject<HTMLElement>, onClose: () => void) {
     if (!el) return;
     const opener = document.activeElement as HTMLElement | null;
     const items = () => Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
-    (items()[0] ?? el).focus();
+    (byKeyboard ? items()[0] ?? el : el).focus({ preventScroll: true });
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
