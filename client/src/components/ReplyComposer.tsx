@@ -212,14 +212,20 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       <p className="composer__from">
         From {thread.accountLabel} to {to.email}
       </p>
+      {thread.distilledAsk && (
+        <div className="composer__goal">
+          <span className="composer__goal-label">Goal</span>
+          <p className="composer__goal-text">{thread.distilledAsk}</p>
+        </div>
+      )}
       <div className="composer__pills">
         {chips.map((c) => (
           <button key={c.id} className={`pill${sel === c.id ? ' is-on' : ''}`} onClick={() => pick(c.id)}>
-            {c.label}
+            <span className="pill__label">{c.label}</span>
           </button>
         ))}
         <button className={`pill${sel === OWN ? ' is-on' : ''}`} onClick={() => pick(OWN)}>
-          Write my own
+          <span className="pill__label">Write my own</span>
         </button>
       </div>
       <div className="composer__body">

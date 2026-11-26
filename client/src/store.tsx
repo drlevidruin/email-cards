@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { api } from './lib/api';
 import type { AgentChatMessage, EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
-import { clearThreadCache } from './lib/threadCache';
+import { pruneThreadCache } from './lib/threadCache';
+import { logUndone, resetToday, seedSample } from './lib/progress';
 import { NOT_SAVED, useCardActions } from './storeActions';
 import type { CountKey, Data, Exiting, Session, Toast, UndoEntry } from './storeTypes';
 
@@ -48,6 +49,7 @@ function newSession(): Session {
     dismissed: new Set(),
     counts: { replied: 0, done: 0, later: 0, bookmarked: 0, blocked: 0, allowed: 0, moved: 0 },
     coverPending: null,
+    todayDone: false,
   };
 }
 
@@ -74,7 +76,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!silent) setStatus('loading');
     try {
       const b = await api.bootstrap();
-      clearThreadCache();
+      pruneThreadCache(b.threads);
       setData({
         accounts: b.accounts,
         threads: b.threads,
@@ -95,6 +97,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    seedSample();
     void load(false);
   }, [load]);
 
@@ -144,6 +147,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         entry.ids.forEach((id) => sess.dismissed.delete(id));
         sess.counts[entry.count] = Math.max(0, sess.counts[entry.count] - entry.n);
       }
+      const undoneStack = entry.sessionKey.split('|')[0] as StackId;
+      if (entry.sessionKey && entry.ids.length > 0) logUndone(undoneStack, entry.ids);
       bump();
     } catch {
       showToast(NOT_SAVED);
@@ -160,6 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       refresh: () => load(true),
       resetSessions: () => {
         sessions.current.clear();
+        resetToday();
         setChat([]);
         setExiting(null);
         undoRef.current = null;

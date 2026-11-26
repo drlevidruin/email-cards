@@ -8,6 +8,7 @@ import { useIsDesktop } from '../lib/useIsDesktop';
 import { navigate, useRoute } from '../router';
 import { useStore } from '../store';
 import { ActionBar } from '../components/ActionBar';
+import { BookmarkButton } from '../components/BookmarkButton';
 import { PageShell } from '../components/PageShell';
 import { ThreadView } from '../components/ThreadView';
 import { useThreadActions } from '../components/useThreadActions';
@@ -50,7 +51,7 @@ export function AllMailScreen() {
 
   const wanted = route.segments[0] === 'all' ? route.segments[1] : undefined;
   const selected = desktop && rows ? rows.find((t) => t.id === wanted) ?? rows[0] : undefined;
-  const { act, sheet } = useThreadActions(selected, false);
+  const { act, toggleBookmark, sheet } = useThreadActions(selected, false);
 
   useEffect(() => {
     if (desktop && selected && selected.id !== wanted) navigate(`/all/${selected.id}`, { replace: true });
@@ -131,10 +132,13 @@ export function AllMailScreen() {
           {selected && (
             <>
               <div className="mail__thread">
+                <div className="mail__tools">
+                  <BookmarkButton on={selected.isStarred} onToggle={toggleBookmark} />
+                </div>
                 <ThreadView key={selected.id} threadId={selected.id} />
               </div>
               <div className="mail__bar">
-                <ActionBar variant={selected.isStarred ? 'bookmarked' : 'default'} active={null} onAction={act} plainLabels />
+                <ActionBar variant="default" active={null} onAction={act} plainLabels />
               </div>
             </>
           )}

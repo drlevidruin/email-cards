@@ -2,10 +2,10 @@ import { Sheet } from './Sheet';
 import './ShortcutsDialog.css';
 
 const ROWS: [string, string][] = [
-  ['Done', '←'],
-  ['Later', '↓'],
-  ['Bookmark', '↑'],
-  ['Reply', '→ or Enter'],
+  ['Done', '→ or E'],
+  ['Later', '← or L'],
+  ['Reply', 'R or Enter'],
+  ['Bookmark', 'B'],
   ['Built-in reply', '1 2 3'],
   ['Undo', 'Z'],
   ['Menu', 'M'],

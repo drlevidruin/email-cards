@@ -6,6 +6,8 @@ export interface Session {
   dismissed: Set<string>;
   counts: Record<CountKey, number>;
   coverPending: boolean | null;
+  /** The Today card has been dealt with this session (Start was pressed). */
+  todayDone: boolean;
 }
 
 export interface Toast {

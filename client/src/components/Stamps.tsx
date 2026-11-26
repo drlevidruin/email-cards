@@ -1,26 +1,34 @@
+import { Ban, Check, Clock, type LucideIcon } from 'lucide-react';
 import { motion, type MotionValue } from 'framer-motion';
-import type { Dir } from './ActionBar';
 import './Card.css';
 
+type Side = 'left' | 'right';
+
 interface Props {
-  opacity: Record<Dir, MotionValue<number>>;
-  labels: Partial<Record<Dir, string>>;
-  accent: Dir;
+  opacity: Record<Side, MotionValue<number>>;
+  labels: Record<Side, string>;
+  accent: Side;
 }
+
+const ICONS: Record<string, LucideIcon> = { Done: Check, Allow: Check, Later: Clock, Block: Ban };
 
 export function Stamps({ opacity, labels, accent }: Props) {
   return (
     <>
-      {(Object.keys(labels) as Dir[]).map((dir) => (
-        <motion.div
-          key={dir}
-          className={`stamp stamp--${dir}${dir === accent ? ' stamp--accent' : ''}`}
-          style={{ opacity: opacity[dir] }}
-          aria-hidden="true"
-        >
-          {labels[dir]}
-        </motion.div>
-      ))}
+      {(['right', 'left'] as Side[]).map((side) => {
+        const Icon = ICONS[labels[side]];
+        return (
+          <motion.div
+            key={side}
+            className={`stamp stamp--${side}${side === accent ? ' stamp--accent' : ''}`}
+            style={{ opacity: opacity[side] }}
+            aria-hidden="true"
+          >
+            {Icon && <Icon size={16} strokeWidth={2} />}
+            {labels[side]}
+          </motion.div>
+        );
+      })}
     </>
   );
 }

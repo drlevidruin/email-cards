@@ -977,6 +977,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 96,
       distilledAsk: 'Sign the venue addendum',
+      goalQuote: 'Could you confirm the $4,200 AV lighting cap and reply with approval on Addendum B by 4:00 PM today so I can lock the main gallery and release the backup bidder?',
       aiSummaryBullets: [
         'The venue holds a backup booking for Dec 12.',
         'Sign by 4 PM today or lose the date.',
@@ -1022,6 +1023,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 93,
       distilledAsk: 'Confirm your $75,000 investment',
+      goalQuote: 'Please reply with "Full $75k", a partial amount, or "Pass" before 5:30 PM today so we keep your slot intact.',
       aiSummaryBullets: [
         'Kestrel AI is raising more than it planned.',
         'Say yes, partial, or pass by 5:30 PM.',
@@ -1067,6 +1069,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 89,
       distilledAsk: 'Approve the packaging proof',
+      goalQuote: 'Can you review the updated die-line PDF attached and reply to greenlight Option B?',
       aiSummaryBullets: [
         'Leadership picked Option B.',
         'Miss noon tomorrow and printing slips two weeks.',
@@ -1112,6 +1115,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 86,
       distilledAsk: 'Approve the $2,850 beam change',
+      goalQuote: 'Following up quickly: if you approve the $2,850 steel lintel change order by tomorrow at 3:00 PM, I can stamp and upload Sheet S2 before the Thursday morning city intake cutoff and keep our January demo date intact.',
       aiSummaryBullets: [
         'The city cleared everything except one beam.',
         'The upgrade costs $2,850 more.',
@@ -1157,6 +1161,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 84,
       distilledAsk: 'Choose the website hero build',
+      goalQuote: 'Which build should we present at Thursday\'s 2:00 PM check-in with Priya?',
       aiSummaryBullets: [
         'Build B ships Friday and works on every phone.',
         'Build A looks better but ships Tuesday.',
@@ -1202,6 +1207,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 79,
       distilledAsk: 'Offer two times for Samira\'s call',
+      goalQuote: 'Can you send two 30-minute slots next week so I can lock the intro?',
       aiSummaryBullets: [
         'Daniel wants to introduce you to Samira.',
         'She is raising a $16M round in January.',
@@ -1247,6 +1253,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'decision',
       urgencyScore: 74,
       distilledAsk: 'Pick your arrival night and lift pass',
+      goalQuote: 'Are you driving up Thursday night or Friday morning?',
       aiSummaryBullets: [
         'The chalet is booked for Jan 16 to 19.',
         'Hannah needs answers by Friday evening.',
@@ -1294,6 +1301,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 72,
       distilledAsk: 'Nudge Marcus for the lighting quote',
+      goalQuote: 'Could you send over the revised itemized quote under $4,200 so I can sign off with Maya?',
       aiSummaryBullets: [
         'You need it to finish the venue addendum.',
         'No reply in four days.',
@@ -1339,6 +1347,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 68,
       distilledAsk: 'Nudge Tessa for the Q4 numbers',
+      goalQuote: 'Once Carta\'s Q4 cap table export lands, could you share the finalized net IRR table and remaining dry powder figure so I can finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check?',
       aiSummaryBullets: [
         'The data she needed has arrived.',
         'It decides today\'s $75,000 investment.',
@@ -1384,6 +1393,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 65,
       distilledAsk: 'Nudge Claire for the contract redline',
+      goalQuote: 'Let me know once you have clean markup we can return to Jordan\'s team.',
       aiSummaryBullets: [
         'All terms are already agreed.',
         'Printing starts this week.',
@@ -1429,6 +1439,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 61,
       distilledAsk: 'Send Owen your interview scorecards',
+      goalQuote: 'Whenever you get a moment before Thursday morning, drop your scorecard notes in the doc so we can extend an offer before competing timelines close.',
       aiSummaryBullets: [
         'Owen wants to make an offer this week.',
         'Lina is strong on type, Theo on shaders.',
@@ -1474,6 +1485,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 58,
       distilledAsk: 'Upload your tax documents by Friday',
+      goalQuote: 'To finalize your Q4 safe-harbor estimated payment without overpaying, please upload two items to the secure portal by Friday:',
       aiSummaryBullets: [
         'Your receipts are already saved.',
         'Rachel returns vouchers within a day.',
@@ -1519,6 +1531,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 52,
       distilledAsk: 'Confirm 14 guests and the walk-through',
+      goalQuote: '14 portfolio founders and co-investors are confirmed, including Priya (Kestrel AI) and Daniel Park. Since your Delta flight lands Wednesday afternoon, we can do a quick walk-through Thursday morning.',
       aiSummaryBullets: [
         'The dinner room is minutes from the keynote.',
         'Priya and Daniel are both coming.',
@@ -1564,6 +1577,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'waiting',
       urgencyScore: 46,
       distilledAsk: 'Pick the team offsite location',
+      goalQuote: 'No rush this week; let\'s pick a winner over Monday coffee.',
       aiSummaryBullets: [
         'Troutbeck is easy to reach by train.',
         'Sea Ranch suits West Coast client visits.',
@@ -1608,6 +1622,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'screener',
       urgencyScore: 76,
       distilledAsk: 'Review the Veridian teaser',
+      goalQuote: 'I would love to share a 2-page technical overview and get 20 minutes of your candid feedback on our Series A narrative.',
       aiSummaryBullets: [
         'Daniel Park sent her your way.',
         'Her warehouse robots are already working.',
@@ -1637,6 +1652,7 @@ export function buildDemoDataset(): DemoDataset {
       bucket: 'screener',
       urgencyScore: 48,
       distilledAsk: 'Accept the keynote intro call',
+      goalQuote: 'Would you be open to a quick 10-minute call next week?',
       aiSummaryBullets: [
         'A 900-person design conference in San Francisco.',
         'They want a 10 minute call next week.',

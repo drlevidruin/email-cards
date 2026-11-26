@@ -1,0 +1,53 @@
+.cardmail {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+.cardmail::-webkit-scrollbar { width: 6px; }
+.cardmail::-webkit-scrollbar-track { background: transparent; }
+.cardmail::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+.cardmail__sender { display: flex; align-items: center; gap: 12px; }
+.cardmail__sender .bookmark { margin: -4px -10px -4px 0; }
+.cardmail__who { flex: 1; min-width: 0; }
+.cardmail__name { font-size: 15px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cardmail__meta { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.3; color: var(--ink-3); white-space: nowrap; }
+.cardmail__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.cardmail__subject { margin-top: 12px; font-size: 17px; font-weight: 600; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.cardmail__subject--headline { font-size: 21px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
+.cardmail__subject--first { margin-top: 0; }
+.cardmail__wrote { margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.cardmail__body { margin-top: 8px; font-size: 16px; line-height: 1.6; color: var(--ink-body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.card__evidence {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: var(--accent-mark);
+  color: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.cardmail .tv__files { margin-top: 16px; }
+.cardmail__more {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; min-height: 44px; margin-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 15px; font-weight: 600; color: var(--ink-2); text-align: left;
+}
+.cardmail__more svg { flex: none; color: var(--ink-3); transition: transform 200ms var(--ease); }
+.cardmail__more svg.is-open { transform: rotate(180deg); }
+.cardmail__earlier { padding: 14px 0; border-top: 1px solid var(--line); }
+.cardmail__earlier-head { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.cardmail__earlier-body { margin-top: 6px; font-size: 15px; line-height: 1.55; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (min-width: 900px) {
+  .cardmail { padding: 20px 32px 28px; user-select: text; -webkit-user-select: text; }
+  .cardmail__body, .cardmail__earlier-body { max-width: 640px; }
+}
+/* A mouse can select the email text; the band and the tray keep the grab cursor */
+@media (min-width: 900px) and (pointer: fine) {
+  .cardmail { cursor: text; }
+  .cardmail button { cursor: pointer; }
+}

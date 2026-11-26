@@ -5,7 +5,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(21, 23, 28, 0.4);
+  background: var(--scrim);
   animation: scrim-in 200ms var(--ease);
 }
 .sheet {

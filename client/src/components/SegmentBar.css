@@ -1,0 +1,10 @@
+.segbar { flex: none; display: flex; gap: 3px; height: 4px; margin: 0 16px; }
+.segbar--empty { background: transparent; }
+.segbar__seg { flex: 1; min-width: 0; border-radius: 2px; background: var(--line); }
+.segbar__seg.is-on { background: var(--ink); }
+.segbar__seg.is-new { animation: seg-pulse 420ms var(--ease); }
+.segbar--plain { display: block; overflow: hidden; border-radius: 2px; background: var(--line); }
+.segbar__fill { height: 100%; border-radius: 2px; background: var(--ink); transition: width 250ms var(--ease); }
+@keyframes seg-pulse { 0% { transform: scaleY(1); } 40% { transform: scaleY(2); } 100% { transform: scaleY(1); } }
+@media (min-width: 900px) { .segbar { margin: 0; } }
+@media (prefers-reduced-motion: reduce) { .segbar__seg.is-new { animation: none; } }

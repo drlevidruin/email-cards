@@ -1,15 +1,14 @@
-import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   animate,
   motion,
   useMotionValue,
   useReducedMotion,
   useTransform,
-  type MotionValue,
   type PanInfo,
 } from 'framer-motion';
 import type { DeckItem } from '../lib/stacks';
-import type { GmailAccount } from '../lib/types';
+import type { EmailThread, GmailAccount } from '../lib/types';
 import type { Dir } from './ActionBar';
 import { EmailCard } from './EmailCard';
 import { ScreenerCard } from './ScreenerCard';
@@ -26,15 +25,22 @@ interface Props {
   items: DeckItem[];
   /** Id of a card that should leave to the right as soon as it shows (a reply was just sent). */
   exitingId?: string;
+  /** The two swipe directions that do something. */
   enabled: Dir[];
+  /** Swipes that fly the card out. A swipe left in the other stacks opens the Later sheet and the card stays. */
   flyDirs: Dir[];
-  labels: Partial<Record<Dir, string>>;
-  accent: Dir;
+  labels: { left: string; right: string };
   desktop: boolean;
+  /** Stacks that do not reply from the card (newsletters, receipts). */
+  noReplies?: boolean;
   accounts?: GmailAccount[];
+  onBookmark?: (thread: EmailThread) => void;
   onDirection: (dir: Dir, item: DeckItem) => void;
   onActive: (dir: Dir | null) => void;
   onExitDone: () => void;
+  /** Once, on the very first card ever: it slides a little to the right and back, to show the swipe. */
+  nudge?: boolean;
+  onNudged?: () => void;
 }
 
 const SPRING = { type: 'spring', stiffness: 500, damping: 40 } as const;
@@ -43,7 +49,7 @@ const COMMIT_VELOCITY = 600;
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
-  const { items, exitingId, enabled, flyDirs, labels, accent, desktop, accounts, onDirection, onActive, onExitDone } = props;
+  const { items, exitingId, enabled, flyDirs, labels, desktop, noReplies, accounts, onBookmark, onDirection, onActive, onExitDone, nudge, onNudged } = props;
   const reduced = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -59,12 +65,12 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
   const nextInk = useTransform(progress, [0.5, 1], [0, 1]);
   const sliverScale = useTransform(progress, [0, 1], [0.92, 0.96]);
   const sliverY = useTransform(progress, [0, 1], [20, 10]);
-  const rotate = useTransform(x, [-300, 300], reduced ? [0, 0] : [-8, 8]);
-  const stamps: Record<Dir, MotionValue<number>> = {
-    right: useTransform(x, (v) => clamp01(v / COMMIT_OFFSET)),
+  const rotate = useTransform(x, [-300, 300], reduced ? [0, 0] : [-6, 6]);
+  // While the first-card nudge plays, its Done stamp shows at full strength instead of the 40% a 44px slide would give.
+  const nudging = useMotionValue(0);
+  const stamps = {
+    right: useTransform([x, nudging], ([v, n]: number[]) => (n ? clamp01(v / 6) : clamp01(v / COMMIT_OFFSET))),
     left: useTransform(x, (v) => clamp01(-v / COMMIT_OFFSET)),
-    up: useTransform(y, (v) => clamp01(-v / COMMIT_OFFSET)),
-    down: useTransform(y, (v) => clamp01(v / COMMIT_OFFSET)),
   };
 
   // A new top card starts from rest; reset before paint so it never shows at the old offset.
@@ -122,26 +128,37 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
     }
   }, [exitingId, topId, flyOut, onExitDone]);
 
-  const dirOf = (info: PanInfo): Dir | null => {
-    const { x: ox, y: oy } = info.offset;
-    return Math.abs(ox) >= Math.abs(oy) ? (ox > 0 ? 'right' : 'left') : oy > 0 ? 'down' : 'up';
-  };
+  useEffect(() => {
+    if (!nudge || !topId || reduced) return;
+    const t = window.setTimeout(async () => {
+      if (busy.current || moved.current > 0) return;
+      onNudged?.();
+      nudging.set(1);
+      await animate(x, 44, { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] });
+      if (!busy.current && moved.current === 0) await animate(x, 0, { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] });
+      nudging.set(0);
+    }, 900);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nudge, topId, reduced, x, nudging]);
+
+  const dirOf = (info: PanInfo): Dir => (info.offset.x > 0 ? 'right' : 'left');
 
   const onDrag = (_: unknown, info: PanInfo) => {
-    moved.current = Math.max(moved.current, Math.hypot(info.offset.x, info.offset.y));
+    moved.current = Math.max(moved.current, Math.abs(info.offset.x));
     const d = dirOf(info);
-    const far = Math.hypot(info.offset.x, info.offset.y) > 40;
-    onActive(d && far && enabled.includes(d) ? d : null);
+    onActive(Math.abs(info.offset.x) > 40 && enabled.includes(d) ? d : null);
   };
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
     onActive(null);
     const d = dirOf(info);
-    if (!d) return springBack();
-    const horizontal = d === 'left' || d === 'right';
-    const off = Math.abs(horizontal ? info.offset.x : info.offset.y);
-    const vel = Math.abs(horizontal ? info.velocity.x : info.velocity.y);
-    const commit = off > COMMIT_OFFSET || (vel > COMMIT_VELOCITY && off > 24);
+    const off = Math.abs(info.offset.x);
+    const vel = Math.abs(info.velocity.x);
+    // A fast release only counts when it moves the way the card was dragged. A flick back toward the middle always springs back.
+    const fast = vel > COMMIT_VELOCITY;
+    const sameWay = Math.sign(info.velocity.x) === Math.sign(info.offset.x);
+    const commit = fast ? sameWay && off > 24 : off > COMMIT_OFFSET;
     if (commit && enabled.includes(d)) trigger(d);
     else springBack();
   };
@@ -151,12 +168,12 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
       {items.slice(0, 3).map((item, role) => {
         const account = accounts && accounts.length > 1 ? accounts.find((a) => a.id === (item.type === 'thread' ? item.thread.accountId : item.sender.accountId)) : undefined;
         const top = role === 0;
-        const overlay: ReactNode = top ? <Stamps opacity={stamps} labels={labels} accent={accent} /> : null;
+        const overlay: ReactNode = top ? <Stamps opacity={stamps} labels={labels} accent="right" /> : null;
         const body =
           role === 2 ? null : item.type === 'thread' ? (
-            <EmailCard thread={item.thread} desktop={desktop} account={account} overlay={overlay} fromDeck />
+            <EmailCard thread={item.thread} desktop={desktop} account={account} overlay={overlay} noReplies={noReplies} onBookmark={top ? onBookmark : undefined} fromDeck />
           ) : (
-            <ScreenerCard sender={item.sender} desktop={desktop} account={account} overlay={overlay} />
+            <ScreenerCard sender={item.sender} account={account} desktop={desktop} overlay={overlay} />
           );
         const behind = top ? {} : { inert: '' as unknown as boolean, 'aria-hidden': true };
         return (
@@ -170,8 +187,7 @@ export const Deck = forwardRef<DeckHandle, Props>(function Deck(props, ref) {
                   ? { scale: nextScale, y: nextY, zIndex: 2 }
                   : { scale: sliverScale, y: sliverY, zIndex: 1 }
             }
-            drag={top}
-            dragDirectionLock
+            drag={top ? 'x' : false}
             dragMomentum={false}
             dragElastic={1}
             onDrag={top ? onDrag : undefined}

@@ -1,0 +1,28 @@
+.band {
+  flex: none;
+  padding: 16px 20px 18px;
+  border-bottom: 1px solid var(--accent-line);
+  background: var(--accent-tint);
+}
+.band--receipt { border-bottom-color: var(--line); background: var(--surface-2); }
+.band__row { display: flex; align-items: flex-start; gap: 6px; }
+.band__grow { flex: 1; }
+.band--receipt .band__row { justify-content: space-between; gap: 12px; }
+.band__sep { font-size: 13px; font-weight: 600; line-height: 18px; color: var(--ink-3); }
+.band .bookmark { margin: -13px -10px -7px 0; }
+.band__label { font-size: 13px; font-weight: 600; line-height: 18px; color: var(--accent); }
+.band__goal {
+  margin-top: 4px;
+  font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink);
+  overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.band__due { font-size: 13px; font-weight: 600; line-height: 18px; color: var(--ink-2); }
+.band__due--hot { color: var(--danger); }
+.band__amount { font-size: 30px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.band--receipt .bookmark { margin: -6px -10px -5px 0; }
+.band__line { margin-top: 4px; font-size: 14px; color: var(--ink-2); }
+
+@media (min-width: 900px) {
+  .band { padding: 24px 32px; }
+}

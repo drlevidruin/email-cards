@@ -1,60 +1,54 @@
-import { Ban, Bookmark, BookmarkMinus, Check, Clock, Newspaper, Reply, type LucideIcon } from 'lucide-react';
+import { Ban, Check, Clock, Newspaper, Reply, type LucideIcon } from 'lucide-react';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import './ActionBar.css';
 
+/** Swipes. Right is the main move, left is the other one. */
 export type Dir = 'left' | 'right' | 'up' | 'down';
-export type BarVariant = 'default' | 'bookmarked' | 'senders';
+/** The bar's three slots, laid out like the swipes. */
+export type BarAction = 'left' | 'middle' | 'right';
+export type BarVariant = 'default' | 'plain' | 'senders';
 
 interface Item {
-  dir: Dir;
+  slot: BarAction;
   label: string;
   Icon: LucideIcon;
   primary?: boolean;
 }
 
-const ARROW: Record<Dir, string> = { left: '← ', down: '↓ ', up: '↑ ', right: '' };
-
 function items(variant: BarVariant): Item[] {
   if (variant === 'senders') {
     return [
-      { dir: 'left', label: 'Block', Icon: Ban },
-      { dir: 'down', label: 'Newsletters', Icon: Newspaper },
-      { dir: 'right', label: 'Allow', Icon: Check, primary: true },
+      { slot: 'left', label: 'Block', Icon: Ban },
+      { slot: 'middle', label: 'Newsletters', Icon: Newspaper },
+      { slot: 'right', label: 'Allow', Icon: Check, primary: true },
     ];
   }
-  return [
-    { dir: 'left', label: 'Done', Icon: Check },
-    { dir: 'down', label: 'Later', Icon: Clock },
-    variant === 'bookmarked'
-      ? { dir: 'up', label: 'Unbookmark', Icon: BookmarkMinus }
-      : { dir: 'up', label: 'Bookmark', Icon: Bookmark },
-    { dir: 'right', label: 'Reply', Icon: Reply, primary: true },
-  ];
+  const out: Item[] = [{ slot: 'left', label: 'Later', Icon: Clock }];
+  if (variant === 'default') out.push({ slot: 'middle', label: 'Reply', Icon: Reply });
+  out.push({ slot: 'right', label: 'Done', Icon: Check, primary: true });
+  return out;
 }
 
 interface Props {
   variant: BarVariant;
   active: Dir | null;
-  /** No arrow glyphs, for screens where the arrow keys do nothing. */
+  /** No key hints in the labels, for screens where the arrow keys do nothing. */
   plainLabels?: boolean;
-  onAction: (dir: Dir) => void;
+  onAction: (slot: BarAction) => void;
 }
 
 export function ActionBar({ variant, active, plainLabels, onAction }: Props) {
   const desktop = useIsDesktop();
+  const list = items(variant);
   return (
-    <div className="actionbar no-select">
-      {items(variant).map(({ dir, label, Icon, primary }) => {
-        const text = desktop && !plainLabels ? (dir === 'right' ? `${label} →` : `${ARROW[dir]}${label}`) : label;
-        const cls = ['actionbar__btn', primary && 'actionbar__btn--primary', active === dir && 'is-active']
-          .filter(Boolean)
-          .join(' ');
+    <div className={`actionbar actionbar--${variant} no-select`}>
+      {list.map(({ slot, label, Icon, primary }) => {
+        const text = desktop && !plainLabels ? (slot === 'left' ? `← ${label}` : slot === 'right' ? `${label} →` : label) : label;
+        const cls = ['actionbar__btn', primary && 'actionbar__btn--primary', active === slot && 'is-active'].filter(Boolean).join(' ');
         return (
-          <button key={dir} className="actionbar__item" onClick={() => onAction(dir)}>
-            <span className={cls}>
-              <Icon size={22} strokeWidth={2} />
-            </span>
-            <span className="actionbar__label">{text}</span>
+          <button key={slot} className={cls} onClick={() => onAction(slot)}>
+            <Icon size={20} strokeWidth={2} />
+            <span>{text}</span>
           </button>
         );
       })}

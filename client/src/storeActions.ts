@@ -1,6 +1,7 @@
 import { useCallback, useMemo, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { api } from './lib/api';
 import { sentToast } from './lib/snapshot';
+import { logMoves, logUndone } from './lib/progress';
 import type { EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
 import type { CountKey, Data, Exiting, Session, Snap, UndoEntry } from './storeTypes';
@@ -57,6 +58,14 @@ export function useCardActions(core: Core) {
         spec.ids.forEach((id) => sess.dismissed.add(id));
         sess.counts[spec.count] += n;
       }
+      if (spec.stack && n > 0) {
+        const stack = spec.stack;
+        const accountOf = (id: string) =>
+          prev.threads.find((t) => t.id === id)?.accountId ?? prev.screener.find((x) => x.email === id)?.accountId ?? '';
+        logMoves(spec.ids.map((id) => ({ id, stack, account: accountOf(id) })));
+        // A short tap on the phones that have one; it does nothing on an iPhone
+        if (['done', 'later', 'allowed', 'blocked'].includes(spec.count)) navigator.vibrate?.(8);
+      }
       patchSnap(spec.local);
       bump();
       try {
@@ -80,6 +89,7 @@ export function useCardActions(core: Core) {
         if (sess) {
           spec.ids.forEach((id) => sess.dismissed.delete(id));
           sess.counts[spec.count] -= n;
+          if (spec.stack) logUndone(spec.stack, spec.ids);
         }
         // Put back only what this action changed, so an action that saved in the meantime stays.
         const was = (id: string) => prev.threads.find((x) => x.id === id);
@@ -192,6 +202,7 @@ export function useCardActions(core: Core) {
         const sess = session(lastStack);
         sess.dismissed.add(t.id);
         sess.counts.replied += 1;
+        logMoves([{ id: t.id, stack: lastStack, account: t.accountId, reply: true }]);
         patchSnap((s) => ({ ...s, threads: s.threads.map((x) => (x.id === t.id ? { ...x, isArchived: true, bucket: 'archived' } : x)) }));
         if (!keepCard) setExiting({ thread: t });
       }

@@ -9,8 +9,8 @@
   pointer-events: none;
   z-index: 60;
 }
-/* sits 12px above the action bar: 12px padding + 64px button + 8px gap + 16px label */
-.toast-wrap--bar { bottom: calc(120px + env(safe-area-inset-bottom)); }
+/* sits 12px above the action bar: 10px padding + 54px button + 14px padding */
+.toast-wrap--bar { bottom: calc(90px + env(safe-area-inset-bottom)); }
 .toast-wrap--top { top: calc(60px + env(safe-area-inset-top)); bottom: auto; }
 .toast {
   display: flex;

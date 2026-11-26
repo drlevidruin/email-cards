@@ -27,7 +27,7 @@
 .search input::placeholder { color: var(--ink-3); }
 .seg { display: flex; gap: 2px; margin-top: 12px; padding: 2px; border-radius: var(--radius-s); background: var(--surface-2); }
 .seg button {
-  flex: 1; height: 32px; border: 1px solid transparent; border-radius: 8px;
+  flex: 1; height: 32px; border: 1px solid transparent; border-radius: var(--radius-s);
   font-size: 14px; font-weight: 600; color: var(--ink-2);
 }
 .seg button.is-on { border-color: var(--line-strong); background: var(--surface); color: var(--ink); }

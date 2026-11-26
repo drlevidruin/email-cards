@@ -2,17 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Menu as MenuIcon, Undo2 } from 'lucide-react';
 import { useStore } from '../store';
 import { navigate } from '../router';
-import { goalCount } from '../lib/goals';
-import { buildStack, replyActions, stackCounts, stackLabel, STACKS, type DeckItem, type StackId } from '../lib/stacks';
+import { finishInfo } from '../lib/finish';
+import { handledToday, markClear, markNudged, markStart, nudgeSeen, useProgressLog } from '../lib/progress';
+import { buildStack, replyActions, stackCounts, stackLabel, type DeckItem, type StackId } from '../lib/stacks';
+import { loadThread } from '../lib/threadCache';
 import { describeWake, type LaterOption } from '../lib/time';
+import type { EmailThread } from '../lib/types';
+import { useCelebrate } from '../lib/useCelebrate';
 import { useIsDesktop } from '../lib/useIsDesktop';
-import { ActionBar, type BarVariant, type Dir } from '../components/ActionBar';
+import { ActionBar, type BarAction, type BarVariant, type Dir } from '../components/ActionBar';
 import { CoverCard } from '../components/CoverCard';
 import { Deck, type DeckHandle } from '../components/Deck';
-import { FinishScreen, type NextRow } from '../components/FinishScreen';
+import { FinishCard } from '../components/FinishCard';
 import { LaterSheet } from '../components/LaterSheet';
 import { Menu } from '../components/Menu';
-import { ProgressLine } from '../components/ProgressLine';
+import { SegmentBar } from '../components/SegmentBar';
+import { TodayCard } from '../components/TodayCard';
 import { ShortcutsDialog } from '../components/ShortcutsDialog';
 import { TopBar } from '../components/TopBar';
 import './CardsScreen.css';
@@ -30,6 +35,7 @@ export function CardsScreen({ stack }: { stack: StackId }) {
   const { setLastStack } = store;
   useEffect(() => setLastStack(stack), [stack, setLastStack]);
 
+  useProgressLog();
   const session = store.session(stack);
   const base = data
     ? buildStack(stack, data.threads, data.screener, account).filter((i) => !session.dismissed.has(i.id))
@@ -42,43 +48,88 @@ export function CardsScreen({ stack }: { stack: StackId }) {
     ? { type: 'thread', id: store.exiting.thread.id, thread: store.exiting.thread }
     : null;
   const items = exitingItem ? [exitingItem, ...base] : base;
-  const cleared = session.dismissed.size;
-  const total = cleared + base.length;
+  // What was handled today (it survives a reload) plus what is left
+  const handled = handledToday(stack, account);
+  // A card that is still flying out after a sent reply counts as not yet handled; the bar and count tick when it leaves
+  const shown = handled - (exitingItem ? 1 : 0);
+  const total = handled + base.length;
   const cover = session.coverPending === true && !exitingItem && base.length > 0;
   const finished = status === 'ready' && base.length === 0 && !exitingItem;
+  const today = status === 'ready' && stack === 'needs-you' && !session.todayDone && base.length > 0 && !exitingItem;
+
+  const celebrate = useCelebrate(`${stack}|${account}`, status === 'ready' && !today && (base.length > 0 || !!exitingItem), finished);
 
   const isSender = stack === 'new-senders';
-  const variant: BarVariant = isSender ? 'senders' : stack === 'bookmarked' ? 'bookmarked' : 'default';
-  const enabled: Dir[] = isSender ? ['left', 'down', 'right'] : ['left', 'down', 'up', 'right'];
-  const flyDirs: Dir[] = isSender ? ['left', 'down', 'right'] : ['left', 'up'];
-  const labels: Partial<Record<Dir, string>> = isSender
-    ? { right: 'Allow', left: 'Block', down: 'Newsletters' }
-    : { right: 'Reply', left: 'Done', up: stack === 'bookmarked' ? 'Unbookmark' : 'Bookmark', down: 'Later' };
+  const noReplies = stack === 'newsletters' || stack === 'receipts';
+  const variant: BarVariant = isSender ? 'senders' : noReplies ? 'plain' : 'default';
+  const enabled: Dir[] = ['left', 'right'];
+  // Done and Allow and Block fly the card out. Later opens its sheet first, so the card stays until a time is picked.
+  const flyDirs: Dir[] = isSender ? ['left', 'right'] : ['right'];
+  const labels = isSender ? { right: 'Allow', left: 'Block' } : { right: 'Done', left: 'Later' };
 
   const overlay = menu || shortcuts || !!laterFor;
   const multi = (data?.accounts.length ?? 0) > 1 && account === 'all';
 
+  // Load the first three cards' emails ahead of time, so a card shows its whole email at once.
+  const ahead = items
+    .slice(0, 3)
+    .map((i) => (i.type === 'thread' ? i.id : i.sender.threadIds?.[0] ?? ''))
+    .join('|');
+  useEffect(() => {
+    ahead.split('|').forEach((id) => {
+      if (id) loadThread(id).catch(() => undefined);
+    });
+  }, [ahead]);
+
+  // The day is clear only when Needs you is empty in every account, whichever account is showing
+  useEffect(() => {
+    if (finished && stack === 'needs-you' && data && stackCounts(data.threads, data.screener, 'all')['needs-you'] === 0) markClear();
+  }, [finished, stack, data]);
+
+  // A stack's clock starts the first time it shows a card or its cover (the Start press, on Needs you)
+  const clockOn = status === 'ready' && base.length > 0 && !today;
+  useEffect(() => {
+    if (clockOn) markStart(stack);
+  }, [clockOn, stack]);
+
+  const start = useCallback(() => {
+    session.todayDone = true;
+    markStart(stack);
+    store.touch();
+  }, [session, stack, store]);
+
   const onDirection = useCallback(
     (dir: Dir, item: DeckItem) => {
       if (item.type === 'sender') {
-        const d = dir === 'left' ? 'muted' : dir === 'down' ? 'feed' : 'approved';
-        void store.decide(item.sender, stack, d);
+        void store.decide(item.sender, stack, dir === 'left' ? 'muted' : 'approved');
         return;
       }
-      const t = item.thread;
-      if (dir === 'left') void store.done(t, stack);
-      else if (dir === 'up') void store.bookmark(t, stack, stack !== 'bookmarked');
-      else if (dir === 'right') navigate(`/reply/${t.id}?from=deck`);
+      if (dir === 'right') void store.done(item.thread, stack);
       else setLaterFor(item);
     },
     [store, stack]
   );
 
+  const bookmark = useCallback(
+    (t: EmailThread) => deck.current?.flyOut('up', () => void store.bookmark(t, stack, !t.isStarred)),
+    [store, stack]
+  );
+
+  const reply = (t: EmailThread, qa?: string) => navigate(`/reply/${t.id}?${qa ? `qa=${qa}&` : ''}from=deck`);
+
+  const onBar = (slot: BarAction) => {
+    if (slot !== 'middle') return deck.current?.trigger(slot);
+    const top = items[0];
+    if (!top) return;
+    if (top.type === 'sender') deck.current?.flyOut('down', () => void store.decide(top.sender, stack, 'feed'));
+    else if (!noReplies) reply(top.thread);
+  };
+
   const pickLater = (o: LaterOption) => {
     const item = laterFor;
     setLaterFor(null);
     if (!item || item.type !== 'thread') return;
-    deck.current?.flyOut('down', () => void store.later(item.thread, stack, o.at, describeWake(o.at)));
+    deck.current?.flyOut('left', () => void store.later(item.thread, stack, o.at, describeWake(o.at)));
   };
 
   useEffect(() => {
@@ -93,17 +144,24 @@ export function CardsScreen({ stack }: { stack: StackId }) {
         void store.undo();
         return;
       }
-      if (cover || finished) return;
+      if (cover || finished || today) return;
       const top = items[0];
-      const map: Record<string, Dir> = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'right' };
-      if (map[e.key]) {
+      const key = e.key.toLowerCase();
+      if (e.key === 'ArrowRight' || (!isSender && key === 'e')) {
         e.preventDefault();
-        deck.current?.trigger(map[e.key]);
-      } else if (e.key.toLowerCase() === 'm') setMenu(true);
+        deck.current?.trigger('right');
+      } else if (e.key === 'ArrowLeft' || (!isSender && key === 'l')) {
+        e.preventDefault();
+        deck.current?.trigger('left');
+      } else if (top?.type === 'thread' && !noReplies && (key === 'r' || e.key === 'Enter')) {
+        e.preventDefault();
+        reply(top.thread);
+      } else if (top?.type === 'thread' && key === 'b') bookmark(top.thread);
+      else if (key === 'm') setMenu(true);
       else if (e.key === '?') setShortcuts(true);
-      else if (top?.type === 'thread' && /^[1-3]$/.test(e.key)) {
+      else if (top?.type === 'thread' && !noReplies && /^[1-3]$/.test(e.key)) {
         const r = replyActions(top.thread)[Number(e.key) - 1];
-        if (r) navigate(`/reply/${top.id}?qa=${r.id}&from=deck`);
+        if (r) reply(top.thread, r.id);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -129,14 +187,19 @@ export function CardsScreen({ stack }: { stack: StackId }) {
       </div>
     );
   } else if (finished) {
-    const counts = stackCounts(data.threads, data.screener, account);
-    const next: NextRow[] = STACKS.filter((s) => s.id !== stack && counts[s.id] > 0).map((s) => ({
-      path: `/cards/${s.id}`,
-      label: s.label,
-      count: counts[s.id],
-    }));
-    next.push({ path: '/goals', label: 'Goals', count: goalCount(data, account) });
-    content = <FinishScreen label={stackLabel(stack)} counts={session.counts} next={next} />;
+    const info = finishInfo(data, stack, account);
+    content = (
+      <FinishCard
+        stack={stack}
+        account={account}
+        kicker={info.kicker}
+        celebrate={celebrate}
+        dayClear={info.needsYouClear}
+        next={info.next}
+      />
+    );
+  } else if (today) {
+    content = <TodayCard left={base.length} account={account} keys={!overlay} onStart={start} />;
   } else if (cover) {
     const threads = base.flatMap((i) => (i.type === 'thread' ? [i.thread] : []));
     content = (
@@ -159,17 +222,21 @@ export function CardsScreen({ stack }: { stack: StackId }) {
         enabled={enabled}
         flyDirs={flyDirs}
         labels={labels}
-        accent="right"
         desktop={desktop}
+        noReplies={noReplies}
+        onBookmark={bookmark}
         accounts={multi ? data.accounts : undefined}
         onDirection={onDirection}
         onActive={setActive}
         onExitDone={store.clearExiting}
+        nudge={!nudgeSeen() && !overlay}
+        onNudged={markNudged}
       />
     );
   }
 
-  const showBar = status === 'ready' && !finished && !cover;
+  const showBar = status === 'ready' && !finished && !cover && !today;
+  const showCount = status === 'ready' && !finished && !cover && !today && total > 0;
   return (
     <div className="cards">
       <div className="cards__col">
@@ -198,15 +265,19 @@ export function CardsScreen({ stack }: { stack: StackId }) {
           }
         >
           <span className="topbar__title">{stackLabel(stack)}</span>
-          {status === 'ready' && <span className="topbar__count">{base.length} left</span>}
+          {showCount && (
+            <span className="topbar__count">
+              {Math.min(shown + 1, total)} of {total}
+            </span>
+          )}
         </TopBar>
-        <ProgressLine cleared={cleared} total={total} />
+        <SegmentBar handled={shown} total={total} />
         <div className="cards__deck">{content}</div>
         {showBar ? (
           <ActionBar
             variant={variant}
             active={active}
-            onAction={(d) => deck.current?.trigger(d)}
+            onAction={onBar}
           />
         ) : (
           <div className="cards__bar-space" />

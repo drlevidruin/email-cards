@@ -101,6 +101,8 @@ export interface EmailThread {
   bucket: PriorityBucket;
   urgencyScore: number;
   distilledAsk: string | null;
+  /** The exact words in the newest message that the Goal comes from. */
+  goalQuote?: string | null;
   aiSummaryBullets: string[];
   deadlineAt?: string | null;
   deadlineLabel?: string | null;

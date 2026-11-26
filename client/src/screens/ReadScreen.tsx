@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { goBack, navigate } from '../router';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import { ActionBar } from '../components/ActionBar';
+import { BookmarkButton } from '../components/BookmarkButton';
 import { EmailCard } from '../components/EmailCard';
 import { PageShell } from '../components/PageShell';
 import { ThreadView } from '../components/ThreadView';
@@ -30,7 +31,7 @@ export function ReadScreen({ threadId }: { threadId: string }) {
     if (store.status === 'ready' && !thread) navigate('/cards/needs-you', { replace: true });
   }, [store.status, thread]);
 
-  const { act, sheet, sheetOpen } = useThreadActions(thread, true);
+  const { act, toggleBookmark, sheet, sheetOpen } = useThreadActions(thread, true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -58,9 +59,11 @@ export function ReadScreen({ threadId }: { threadId: string }) {
               thread={thread}
               desktop
               account={multi ? store.data?.accounts.find((a) => a.id === thread.accountId) : undefined}
+              noReplies
+              onBookmark={toggleBookmark}
             />
           </div>
-          <ActionBar variant={thread.isStarred ? 'bookmarked' : 'default'} active={null} onAction={act} plainLabels />
+          <ActionBar variant="default" active={null} onAction={act} plainLabels />
         </div>
         {sheet}
       </div>
@@ -71,10 +74,13 @@ export function ReadScreen({ threadId }: { threadId: string }) {
     <PageShell
       footer={
         <div className="read__bar">
-          <ActionBar variant={thread.isStarred ? 'bookmarked' : 'default'} active={null} onAction={act} plainLabels />
+          <ActionBar variant="default" active={null} onAction={act} plainLabels />
         </div>
       }
     >
+      <div className="read__tools">
+        <BookmarkButton on={thread.isStarred} onToggle={toggleBookmark} />
+      </div>
       <ThreadView threadId={thread.id} />
       {sheet}
     </PageShell>

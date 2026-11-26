@@ -1,0 +1,18 @@
+.today { padding: 24px 20px 20px; }
+.today__body { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; text-align: center; overflow: hidden; }
+.today__body > :first-child { margin-top: auto; }
+.today__body > :last-child { margin-bottom: auto; }
+.today__date { font-size: 15px; font-weight: 600; color: var(--ink-3); }
+.today__count { margin-top: 6px; font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
+.today__time { margin-top: 4px; font-size: 15px; color: var(--ink-3); }
+.today__ring { margin: 24px 0; }
+.today__action { flex: none; padding-top: 16px; }
+.today__start { width: 100%; height: 56px; border-radius: var(--radius-l); font-size: 17px; }
+@media (max-height: 720px) {
+  .today { padding: 16px 20px; }
+  .today__ring { margin: 14px 0; transform: scale(0.82); transform-origin: center; height: 140px; display: flex; align-items: center; justify-content: center; }
+}
+@media (min-width: 900px) {
+  .today { padding: 40px 32px 32px; }
+  .today__action { width: 100%; max-width: 420px; margin: 0 auto; }
+}

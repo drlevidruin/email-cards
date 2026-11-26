@@ -9,7 +9,7 @@
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
 .draft__actions { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
-.draft__send { height: 40px; padding: 0 20px; border-radius: 12px; font-size: 15px; }
+.draft__send { height: 40px; padding: 0 20px; border-radius: var(--radius-m); font-size: 15px; }
 .draft__delete { margin-left: auto; color: var(--danger); font-size: 15px; }
 
 @media (min-width: 900px) {

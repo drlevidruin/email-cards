@@ -1,0 +1,13 @@
+.bookmark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  color: var(--ink-3);
+  transition: transform 120ms var(--ease), color 120ms;
+}
+.bookmark.is-on { color: var(--ink); }
+.bookmark:active { transform: scale(0.92); }
