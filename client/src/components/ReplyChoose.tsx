@@ -4,6 +4,7 @@ import type { QuickActionChip } from '../lib/types';
 import { stripReply } from '../lib/replyText';
 import { blanksOf } from '../lib/commitments';
 import { goBack } from '../router';
+import { BlankText } from './BlankText';
 import { Avatar } from './Avatar';
 import { DueLine } from './Hero';
 import './ReplyChoose.css';
@@ -24,7 +25,7 @@ interface Props {
 }
 
 /** A suggestion's text: three lines at most, fading out over the last line when it runs longer. */
-function Suggestion({ text, blanks }: { text: string; blanks: number }) {
+function Suggestion({ text, blanks }: { text: string; blanks: string[] }) {
   const el = useRef<HTMLSpanElement>(null);
   const [cut, setCut] = useState(false);
   useLayoutEffect(() => {
@@ -36,9 +37,9 @@ function Suggestion({ text, blanks }: { text: string; blanks: number }) {
   return (
     <>
       <span ref={el} className={`t-subhead choose__body${cut ? ' is-cut' : ''}`}>
-        {text}
+        <BlankText text={text} blanks={blanks} />
       </span>
-      {blanks > 0 && <span className="t-footnote choose__blank">{`${blanks} ${blanks === 1 ? 'blank' : 'blanks'} to fill`}</span>}
+      {blanks.length > 0 && <span className="t-footnote choose__blank">{`${blanks.length} ${blanks.length === 1 ? 'blank' : 'blanks'} to fill`}</span>}
     </>
   );
 }
@@ -81,7 +82,7 @@ export function ReplyChoose({ first, to, goal, due, chips, yours, drafting, onPi
               <li>
                 <button className="choose__card" onClick={onYours}>
                   <span className="t-headline">Your draft</span>
-                  <Suggestion text={stripReply(yours)} blanks={0} />
+                  <Suggestion text={stripReply(yours)} blanks={[]} />
                 </button>
               </li>
             )}
@@ -89,7 +90,7 @@ export function ReplyChoose({ first, to, goal, due, chips, yours, drafting, onPi
               <li key={c.id}>
                 <button className="choose__card" onClick={() => onPick(c)}>
                   <span className="t-headline">{c.label}</span>
-                  <Suggestion text={c.draftBody ? stripReply(c.draftBody) : c.draftHint ?? ''} blanks={c.draftBody ? blanksOf(c.draftBody).length : 0} />
+                  <Suggestion text={c.draftBody ? stripReply(c.draftBody) : c.draftHint ?? ''} blanks={c.draftBody ? blanksOf(c.draftBody) : []} />
                 </button>
               </li>
             ))}
@@ -110,7 +111,7 @@ export function ReplyChoose({ first, to, goal, due, chips, yours, drafting, onPi
             onAsk(text);
           }}
         >
-          <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Or tell Claude what to say" aria-label="Tell Claude what to say" />
+          <input value={ask} onChange={(e) => setAsk(e.target.value)} placeholder="Or say what to write" aria-label="Say what to write" />
           {text && (
             <button type="submit" className="composer__ask-go" aria-label="Write reply">
               <ArrowUp size={18} strokeWidth={1.75} />

@@ -1135,7 +1135,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Client', 'Solis Health', 'Print'],
       bucket: 'decision',
       urgencyScore: 89,
-      distilledAsk: 'Greenlight Option B on the die\u2011line',
+      distilledAsk: 'Review the die\u2011line and approve Option B',
       goalQuote: 'Can you review the updated die-line PDF attached and reply to greenlight Option B?',
       aiSummaryBullets: [
         'Leadership picked Option B.',

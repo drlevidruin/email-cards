@@ -1,3 +1,5 @@
+import { BlankText } from '../components/BlankText';
+import { blanksOf } from '../lib/commitments';
 import { useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
@@ -70,7 +72,7 @@ export function DraftsScreen() {
                   <span className="t-footnote draft__time">{d.status === 'held_shabbos' ? 'Held until after Shabbos' : relativeTime(d.createdAt)}</span>
                 </span>
                 <span className="t-subhead draft__subject">{d.subject || 'No subject'}</span>
-                <span className="t-footnote draft__body">{d.bodyText}</span>
+                <span className="t-footnote draft__body"><BlankText text={d.bodyText} blanks={blanksOf(d.bodyText)} /></span>
               </button>
               <button className="draft__delete" aria-label={`Delete draft to ${who(d)}`} disabled={busy === d.id} onClick={() => void remove(d)}>
                 <Trash2 size={18} strokeWidth={1.75} />

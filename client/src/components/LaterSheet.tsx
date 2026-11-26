@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, CalendarDays, CalendarRange, ChevronRight, Sunrise, Sunset, type LucideIcon } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { describeWake, laterOptions, type LaterOption } from '../lib/time';
 import { Sheet } from './Sheet';
 
@@ -9,8 +9,6 @@ interface Props {
   /** The card's deadline, such as `Today 4:00 PM`. */
   due?: string | null;
 }
-
-const ICONS: Record<string, LucideIcon> = { 'before-due': CalendarClock, today: Sunset, tomorrow: Sunrise, monday: CalendarDays, 'next-week': CalendarRange };
 
 /** `6:00 PM` when the label already names the day (Later today, Tomorrow, Monday); `Dec 3 8:00 AM` for Next week. */
 function timeOf(o: LaterOption, now: Date): string {
@@ -51,23 +49,19 @@ export function LaterSheet({ onPick, onClose, due }: Props) {
 
   return (
     <Sheet title="Later" onClose={onClose}>
-      <div className="latergrid">
-        {options.map((o) => {
-          const Icon = ICONS[o.id] ?? CalendarDays;
-          return (
-            <button key={o.id} className="latertile" onClick={() => onPick(o)}>
-              <Icon size={22} strokeWidth={1.75} />
-              <span className="latertile__text">
-                <span className="t-callout latertile__label">{o.label}</span>
-                <span className="t-footnote latertile__time">
-                  {o.showDay ? o.when : timeOf(o, now)}
-                  {o.afterDue && <span className="latertile__late">{"after it's due"}</span>}
-                </span>
+      <ul className="laterlist">
+        {options.map((o) => (
+          <li key={o.id}>
+            <button className="laterrow" onClick={() => onPick(o)}>
+              <span className="t-callout laterrow__label">{o.label}</span>
+              <span className="t-subhead laterrow__time">
+                {o.showDay ? o.when : timeOf(o, now)}
+                {o.afterDue && <span className="laterrow__late">{"after it's due"}</span>}
               </span>
             </button>
-          );
-        })}
-      </div>
+          </li>
+        ))}
+      </ul>
       {custom ? (
         <div className="laterpick">
           <input type="datetime-local" className="laterpick__input" value={value} min={localValue(now)} onChange={(e) => setValue(e.target.value)} aria-label="Date and time" />

@@ -1,5 +1,15 @@
 # Email Cards: notes for any agent working here
 
+## Handoff, 2026-11-26 (Claude, round 9D): only the deck is paper
+
+- Today: the deck card is one white card with a shadow and no stack edges. The three pile tiles and `Sorted for you` are gone. New senders, Newsletters, Receipts, To-do and Drafts are rows on the canvas (`TodayCard`, `.today__links`), each hidden at zero. `Stack.tsx`, `FinishPile` and `CountUp` are deleted. The only edges left are the live deck's card behind the top card (`Deck.tsx`).
+- Finish is type: `All clear` (`t-display`), `N handled in ...`, and the result line from `movesLine` in `FinishCard.tsx` (`2 moved to Needs you · 1 to Newsletters · 1 blocked`; only the first move says `moved`, zero parts are left out). No kicker, no pace line, no card. The toast rides above `.finish__primary`.
+- Action bar: four equal buttons on the canvas, no pill, no fill. Done (and Allow) are emerald, the rest ink. A drag past the commit point still fills the button it is heading for.
+- Later sheet is a list (`laterrow` in `Sheet.css`): name left, time right in ink-3, `after it's due` in red, 52px rows, no icons. Nudge is a transparent secondary button with a hairline, 44px tall.
+- Blanks: `BlankText` shows each open blank as its own words on `--accent-line` (radius `--radius-xs`, 4px) in the Choose previews, the committing quotes, the Drafts preview and the editor. `ReplyEdit` shows the body as a div in the textarea's exact type until the body is tapped (caret goes to the end) or the last blank is filled with Add; then it is the textarea. Brackets show again in the textarea.
+- Words: Choose field is `Or say what to write`. Search answers `Two are due today, and ten emails need you.` Jordan's Goal is `Review the die-line and approve Option B` (both data files).
+- Shot harness (`scratchpad/panel/round4/phone.html`): headless Chrome on virtual time starves `requestAnimationFrame`, so card flights never finished and later keys were ignored. The harness now drives animation frames from timers in the app's window and sends keys to the frame's body.
+
 ## Handoff, 2026-11-26 (Claude, round 9B): every fact checks out, every screen lines up
 
 - Demo clock (`lib/demoClock.ts`, imported first in `main.tsx`): in the static demo the page's `Date` is a subclass pinned to Tuesday Nov 24, 2026, 1:00 PM that keeps ticking. It is off for a real mailbox (hash starting `#k=`). Message times in `staticDemoData.ts` are relative (`hoursAgo`, `workTime`, which avoids Friday from 4 PM and Saturday); deadlines are absolute (`onDay(month, day, hour, min)`). Dec 12 and Jan 16 are Saturdays, so the keynote and dinner are Dec 10 and Stowe is Jan 15 to 18. `tools/sync_server.sh` after any data edit.

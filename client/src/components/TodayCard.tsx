@@ -5,9 +5,9 @@ import { counterpart, stackCounts, type DeckItem, type StackId } from '../lib/st
 import { dueParts, isUrgent } from '../lib/time';
 import { todoCounts } from '../lib/todo';
 import { navigate } from '../router';
+import { useIsDesktop } from '../lib/useIsDesktop';
 import { useStore } from '../store';
 import { DueLine } from './Hero';
-import { Stack } from './Stack';
 import './TodayCard.css';
 
 const dateLine = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -27,10 +27,11 @@ interface Props {
   onOpen: (item: DeckItem) => void;
 }
 
-/** The first screen of the day: how many need you, the deck to start, the next few, the piles sorted for you, and the way to To-do and Drafts. */
+/** The first screen of the day: how many need you, the deck to start, the next few, the piles sorted for you, and the way to To-do and Drafts. On a laptop the rail has the piles, so they are left off here. */
 export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
   useProgressLog();
   const { data } = useStore();
+  const desktop = useIsDesktop();
   // Enter and the right arrow start, the same as the deck
   useEffect(() => {
     if (!keys) return;
@@ -52,11 +53,12 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
   const counts = data ? todoCounts(data, account) : null;
   const piles = data ? stackCounts(data, account) : null;
   const drafts = data ? data.drafts.filter((d) => d.status !== 'sent').length : 0;
+  // New senders, Newsletters and Receipts, then To-do and Drafts; a row with nothing in it is left out
   const links = [
-    counts && counts.open > 0 && { label: 'To-do', value: counts.open, path: '/goals' },
-    drafts > 0 && { label: 'Drafts', value: drafts, path: '/drafts' },
-  ].filter(Boolean) as { label: string; value: number; path: string }[];
-  const sorted = PILES.filter((p) => (piles?.[p.id] ?? 0) > 0);
+    ...PILES.map((p) => ({ label: p.label, value: piles?.[p.id] ?? 0, path: `/cards/${p.id}` })),
+    { label: 'To-do', value: counts?.open ?? 0, path: '/goals' },
+    { label: 'Drafts', value: drafts, path: '/drafts' },
+  ].filter((l) => l.value > 0 && !desktop);
 
   const first = items[0]?.type === 'thread' ? items[0].thread : null;
   const firstWho = items[0]?.type === 'thread' ? counterpart(items[0].thread).name : items[0]?.type === 'sender' ? items[0].sender.name : '';
@@ -96,7 +98,7 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
     const ro = new ResizeObserver(measure);
     ro.observe(page);
     return () => ro.disconnect();
-  }, [ids, sorted.length, links.length, counts?.dueToday]);
+  }, [ids, links.length, counts?.dueToday, desktop]);
 
   const showNext = next.length > 0 && (fit === null || fit.n > 0);
   return (
@@ -112,7 +114,7 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
           <ChevronRight size={18} strokeWidth={1.75} />
         </button>
       )}
-      <Stack count={left} onClick={onStart} label={`${handled > 0 ? 'Continue' : 'Start'}, ${left} ${left === 1 ? 'card' : 'cards'}`} className="today__stack">
+      <button className="today__stack" onClick={onStart} aria-label={`${handled > 0 ? 'Continue' : 'Start'}, ${left} ${left === 1 ? 'card' : 'cards'}`}>
         <span className="today__deck">
           {first && <DueLine label={first.deadlineLabel} />}
           <span className="t-title-2 today__goal">{first ? first.distilledAsk || first.subject : firstWho}</span>
@@ -124,7 +126,7 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
             </span>
           </span>
         </span>
-      </Stack>
+      </button>
       <div className={`today__next${showNext ? '' : ' is-empty'}`} ref={region}>
         <h2 className="t-footnote today__label" ref={label}>Up next</h2>
         <ul className="today__rows" ref={list} style={fit === null ? undefined : { maxHeight: fit.px }}>
@@ -155,21 +157,6 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
           })}
         </ul>
       </div>
-      {sorted.length > 0 && (
-        <div className="today__sorted">
-          <h2 className="t-footnote today__label">Sorted for you</h2>
-          <div className="today__piles">
-            {sorted.map((p) => (
-              <Stack key={p.id} count={piles?.[p.id] ?? 0} onClick={() => navigate(`/cards/${p.id}`)} label={`${p.label}, ${piles?.[p.id]}`} className="stack--small">
-                <span className="today__pile">
-                  <span className="t-title-2 t-num today__pile-n">{piles?.[p.id]}</span>
-                  <span className="t-footnote today__pile-name">{p.label}</span>
-                </span>
-              </Stack>
-            ))}
-          </div>
-        </div>
-      )}
       {links.length > 0 && (
         <ul className="today__links">
           {links.map((l) => (

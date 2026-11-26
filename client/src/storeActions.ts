@@ -16,6 +16,8 @@ interface CommitSpec {
   stack: StackId | null;
   ids: string[];
   count: CountKey;
+  /** What the finish calls this move, when it is not the usual word for the count. */
+  kind?: string;
   local: (s: Snap) => Snap;
   call: () => Promise<unknown>;
   toast: string;
@@ -69,7 +71,7 @@ export function useCardActions(core: Core) {
         const stack = spec.stack;
         const accountOf = (id: string) =>
           prev.threads.find((t) => t.id === id)?.accountId ?? prev.screener.find((x) => x.email === id)?.accountId ?? '';
-        logMoves(spec.ids.map((id) => ({ id, stack, account: accountOf(id), kind: KIND[spec.count] })));
+        logMoves(spec.ids.map((id) => ({ id, stack, account: accountOf(id), kind: spec.kind ?? KIND[spec.count] })));
         // A short tap on the phones that have one; it does nothing on an iPhone
         if (['done', 'later', 'allowed', 'blocked'].includes(spec.count)) navigator.vibrate?.(8);
       }
@@ -228,6 +230,7 @@ export function useCardActions(core: Core) {
         stack,
         ids,
         count: 'done',
+        kind: 'Archived',
         local: (s) => ({
           ...s,
           threads: s.threads.map((x) => (ids.includes(x.id) ? { ...x, isArchived: true, bucket: 'archived' } : x)),

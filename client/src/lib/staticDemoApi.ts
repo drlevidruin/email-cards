@@ -65,36 +65,6 @@ function numWord(n: number, cap = false): string {
   const w = n >= 0 && n <= 10 ? WORDS[n] : String(n);
   return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
 }
-function joinList(items: string[]): string {
-  return items.length < 2 ? items.join('') : items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
-}
-
-/** The short phrase Search uses for a thread: the thing itself, never the Goal title. */
-const PHRASES: Record<string, string> = {
-  thr_dec_01: "Maya's Addendum B",
-  thr_dec_02: "Priya's $75k pro-rata",
-  thr_dec_03: "Jordan's press proof",
-  thr_dec_04: "Elena's steel lintel",
-  thr_dec_05: "Devon's microsite call",
-  thr_dec_06: "Daniel's intro to Samira",
-  thr_dec_07: "Hannah's Stowe cabin",
-  thr_wait_04: "Owen's scorecard notes",
-  thr_wait_05: "Rachel's tax uploads",
-  thr_wait_06: "Mateo's dinner room",
-  thr_ref_01: "Devon's offsite pick",
-};
-function phraseOf(t: EmailThread): string {
-  return PHRASES[t.id] || `${counterpart(t).name.split(' ')[0]}'s email`;
-}
-/** A due label inside a sentence: lowercase today and tomorrow, full weekday names, `at` before a clock time. */
-function dueWords(label?: string | null): string {
-  const p = dueParts(label);
-  if (!p) return '';
-  const days: Record<string, string> = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
-  const day = /^(today|tomorrow)$/i.test(p.day) ? p.day.toLowerCase() : days[p.day] || p.day;
-  if (!p.time) return day;
-  return /^(\d|noon)/i.test(p.time) ? `${day} at ${p.time}` : `${day} ${p.time}`;
-}
 
 function deepClone<T>(val: T): T {
   return JSON.parse(JSON.stringify(val)) as T;
@@ -1026,34 +996,19 @@ export const staticDemoApi = {
       for (const t of needThreads) if (isDueToday(t.deadlineLabel) && !isOverdue(t.deadlineLabel) && !dueIds.includes(t.id)) dueIds.push(t.id);
       const dueThreads = dueIds.flatMap((id) => (byId.get(id) ? [byId.get(id) as EmailThread] : []));
       dueThreads.sort((a, b) => dueTime(a.deadlineLabel) - dueTime(b.deadlineLabel));
-      const dueList = dueThreads.map((t) => {
-        const time = dueParts(t.deadlineLabel)?.time;
-        return time ? `${phraseOf(t)} by ${time}` : phraseOf(t);
-      });
-      const next = needThreads.find((t) => !isDueToday(t.deadlineLabel) && !isOverdue(t.deadlineLabel) && !/^waiting/i.test(t.deadlineLabel || '') && dueParts(t.deadlineLabel));
-      const nextText = next ? dueWords(next.deadlineLabel) : '';
       const n = needs.length;
-      const needIds = needThreads.map((t) => t.id);
-      // Due items that sit on the To-do list, not in Needs you
-      const onTodo = dueIds.filter((id) => !needIds.includes(id)).length;
-      const todoSentence =
-        onTodo === 0
-          ? ''
-          : onTodo === dueIds.length
-            ? `${dueIds.length === 1 ? 'It is' : dueIds.length === 2 ? 'Both are' : `All ${numWord(dueIds.length)} are`} on your To-do. `
-            : `${onTodo === 1 ? 'One of them is' : `${numWord(onTodo, true)} of them are`} on your To-do. `;
-      const needsSentence =
-        n === 0
-          ? onTodo > 0 || dueList.length === 0
-            ? 'Nothing needs you.'
-            : 'Nothing else needs you.'
-          : onTodo === 0 && dueList.length > 0
-            ? `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you in all.`
-            : `${numWord(n, true)} ${n === 1 ? 'email needs' : 'emails need'} you${nextText ? `, the first due ${nextText}` : ''}.`;
+      const d = dueThreads.length;
+      const dueWord = numWord(d, true);
+      const needWord = `${numWord(n)} ${n === 1 ? 'email needs' : 'emails need'} you`;
       const sentence =
-        dueList.length > 0
-          ? `${numWord(dueList.length, true)} ${dueList.length === 1 ? 'thing is' : 'things are'} due today: ${joinList(dueList)}. ${todoSentence}${needsSentence}`
-          : `Nothing is due today. ${needsSentence}`;
+        d > 0 && n > 0
+          ? `${dueWord} ${d === 1 ? 'is' : 'are'} due today, and ${needWord}.`
+          : d > 0
+            ? `${dueWord} ${d === 1 ? 'is' : 'are'} due today. Nothing else needs you.`
+            : n > 0
+              ? `Nothing is due today, and ${needWord}.`
+              : 'Nothing is due today and nothing needs you.';
+      const needIds = needThreads.map((t) => t.id);
       // The rows: the due ones, then Needs you, then `and X more` so the Needs you rows shown plus X make N
       const rest = needThreads.filter((t) => !dueIds.includes(t.id)).slice(0, 3);
       const cited = [...dueThreads, ...rest];

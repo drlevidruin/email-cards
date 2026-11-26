@@ -1,7 +1,0 @@
-.pile { flex: none; width: 220px; margin: 14px 0 22px; }
-.pile__front { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 112px; }
-.pile__n { color: var(--ink); }
-.pile__label { color: var(--ink-3); }
-.pile--go .stack__front { animation: pile-in 320ms var(--ease) both; }
-@keyframes pile-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .pile--go .stack__front { animation: none; } }

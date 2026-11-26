@@ -21,8 +21,8 @@ function place(): Spot {
       style: { top: 'auto', bottom: Math.round(window.innerHeight - bar.top + 12), left: Math.round(bar.left), right: Math.round(window.innerWidth - bar.right) },
     };
   }
-  // The To-do page keeps Tackle at the bottom of the phone: the toast rides above it
-  const foot = [...document.querySelectorAll('.todo__tackle')].map((el) => el.getBoundingClientRect()).find((r) => r.height > 0 && r.top > window.innerHeight / 2);
+  // The To-do page keeps Tackle, and the finish keeps Next, at the bottom of the phone: the toast rides above it
+  const foot = [...document.querySelectorAll('.todo__tackle, .finish__primary')].map((el) => el.getBoundingClientRect()).find((r) => r.height > 0 && r.top > window.innerHeight / 2);
   return {
     style: {
       top: 'auto',

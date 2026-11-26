@@ -20,19 +20,13 @@
 .sheet__handle { width: 40px; height: 4px; margin: 0 auto 12px; border-radius: 2px; background: var(--line-strong); }
 .sheet__title { padding: 0 8px 12px; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
 
-.latergrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.latertile {
-  display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start;
-  height: auto; min-height: 88px; gap: 8px; padding: 14px; border-radius: var(--radius-l); background: var(--surface-2); text-align: left; color: var(--ink-2);
-}
-.latertile:active { background: var(--line); }
-.latertile > svg { flex-shrink: 0; }
-.latergrid > .latertile:last-child:nth-child(odd) { grid-column: 1 / -1; }
-.latertile__text { display: flex; flex-direction: column; }
-.latertile__label { color: var(--ink); }
-.latertile__time { color: var(--ink-3); }
-.latertile__late { display: block; color: var(--danger); }
-.laterpick__row { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 52px; margin-top: 4px; padding: 0 8px; color: var(--ink); }
+.laterlist > li + li { border-top: 1px solid var(--line); }
+.laterrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 52px; padding: 6px 8px; text-align: left; }
+.laterrow:active { background: var(--surface-2); }
+.laterrow__label { flex: none; color: var(--ink); }
+.laterrow__time { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; text-align: right; color: var(--ink-3); }
+.laterrow__late { color: var(--danger); }
+.laterpick__row { display: flex; border-top: 1px solid var(--line); align-items: center; justify-content: space-between; width: 100%; min-height: 52px; padding: 0 8px; color: var(--ink); }
 .laterpick__row svg { color: var(--ink-4); }
 .laterpick { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .laterpick__input { flex: 1; min-width: 0; height: 48px; padding: 0 12px; border: 0; border-radius: var(--radius-m); background: var(--surface-2); font-size: 16px; }

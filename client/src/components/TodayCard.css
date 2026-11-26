@@ -6,11 +6,15 @@
 .today__duetoday-n { font-weight: 600; color: var(--danger); }
 .today__duetoday-rest { color: var(--ink-2); }
 .today__duetoday svg { flex: none; color: var(--ink-4); }
-.today__stack { flex: none; margin-top: 4px; }
+.today__stack {
+  flex: none; display: block; width: 100%; margin-top: 4px; text-align: left;
+  border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card);
+}
+.today__stack:active { background: var(--surface-2); }
 .today__duetoday + .today__stack { margin-top: 0; }
 .today__deck { display: flex; flex-direction: column; padding: 18px 20px 16px; }
 .today__goal {
-  margin-top: 4px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere;
+  margin-top: 4px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; text-wrap: balance;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
 .today__deckfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
@@ -20,7 +24,7 @@
   background: var(--accent); color: #fff; box-shadow: var(--shadow-inset), var(--shadow-btn);
 }
 .today__cap-n { font-weight: 400; color: rgba(255, 255, 255, 0.7); }
-.today__stack button.stack__front:active .today__cap { background: var(--accent-press); }
+.today__stack:active .today__cap { background: var(--accent-press); }
 .today__next { flex: none; overflow: hidden; margin-top: 16px; }
 .today__next.is-empty { height: 0; visibility: hidden; }
 .today__label { margin: 0 0 4px 4px; font-weight: 600; color: var(--ink-3); }
@@ -34,11 +38,6 @@
 .today__time { color: var(--ink-3); }
 .today__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .today__rowgoal { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--ink); overflow-wrap: anywhere; }
-.today__sorted { flex: none; margin-top: 12px; }
-.today__piles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.today__pile { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 64px; }
-.today__pile-n { color: var(--ink); font-weight: 700; }
-.today__pile-name { color: var(--ink-3); white-space: nowrap; }
 .today__links { flex: none; margin-top: 12px; border-top: 1px solid var(--line); }
 .today__links > li + li { border-top: 1px solid var(--line); }
 .today__link { display: flex; align-items: center; gap: 8px; width: 100%; height: 48px; padding: 0 4px; text-align: left; }

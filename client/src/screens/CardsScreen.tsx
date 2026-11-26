@@ -208,7 +208,6 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
       <FinishCard
         stack={stack}
         account={account}
-        kicker={info.kicker}
         celebrate={celebrate}
         dayClear={info.needsYouClear}
         next={info.next}

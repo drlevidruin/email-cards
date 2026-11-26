@@ -1,16 +1,11 @@
-/* A floating glass bar: each button is an icon and its label side by side; the one that finishes the card is a filled emerald capsule. */
+/* Four equal buttons on the canvas: an icon and its label side by side, no fill. Done is emerald, the rest ink. */
 .actionbar {
   flex: none;
   display: flex;
   gap: 6px;
   height: 64px;
   margin: 0 16px calc(16px + env(safe-area-inset-bottom));
-  padding: 8px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.86);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  box-shadow: var(--shadow-float);
+  padding: 8px 0;
 }
 .actionbar__btn {
   flex: 1 1 0;
@@ -22,26 +17,25 @@
   height: 48px;
   padding: 0 4px;
   border-radius: 15px;
-  color: var(--ink-2);
+  color: var(--ink);
   transition: transform 120ms var(--ease), background 120ms, color 120ms;
 }
 .actionbar__btn svg { flex: none; }
 .actionbar__label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .actionbar__btn:active { transform: scale(0.97); }
-.actionbar__btn--primary { border-radius: var(--radius-m); background: var(--accent); color: #fff; box-shadow: var(--shadow-inset), var(--shadow-btn); }
-.actionbar__btn--primary:active { background: var(--accent-press); }
-.actionbar__btn--primary .keycap { border-color: rgba(255, 255, 255, 0.45); background: transparent; color: #fff; }
-/* Dragging toward a button: its icon and label turn ink (Done lightens to a soft emerald so ink reads on it).
+.actionbar__btn--primary { color: var(--accent); }
+.actionbar__btn--primary:active { color: var(--accent-press); }
+/* Dragging toward a button: it gets a light wash.
    Past the commit point, where the pill fills, the button fills the same way: emerald for Done, ink for the rest. */
 .actionbar__btn { --tone: var(--ink); }
 .actionbar__btn--primary { --tone: var(--accent); }
-.actionbar__btn.is-active { color: var(--ink); }
-.actionbar__btn--primary.is-active { background: var(--accent-soft); color: var(--ink); }
+.actionbar__btn.is-active { background: var(--line); color: var(--ink); }
+.actionbar__btn--primary.is-active { background: var(--accent-soft); color: var(--accent); }
 .actionbar__btn.is-past, .actionbar__btn--primary.is-past { background: var(--tone); color: #fff; animation: badge-pop 150ms var(--ease); }
 .actionbar__btn.is-on { background: var(--surface-2); color: var(--ink); }
 
 @media (max-width: 380px) {
-  .actionbar { gap: 2px; margin-left: 10px; margin-right: 10px; padding: 8px 6px; }
+  .actionbar { gap: 2px; margin-left: 10px; margin-right: 10px; }
   .actionbar__btn { gap: 4px; padding: 0 2px; }
   .actionbar__label { gap: 4px; }
   .actionbar__btn > svg, .actionbar__label > svg { width: 18px; height: 18px; }
@@ -50,5 +44,5 @@
 @media (min-width: 1024px) {
   .actionbar { width: 100%; margin: 16px 0 0; }
   .actionbar__btn:hover { background: var(--surface-2); }
-  .actionbar__btn--primary:hover { background: var(--accent-press); }
+  .actionbar__btn--primary:hover { color: var(--accent-press); }
 }

@@ -174,3 +174,9 @@ export function blankLabel(blank: string): string {
   const words = blank.replace(/^\[|\]$/g, '').trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
+
+/** A blank's words for running text: `[The change you need]` or `[the change you need]` becomes `the change you need`. */
+export function blankWords(blank: string): string {
+  const words = blank.replace(/^\[|\]$/g, '').trim();
+  return words.charAt(0).toLowerCase() + words.slice(1);
+}
