@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "email-cards-516019"
+  },
+  "targets": {
+    "email-cards-516019": {
+      "hosting": {
+        "emailchat": [
+          "emailchat"
+        ]
+      }
+    }
+  }
+}

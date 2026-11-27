@@ -22,8 +22,11 @@ import { firstName } from '../lib/utils';
 import type { EmailMessage, EmailThread } from '../lib/types';
 import { Avatar, AvatarPair, hueOf } from '../components/Avatar';
 import { PeopleSheet, sameRecipients } from '../components/PeopleSheet';
+import { PeopleList } from '../components/PeopleList';
 import { BubbleMedia, isPicture } from '../components/BubbleMedia';
 import { ImageViewer } from '../components/ImageViewer';
+import { usePictureVersion } from '../lib/pictures';
+import { isLiveMode } from '../lib/liveMode';
 import { AttachStrip } from '../components/AttachStrip';
 import { Sheet } from '../components/Sheet';
 import './ChatScreen.css';
@@ -119,6 +122,7 @@ function Bubble({ item, first, fresh, who, whoColor, face, mark, whole, setRef, 
   const [long, setLong] = useState(false);
   const body = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<number | null>(null);
+  usePictureVersion();
   const pictures = msg.attachments.filter(isPicture);
   const full = item.held ? msg.bodyText : whole ? msg.bodyText.trim() : bubbleText(msg.bodyText, msg.fromName);
   // Fold by rendered lines: a text more than four lines taller than its 12-line box gets Read more; a shorter overflow is shown whole
@@ -539,8 +543,10 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     );
   });
 
+  // Live Gmail is read only: no composer at all (no field, Send, To line, Cc/Bcc, paperclip or suggested replies)
+  const readOnly = isLiveMode();
   return (
-    <div className="chat">
+    <div className={`chat${readOnly ? ' chat--readonly' : ''}`}>
       <header className="chat__head">
         {!desktop && (
           <button className="chatapp__icon chat__back" aria-label="Back to emails" onClick={back}>
@@ -599,6 +605,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
           </button>
         )}
       </div>
+      {!readOnly && (
       <div className="chatbar">
         {suggestions.length > 0 && !text && (
           <div className="chatbar__sugs" role="group" aria-label="Suggested replies">
@@ -642,6 +649,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
           </button>
         </div>
       </div>
+      )}
       {moreOpen && (
         <Sheet title={chat.isGroup ? groupName(chat.people) : chat.name} onClose={() => setMoreOpen(false)} className="moresheet">
           <button
@@ -654,20 +662,23 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
             <MailOpen size={22} strokeWidth={1.75} aria-hidden="true" />
             <span>{whole ? 'Show short emails' : 'Show full emails'}</span>
           </button>
-          <button
-            className="moresheet__row"
-            onClick={() => {
-              if (!ready) return;
-              setMoreOpen(false);
-              setPeopleOpen(true);
-            }}
-          >
-            <Users size={22} strokeWidth={1.75} aria-hidden="true" />
-            <span>Who gets your message</span>
-          </button>
+          {!readOnly && (
+            <button
+              className="moresheet__row"
+              onClick={() => {
+                if (!ready) return;
+                setMoreOpen(false);
+                setPeopleOpen(true);
+              }}
+            >
+              <Users size={22} strokeWidth={1.75} aria-hidden="true" />
+              <span>Who gets your message</span>
+            </button>
+          )}
         </Sheet>
       )}
-      {peopleOpen && ready && <PeopleSheet rec={sendTo} plan={plan.rec} mine={mine} known={everyone} group={chat.isGroup} showSwitch={chat.isGroup && !plan.bccd} everyone={chatAddrs} replyTo={replyTo} onChange={setRec} onClose={() => setPeopleOpen(false)} />}
+      {peopleOpen && ready && readOnly && <PeopleList people={chat.people} onClose={() => setPeopleOpen(false)} />}
+      {peopleOpen && ready && !readOnly && <PeopleSheet rec={sendTo} plan={plan.rec} mine={mine} known={everyone} group={chat.isGroup} showSwitch={chat.isGroup && !plan.bccd} everyone={chatAddrs} replyTo={replyTo} onChange={setRec} onClose={() => setPeopleOpen(false)} />}
     </div>
   );
 }

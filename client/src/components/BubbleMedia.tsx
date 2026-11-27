@@ -1,12 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { FileSpreadsheet, FileText, Image as ImageIcon, Paperclip } from 'lucide-react';
 import type { EmailAttachment } from '../lib/types';
-import { pictureSrc } from '../lib/pictures';
+import { isLivePicture, livePictureOk, pictureSrc, requestLivePicture, usePictureVersion } from '../lib/pictures';
 import { isAttachedFile, kindLine, pictureRatio } from '../lib/pictureData';
 import './BubbleMedia.css';
 
 /** An attachment a picture tag can show: its preview must come from a safe place, else it is a file row. */
-export const isPicture = (a: EmailAttachment) => a.mimeType.startsWith('image/') && !!pictureSrc(a);
+export const isPicture = (a: EmailAttachment) => a.mimeType.startsWith('image/') && (isLivePicture(a) ? livePictureOk(a) : !!pictureSrc(a));
 
 function kindText(a: EmailAttachment): string {
   const ext = /\.([A-Za-z0-9]{1,5})$/.exec(a.filename)?.[1];
@@ -39,6 +39,11 @@ function FileRow({ a }: { a: EmailAttachment }) {
 /** A bubble's attachments: pictures above its text (children), file rows below. */
 export function BubbleMedia({ attachments, onOpen, children }: { attachments: EmailAttachment[]; onOpen: (index: number) => void; children?: ReactNode }) {
   const [broken, setBroken] = useState<Set<string>>(new Set());
+  // A live picture is downloaded only now, when its bubble is drawn, and the bubble draws again when it arrives
+  const arrived = usePictureVersion();
+  useEffect(() => {
+    for (const a of attachments) requestLivePicture(a);
+  }, [attachments, arrived]);
   const pictures = attachments.filter(isPicture);
   const shown = pictures.filter((a) => !broken.has(a.id));
   // An inline picture that cannot show is left out; only attached files get a row
@@ -53,8 +58,8 @@ export function BubbleMedia({ attachments, onOpen, children }: { attachments: Em
       {shown.length > 0 && (
         <div className={grid}>
           {cells.map((a, i) => (
-            <button key={a.id} type="button" className="bmedia__pic" style={!many && ratio ? { aspectRatio: String(ratio) } : undefined} aria-label={a.alt ? `Open picture: ${a.alt}` : !a.inline && a.filename ? `Open picture: ${a.filename}` : 'Open picture'} onClick={() => onOpen(pictures.indexOf(a))}>
-              <img src={pictureSrc(a)} width={a.width || undefined} height={a.height || undefined} alt="" loading="lazy" decoding="async" onError={() => setBroken((b) => new Set(b).add(a.id))} />
+            <button key={a.id} type="button" className="bmedia__pic" style={!many && ratio ? { aspectRatio: String(ratio) } : undefined} aria-label={a.alt ? `Open picture: ${a.alt}` : !a.inline && a.filename ? `Open picture: ${a.filename}` : 'Open picture'} onClick={() => pictureSrc(a) && onOpen(pictures.indexOf(a))}>
+              {pictureSrc(a) && <img src={pictureSrc(a)} width={a.width || undefined} height={a.height || undefined} alt="" loading="lazy" decoding="async" onError={() => setBroken((b) => new Set(b).add(a.id))} />}
               {i === 3 && extra > 0 && <span className="bmedia__more">{`+${extra}`}</span>}
             </button>
           ))}

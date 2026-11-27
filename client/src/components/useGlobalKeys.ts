@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { navigate } from '../router';
+import { isLiveMode } from '../lib/liveMode';
 
 interface Opts {
   onShortcuts: () => void;
@@ -40,16 +41,18 @@ export function useGlobalKeys({ onShortcuts, off }: Opts) {
       } else if (waiting) {
         // G then a letter: a destination, or nothing. It never falls through to the deck.
         eat();
-        if (GO[key]) navigate(GO[key]);
+        // Live Gmail has no drafts and no goals screen
+        if (GO[key] && !(isLiveMode() && key !== 'i')) navigate(GO[key]);
       } else if (key === 'g') {
         eat();
         pending.current = Date.now() + 1200;
       } else if (e.key === '/') {
         eat();
-        navigate('/ask');
+        if (!isLiveMode()) navigate('/ask');
       } else if (key === 'c') {
         eat();
-        navigate('/new');
+        // Live Gmail is read only: there is no new email
+        if (!isLiveMode()) navigate('/new');
       }
     };
     window.addEventListener('keydown', onKey, true);

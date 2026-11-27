@@ -37,8 +37,12 @@ import { dueParts, dueTime, isDueToday, isOverdue } from './time';
 import { counterpart } from './people';
 import { isSnapshot, ownerName, snapshotData, snapshotStoreKey } from './snapshot';
 import { SAMPLE_STORE_KEY } from './freshSample';
+import { isLiveMode, liveStopped, LIVE_KEYS } from './liveMode';
+import { liveAccounts } from './liveAuth';
+import { dropOldest, liveGmailAccount, mergeChanges, reconcileAccounts } from './liveMerge';
+import type { SyncChanges } from './liveSync';
 
-const storageKey = () => (isSnapshot() ? snapshotStoreKey() : SAMPLE_STORE_KEY);
+const storageKey = () => (isLiveMode() ? LIVE_KEYS.store : isSnapshot() ? snapshotStoreKey() : SAMPLE_STORE_KEY);
 
 interface UndoRecord {
   id: string;
@@ -125,7 +129,20 @@ function recomputeUnreadCounts(store: DemoStore): void {
 }
 
 function createFreshStore(): DemoStore {
-  const data = deepClone(withoutPictures(snapshotData() ?? buildDemoDataset()));
+  // Live mode starts with its connected accounts and no mail. The sample is never seeded into it.
+  const data = isLiveMode()
+    ? {
+        accounts: liveAccounts().map((a, i) => liveGmailAccount(a.email, i)),
+        threads: [] as EmailThread[],
+        messages: [] as EmailMessage[],
+        commitments: [] as CommitmentItem[],
+        screener: [] as ScreenerSender[],
+        tasks: [] as ExtractedTask[],
+        drafts: [] as DraftItem[],
+        rules: [] as AgentRule[],
+        customViews: [] as CustomView[],
+      }
+    : deepClone(withoutPictures(snapshotData() ?? buildDemoDataset()));
   const store: DemoStore = {
     accounts: data.accounts,
     threads: data.threads,
@@ -142,7 +159,7 @@ function createFreshStore(): DemoStore {
       googleOAuthConfigured: false,
       shabbosGuardEnabled: true,
       shabbosTimezone: 'America/New_York',
-      demoMode: true,
+      demoMode: !isLiveMode(),
       theme: 'light',
     },
     undoLog: {},
@@ -167,6 +184,8 @@ function loadStore(): DemoStore {
         };
         parsed.undoLog = parsed.undoLog || {};
         parsed.proposals = parsed.proposals || {};
+        // Live mode: the store's accounts are always the connected addresses
+        if (isLiveMode()) reconcileAccounts(parsed, liveAccounts().map((a) => a.email));
         recomputeUnreadCounts(parsed);
         cachedStore = parsed;
         return cachedStore;
@@ -180,14 +199,83 @@ function loadStore(): DemoStore {
   return cachedStore;
 }
 
+/** Live mode: stamps a thread the owner marked read or unread here, so a sync keeps that mark until a newer message arrives. */
+function markLocal(t: EmailThread): void {
+  if (isLiveMode()) t.localMarkAt = new Date().toISOString();
+}
+
 function saveStore(store: DemoStore): void {
   recomputeUnreadCounts(store);
   cachedStore = store;
+  // After Disconnect nothing is saved, in any key
+  if (liveStopped()) return;
+  if (isLiveMode()) {
+    saveLiveStore(store);
+    return;
+  }
   try {
     // A blob address of a picture picked this visit is dead after a reload: keep it in memory only
     window.localStorage.setItem(storageKey(), JSON.stringify(store, (k, v) => (k === 'previewUrl' && typeof v === 'string' && v.startsWith('blob:') ? undefined : v)));
   } catch {
     // Ignore storage quota issues in private browsing
+  }
+}
+
+/** Live mode keeps real mail, so a full storage must not lose the newest: the oldest threads go until it fits. */
+function saveLiveStore(store: DemoStore): void {
+  for (let tries = 0; tries < 60; tries += 1) {
+    try {
+      window.localStorage.setItem(storageKey(), JSON.stringify(store));
+      return;
+    } catch {
+      if (trimOldest(store) === 0) return;
+    }
+  }
+}
+
+/** Drops the oldest tenth of the saved threads (at least 2) and remembers their history ids. Returns how many went. */
+function trimOldest(store: DemoStore): number {
+  const before = new Map(store.threads.map((t) => [t.id, t.historyId]));
+  const n = dropOldest(store, Math.max(2, Math.ceil(store.threads.length / 10)));
+  if (n === 0) return 0;
+  const now = new Set(store.threads.map((t) => t.id));
+  const gone: Record<string, string> = {};
+  for (const [id, h] of before) if (!now.has(id) && h) gone[id] = h;
+  rememberTrimmed(gone, []);
+  return n;
+}
+
+/** Live mode: frees some storage by trimming the oldest saved mail, so the records a sign-in needs can be saved. */
+export function trimLiveStore(): void {
+  const store = loadStore();
+  if (trimOldest(store) === 0) return;
+  cachedStore = store;
+  try {
+    window.localStorage.setItem(storageKey(), JSON.stringify(store));
+  } catch {
+    // Still full: the next save trims again
+  }
+}
+
+const TRIMMED_CAP = 3000;
+function readTrimmed(): Record<string, string> {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(LIVE_KEYS.trimmed) || '{}');
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+/** Threads trimmed to make room keep their history id here, so a sync does not download them in full again until they change. */
+function rememberTrimmed(add: Record<string, string>, remove: string[]): void {
+  const map = { ...readTrimmed(), ...add };
+  for (const id of remove) delete map[id];
+  const ids = Object.keys(map);
+  for (const id of ids.slice(0, Math.max(0, ids.length - TRIMMED_CAP))) delete map[id];
+  try {
+    window.localStorage.setItem(LIVE_KEYS.trimmed, JSON.stringify(map));
+  } catch {
+    // Without room for even this, the trimmed threads are fetched again, as before
   }
 }
 
@@ -341,6 +429,55 @@ function searchThreadsLocal(threads: EmailThread[], query: string, accountId?: s
   return scored.map((x) => x.t);
 }
 
+/** Live mode: each saved thread of the account with the history id it was read at. */
+export function liveKnown(accountId: string): Map<string, string | undefined> {
+  const known = new Map<string, string | undefined>();
+  for (const [id, h] of Object.entries(readTrimmed())) if (id.startsWith(`${accountId}~`)) known.set(id, h);
+  for (const t of loadStore().threads) if (t.accountId === accountId) known.set(t.id, t.historyId);
+  return known;
+}
+
+/** Live mode: puts one account's sync result in the saved store. Returns the threads that changed or went. */
+export function applyLiveSync(accountId: string, changes: Pick<SyncChanges, 'changed' | 'goneIds'>): { changedIds: string[]; removedIds: string[] } {
+  const store = loadStore();
+  reconcileAccounts(store, liveAccounts().map((a) => a.email));
+  const out = mergeChanges(store, accountId, changes);
+  // A thread that was fetched again or left the inbox no longer counts as trimmed
+  if (out.changedIds.length > 0 || out.removedIds.length > 0) rememberTrimmed({}, [...out.changedIds, ...out.removedIds]);
+  saveStore(store);
+  return out;
+}
+
+/** Live mode: the Gmail ids of the messages in the saved store. */
+export function liveMessageIds(): Set<string> {
+  return new Set(loadStore().messages.flatMap((m) => (m.externalId ? [m.externalId] : [])));
+}
+
+export function liveThreadTotal(): number {
+  return loadStore().threads.length;
+}
+
+let attIndex: { messages: EmailMessage[]; map: Map<string, { email: string; messageId: string; attachmentId: string }> } | null = null;
+
+/** Live mode: which mailbox, Gmail message and attachment an attachment id belongs to. */
+export function liveAttachmentSource(id: string): { email: string; messageId: string; attachmentId: string } | undefined {
+  const store = loadStore();
+  if (!attIndex || attIndex.messages !== store.messages) {
+    const map = new Map<string, { email: string; messageId: string; attachmentId: string }>();
+    const email = new Map(store.accounts.map((a) => [a.id, a.email]));
+    for (const m of store.messages) {
+      const addr = email.get(m.accountId);
+      if (!addr) continue;
+      for (const a of m.attachments) {
+        const cut = a.id.indexOf('~');
+        if (cut > 0 && a.gmailAttachmentId) map.set(a.id, { email: addr, messageId: a.id.slice(0, cut), attachmentId: a.gmailAttachmentId });
+      }
+    }
+    attIndex = { messages: store.messages, map };
+  }
+  return attIndex.map.get(id);
+}
+
 export const staticDemoApi = {
   health: async () => ({ ok: true }),
 
@@ -417,6 +554,7 @@ export const staticDemoApi = {
     t.isArchived = true;
     t.bucket = 'archived';
     t.isUnread = false;
+    markLocal(t);
     saveStore(store);
     return { ok: true, undoId, thread: deepClone(t) };
   },
@@ -445,6 +583,7 @@ export const staticDemoApi = {
     const t = store.threads.find((x) => x.id === id);
     if (!t) return { ok: false };
     t.isUnread = isUnread;
+    markLocal(t);
     saveStore(store);
     return { ok: true, thread: deepClone(t) };
   },
@@ -479,6 +618,7 @@ export const staticDemoApi = {
         t.isArchived = true;
         t.bucket = 'archived';
         t.isUnread = false;
+        markLocal(t);
         count += 1;
       }
     }
@@ -562,7 +702,7 @@ export const staticDemoApi = {
   getGoogleAuthUrl: async (): Promise<{ url?: string; configured?: boolean; error?: string }> => ({
     url: undefined,
     configured: false,
-    error: 'Interactive Phone Demo mode: run Email Cards locally on Mac to connect live Google OAuth2.',
+    error: 'Interactive Phone Demo mode: run Email Chat locally on Mac to connect live Google OAuth2.',
   }),
 
   getDrafts: async () => deepClone(loadStore().drafts),
@@ -836,6 +976,14 @@ export const staticDemoApi = {
   },
 
   resetDemo: async () => {
+    // Live mail is read again from Gmail, so the list of trimmed threads must not count them as saved
+    if (isLiveMode()) {
+      try {
+        window.localStorage.removeItem(LIVE_KEYS.trimmed);
+      } catch {
+        // Nothing to clear
+      }
+    }
     const fresh = createFreshStore();
     saveStore(fresh);
     return { ok: true };
@@ -1159,8 +1307,10 @@ export const staticDemoApi = {
         t.isArchived = true;
         t.bucket = 'archived';
         t.isUnread = false;
+        markLocal(t);
       } else if (actionType === 'mark_read') {
         t.isUnread = false;
+        markLocal(t);
       }
     }
     prop.status = 'executed';
@@ -1220,7 +1370,7 @@ export const staticDemoApi = {
   testClaudeKey: async (payload: TestKeyRequest): Promise<TestKeyResponse> => ({
     ok: false,
     message:
-      'Interactive Phone Demo mode runs locally in your browser without sending API keys. Run Email Cards locally on your Mac to connect your Anthropic key.',
+      'Interactive Phone Demo mode runs locally in your browser without sending API keys. Run Email Chat locally on your Mac to connect your Anthropic key.',
     model: payload.model || 'claude-sonnet-4-20250514',
   }),
 };

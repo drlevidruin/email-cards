@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useDialog } from './useDialog';
+import { isLiveMode } from '../lib/liveMode';
 import './ShortcutsDialog.css';
 
 type Group = { title: string; rows: [string, string[]][] };
@@ -69,6 +70,17 @@ function Column({ groups }: { groups: Group[] }) {
   );
 }
 
+// Live Gmail is read only: no cards, no replies, no new email and no drafts
+const LIVE_RIGHT: Group[] = [
+  {
+    title: 'Go to',
+    rows: [
+      ['Emails', ['G', 'I']],
+      ['This sheet', ['?']],
+    ],
+  },
+];
+
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
   const box = useRef<HTMLDivElement>(null);
   useDialog(box, onClose);
@@ -77,8 +89,8 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
       <div ref={box} tabIndex={-1} className="shortcuts" role="dialog" aria-modal="true" aria-label="Shortcuts" onClick={(e) => e.stopPropagation()}>
         <h2 className="t-title-2 shortcuts__title">Shortcuts</h2>
         <div className="shortcuts__cols">
-          <Column groups={LEFT} />
-          <Column groups={RIGHT} />
+          {!isLiveMode() && <Column groups={LEFT} />}
+          <Column groups={isLiveMode() ? LIVE_RIGHT : RIGHT} />
         </div>
       </div>
     </div>

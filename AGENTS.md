@@ -22,6 +22,54 @@
 - Owner's word, "say emails on top left corner": every visible "Chats" or "chat" is now "Emails" or "email" (list title, its aria-label, back buttons, rail row, shortcuts sheet, back-button place name, pin and archive rows, toasts, empty states, "Pick an email", "Everyone in this email", "Email options"). Routes (`#/chats`, `#/chat/...`) and code names are unchanged.
 - Not tested on a phone: pinch, double tap, drag to close, press and hold, and the share sheet. Only the maths is tested.
 
+## Handoff, 16D (2026-11-27): a broken link no longer freezes the page, and short list previews
+
+- `htmlToText` reads a link's attributes in one capture (`<a\s([^<>]*)>`) and finds `href` inside that text, so a broken `<a href=` can no longer backtrack. Checked in `gmail-check.mts` at 10 KB and 300 KB (all under 100 ms; measured 0 to 3 ms).
+- A list row keeps at most 200 characters of an email (`oneLine` and `cutText` in `lib/preview.ts`, never splitting an emoji), and the body is cut before it is scanned.
+- The sign-in address no longer carries `include_granted_scopes`, so a token has only `gmail.readonly`.
+- Reset in live mode also removes `email_cards_live_trimmed`.
+- A picture is not requested while offline, and a network error clears its state like a 401 or 429. One shared redraw (30 seconds) and the `online` event draw it again.
+- Coming back online runs the idle-aware `renewOnTick`, not the boot check.
+
+## Handoff, 16C (2026-11-27): the name Email Chat, and the review fixes
+
+- The visible name is Email Chat (title, manifest, og tags, rail, menu, welcome). The site is `https://emailchat.web.app`: `firebase.json` and `.firebaserc` use target and site `emailchat`. Storage keys, code names, the `/email-cards/` base path and the repo name are unchanged. The live-only build has its own description ("Your email as chats, read only.") through a small plugin in `vite.config.ts`.
+- Deploy: `npm run build:web` in `client`, then from the repo root `firebase deploy --only hosting:emailchat --project email-cards-516019`. `build:web` empties `VITE_GMAIL_API_BASE` and `VITE_GOOGLE_AUTH_URL`, so a test value in the shell cannot ship.
+- The Pages build has no live mode: `deploy-pages.yml` no longer sets `VITE_GOOGLE_CLIENT_ID`. Every Pages project of the account shares one origin and one storage, so a token must never be saved there.
+- No renewal while offline: `online` is an input to every renewal decision (boot, visible, list route, tick), and the `online` event runs the check. Before leaving for Google the pending (and tried) records are saved and read back; if storage is full the live store is trimmed once to make room, and if they still do not stick the page stays and shows a line.
+- Disconnect sets a stopped flag first (`stopLive`): no sync round saves after it, and nothing is saved in any key. It also frees every live picture.
+- Trimmed threads keep their history id in `email_cards_live_trimmed` and are merged into `liveKnown`, so they are not downloaded again until they change.
+- A thread read or marked unread in the app gets `localMarkAt`. The mark holds until a newer message arrives; without a mark, Gmail decides.
+- `htmlToText` reads broken html in one pass (blocks cut by search, patterns stop at `<` and `>`, a link body ends at the next link) and reads at most 200 KB.
+- Pictures are keyed by `messageId~pPartId`; Gmail's attachment id is kept as `gmailAttachmentId` for the download only. One download per key at a time, URLs are revoked when the message leaves the store and on Disconnect and Reset. A 401 or 429 retries after 30 seconds instead of failing the picture.
+- In live mode the chat header opens a plain People list (`PeopleList.tsx`); the recipient editor is not reachable.
+- `gmailApi` ids allow only `[A-Za-z0-9_-]`, so `..` cannot pass.
+- An archived thread stays archived after a refetch until a newer message arrives. Not tested in a real browser or against real Google.
+
+## Handoff, 16B (2026-11-27): a web.app build, and three fixes to live mode
+
+- `VITE_LIVE_DEFAULT=true` (with `VITE_STATIC_DEMO=true` and a client id) makes live mode always on: no `#live`, no device flag, no sample, no snapshot. `#k=` in the address is dropped and never stored, and `snapshot.bin` is never fetched. Disconnect clears the live keys and shows the Connect screen. Builds without the flag behave as in 16A (Disconnect goes back to the sample).
+- The boot script moved to `client/public/boot.js` so a CSP without inline scripts allows it. It reads `data-demo`, `data-live-default` and `data-client-id` from `<html>` (Vite fills them; an unset variable stays as literal text, so each is compared with `true`). In live mode it never sets `boot-welcome`. `og:url` was removed.
+- `npm run build:web` in `client` builds `client/dist-web` for the web.app site (renamed in 16C: `https://emailchat.web.app`, site `emailchat`, project `email-cards-516019`). The Google client id is public and sits in that script.
+- Deploy: `npm run build:web` in `client`, then from the repo root `firebase deploy --only hosting:emailchat --project email-cards-516019`. `firebase.json` has the CSP and cache headers; `.firebaserc` maps the target. The CSP was set from a search of the built files: no inline script, eval, worker, iframe or app `innerHTML`; blob only for pictures; the only outside address the app calls is `gmail.googleapis.com`. Google sign-in is a page navigation, which the CSP does not limit. Check the CSP again if the app starts loading anything new.
+- Google Cloud must list `https://emailchat.web.app/` as an authorized redirect URI and JavaScript origin for the client id.
+- A thread the owner wrote last is bucket `waiting` (urgency 40), so it sorts under People and is not Needs reply. If the newest message from someone else is a mailing or an update, that message still decides (`threadBucket` in `gmailParse.ts`).
+- The 30 second tick also renews a token that has run out or has under 2 minutes left (`tickRenewal` in `liveAuthCore.ts`), only when the page is visible on the list, search is empty and not focused, no sheet, menu or viewer is open (`[aria-modal]`, `.scrim`, `.reader`), and there was no touch, key or scroll in the last 60 seconds. Still once per account per 10 minutes, one account at a time. Renewal leaves the page for Google and comes back to the same route.
+- Tests in the scratchpad: `gmail-check.mts`, `live-check.mts`, `boot-check.mjs`.
+
+## Handoff, 16A (2026-11-27): live mode reads real Gmail, read only
+
+- Live mode exists only in a build with `VITE_STATIC_DEMO=true` and `VITE_GOOGLE_CLIENT_ID` set. Since 16C the Pages deploy sets no client id, so the Pages build has no live mode at all; only `npm run build:web` does.
+- Open the site with `#live` to turn it on (`email_cards_live=1`, then the address becomes `#/`). Settings > Disconnect turns it off and removes every `email_cards_live_` key. No sample mail, no saved copy, and the clock is not pinned.
+- Sign-in is Google's redirect flow (`response_type=token`) with the one scope `gmail.readonly`. The state is a random nonce kept 10 minutes; the return hash is read at boot and the address is replaced at once, so a token never stays in the address. A token lives in localStorage and counts as good while more than 2 minutes remain.
+- Silent renewal (`prompt=none` with `login_hint`) runs only at boot, when the page becomes visible, and when the route becomes the list while visible. Never while searching, never more than once per account per 10 minutes, one account at a time. A page left open on the list for over an hour has no good token until one of those happens.
+- Every request goes through `gmailGet` in `lib/gmailApi.ts`: GET only, four allowed paths (profile, inbox thread list, one thread, one attachment). Anything else throws. Nothing in Gmail can change.
+- Sync (`liveSync.ts`, `liveRun.ts`) fetches only new or changed threads, 4 at a time, every 30 seconds while visible. 429 and 5xx wait 1, 2 and 4 seconds. 401 drops the token. 403 stops and keeps saved mail. Reading and archiving in the app stay on this device only.
+- Hidden in live mode: the composer, the New message button, the Drafts row, the routes /new, /drafts, reply and cards, and the keys c, / and G then T or D.
+- Needs reply in live mode counts non-archived `decision` threads, because there is no distilled ask. (A thread the owner answered last is `waiting` since 16B, so it is People, not News.)
+- Not done: Disconnect does not revoke the token with Google. (Trimmed threads are no longer refetched: see 16C.) Not tested in a real browser or against real Google.
+- Tests in the scratchpad: `gmail-check.mts`, `live-check.mts` and the mock in `gmock/` (`server.mjs` is written but was never run).
+
 ## Handoff, 15E (2026-11-27): a private copy no longer forgets its key after one bad download
 
 - `loadSnapshot` used to drop the key and the saved copy on the first 404 or undecryptable file. A CDN edge mid-deploy did that once and the owner lost his key. Now a 404 or a file that will not decrypt is retried at once with `snapshot.bin?r=<now>` and `cache: 'reload'`. If that works, it is a normal load.

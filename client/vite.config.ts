@@ -4,7 +4,17 @@ import path from 'node:path';
 
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || './',
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      // The live-only web build is not a sample, so its page description says so
+      name: 'live-description',
+      transformIndexHtml(html: string) {
+        if (process.env.VITE_LIVE_DEFAULT !== 'true') return html;
+        return html.split('Clear your inbox, one email at a time. Try it on a sample inbox.').join('Your email as chats, read only.');
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@shared': path.resolve(__dirname, '../shared'),

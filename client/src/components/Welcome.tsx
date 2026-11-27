@@ -44,12 +44,12 @@ export function Welcome() {
   if (!up) return null;
   const leaving = !mode;
   return (
-    <div className={`welcome${leaving ? ' is-leaving' : ''}`} role="dialog" aria-modal="true" aria-label="How Email Cards works">
+    <div className={`welcome${leaving ? ' is-leaving' : ''}`} role="dialog" aria-modal="true" aria-label="How Email Chat works">
       <div className="welcome__inner">
         <div className="welcome__text">
           <div className="welcome__brand">
             <img src={`${import.meta.env.BASE_URL}icon-192.png`} width={28} height={28} alt="" />
-            <span>Email Cards</span>
+            <span>Email Chat</span>
           </div>
           <h1 className="voice welcome__title">
             <span className="welcome__line">Clear your inbox,</span> <span className="welcome__line">one email at a time.</span>

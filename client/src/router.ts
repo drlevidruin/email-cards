@@ -41,6 +41,9 @@ function subscribe(cb: () => void) {
   };
 }
 
+/** Calls `cb` whenever the route changes, however it changed. Returns the way to stop. */
+export const watchRoute = subscribe;
+
 // history.state.i counts how deep this tab has navigated, so goBack knows whether back exists.
 function depth(): number {
   return typeof window.history.state?.i === 'number' ? window.history.state.i : 0;

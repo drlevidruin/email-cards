@@ -48,7 +48,7 @@ export function Menu({ current, onClose }: Props) {
     <div className="menu-scrim" onClick={onClose}>
       <nav ref={box} className="menu" role="dialog" aria-modal="true" aria-label="Menu" tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <div className="menu__head">
-          <h2 className="t-headline menu__brand">Email Cards</h2>
+          <h2 className="t-headline menu__brand">Email Chat</h2>
           <button className="icon-btn" aria-label="Close menu" onClick={onClose}>
             <X size={22} strokeWidth={1.75} />
           </button>

@@ -1,5 +1,6 @@
 import type { StackId } from '../lib/stacks';
 import { navigate } from '../router';
+import { isLiveMode } from '../lib/liveMode';
 import { NavRow } from './NavRows';
 import './Rail.css';
 
@@ -18,10 +19,10 @@ export type Here = StackId | 'todo' | 'drafts' | 'all' | 'search' | 'settings' |
 export function Rail({ here }: { here: Here }) {
   return (
     <nav className="rail" aria-label="Mail">
-      <h2 className="t-headline rail__brand">Email Cards</h2>
+      <h2 className="t-headline rail__brand">Email Chat</h2>
       <ul>
         <NavRow label="Emails" onClick={() => navigate('/chats')} />
-        <NavRow label="New email" cap="C" onClick={() => navigate('/new')} />
+        {!isLiveMode() && <NavRow label="New email" cap="C" onClick={() => navigate('/new')} />}
         <NavRow label="Settings" here={here === 'settings'} onClick={() => navigate('/settings')} />
       </ul>
     </nav>

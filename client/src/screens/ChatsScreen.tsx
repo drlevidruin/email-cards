@@ -10,6 +10,9 @@ import { useDrafts } from '../lib/chatDraft';
 import { useLoadedCount } from '../lib/useChatThreads';
 import { peekThread } from '../lib/threadCache';
 import { demoNote } from '../lib/sample';
+import { isLiveMode } from '../lib/liveMode';
+import { connectAccount, useLiveAccounts, useLiveMessage } from '../lib/liveAuth';
+import { useLiveStatus } from '../lib/liveRun';
 import { CATEGORY_LABEL, CATEGORY_ORDER, type Category } from '../lib/categories';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import { useViewportVars } from '../lib/useViewportVars';
@@ -40,6 +43,10 @@ function receiptLine(chats: Chat[]): string | null {
 /** The app's home: a list of chats, one per person, and on a laptop the open chat beside it. */
 export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; archivedView?: boolean }) {
   useViewportVars();
+  const liveMode = isLiveMode();
+  const liveAccounts = useLiveAccounts();
+  const liveMessage = useLiveMessage();
+  const liveStatus = useLiveStatus();
   const store = useStore();
   const { data, status } = store;
   const desktop = useIsDesktop();
@@ -205,6 +212,37 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
 
   const closeRow = () => onSide('', null);
 
+  // Live Gmail with no account yet: the title and one button
+  if (liveMode && liveAccounts.length === 0) {
+    return (
+      <div className="chatapp chatapp--list">
+        <section className="chatlist" aria-label="Emails">
+          <header className="chatlist__head">
+            <h1 className="chatlist__title">Emails</h1>
+          </header>
+          <div className="chatlist__connect">
+            {liveMessage && <p className="chatlist__connectmsg" role="status">{liveMessage}</p>}
+            <button className="btn btn--primary" onClick={connectAccount}>
+              Connect Gmail
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+  // Live Gmail while the first read of the inbox runs and there is no mail yet: the title only
+  if (liveMode && liveStatus.waiting && !activeKey && !archivedView && (data?.threads.length ?? 0) === 0) {
+    return (
+      <div className="chatapp chatapp--list" aria-busy="true">
+        <section className="chatlist">
+          <header className="chatlist__head">
+            <h1 className="chatlist__title">Emails</h1>
+          </header>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className={`chatapp chatapp--${activeKey ? 'open' : 'list'}`}>
       {archivedView ? (
@@ -224,9 +262,11 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
         <section className="chatlist" aria-label="Emails">
           <header className="chatlist__head">
             <h1 className="chatlist__title">Emails</h1>
-            <button className="chatapp__icon" aria-label="New message" onClick={() => navigate('/new')}>
-              <SquarePen size={22} strokeWidth={1.75} />
-            </button>
+            {!liveMode && (
+              <button className="chatapp__icon" aria-label="New message" onClick={() => navigate('/new')}>
+                <SquarePen size={22} strokeWidth={1.75} />
+              </button>
+            )}
             <button className="chatapp__icon" aria-label="Settings" onClick={() => navigate('/settings')}>
               <Settings size={22} strokeWidth={1.75} />
             </button>

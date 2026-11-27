@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { isSnapshot } from './snapshot';
+import { isLiveMode, LIVE_KEYS } from './liveMode';
 import { canPin, emptyPrefs, movePrefs, parsePrefs, type ChatPrefs } from './chatPrefsCore';
 
-/** Pin, mute, archive and the hand-set unread mark for each chat. Kept in this browser only. In a saved copy they use their own key. */
-const key = () => (isSnapshot() ? 'email_cards_snapshot_prefs_v1' : 'email_cards_chat_prefs_v1');
+/** Pin, mute, archive and the hand-set unread mark for each chat. Kept in this browser only. In a saved copy and in live mode they use their own keys. */
+const key = () => (isLiveMode() ? LIVE_KEYS.prefs : isSnapshot() ? 'email_cards_snapshot_prefs_v1' : 'email_cards_chat_prefs_v1');
 
 let cache: ChatPrefs | null = null;
 const listeners = new Set<() => void>();

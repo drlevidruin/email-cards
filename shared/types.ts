@@ -49,6 +49,8 @@ export interface EmailAttachment {
   previewUrl?: string;
   /** A picture from the email's body, not a file someone attached. */
   inline?: boolean;
+  /** Live Gmail only: the id Gmail gave this part for downloading it. It can change between reads, so it is never used to tell attachments apart. */
+  gmailAttachmentId?: string;
   /** Pixel size of the stored picture. */
   width?: number;
   height?: number;
@@ -119,6 +121,10 @@ export interface EmailThread {
   receiptInfo?: ReceiptInfo | null;
   relatedThreadIds: string[];
   senderTrust: SenderTrust;
+  /** Live Gmail only: the thread's history id when it was last read, so a sync fetches only what changed. */
+  historyId?: string;
+  /** Live Gmail only: when the owner marked this thread read or unread in the app. The mark holds until a newer message arrives; without it, Gmail decides. */
+  localMarkAt?: string;
   messages?: EmailMessage[];
 }
 

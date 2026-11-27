@@ -47,6 +47,7 @@
 .chatask__due--hot { color: var(--c-danger); }
 
 .chat__area { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chat--readonly .chat__scroll { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 .chat__scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px 10px 10px; background: var(--c-wall); }
 .chat__col { display: flex; flex-direction: column; min-height: 100%; justify-content: flex-end; }
 

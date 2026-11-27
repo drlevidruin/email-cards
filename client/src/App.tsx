@@ -9,6 +9,7 @@ import { Welcome } from './components/Welcome';
 import { useGlobalKeys } from './components/useGlobalKeys';
 import { useIsDesktop } from './lib/useIsDesktop';
 import { useWelcome } from './lib/welcome';
+import { isLiveMode } from './lib/liveMode';
 import { AllMailScreen } from './screens/AllMailScreen';
 import { AskScreen } from './screens/AskScreen';
 import { ChatsScreen } from './screens/ChatsScreen';
@@ -41,13 +42,16 @@ function safeDecode(s: string): string {
 function Routes() {
   const { segments, query } = useRoute();
   const [head, arg] = segments;
+  // Live Gmail is read only and is just the emails and settings: the writing screens and the old decks are not there
+  const liveOnly = isLiveMode() && head !== 'chats' && head !== 'chat' && head !== 'settings';
   const known =
-    (head === 'cards' && isStackId(arg)) ||
+    !liveOnly &&
+    ((head === 'cards' && isStackId(arg)) ||
     ((head === 'reply' || head === 'read') && !!arg) ||
     head === 'all' ||
     head === 'chats' ||
     (head === 'chat' && !!arg) ||
-    (!!head && Object.hasOwn(PAGES, head) && !arg);
+    (!!head && Object.hasOwn(PAGES, head) && !arg));
 
   useEffect(() => {
     if (!known) navigate('/chats', { replace: true });

@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 dist/
 client/dist/
+client/dist-web/
+.firebase/
 server/dist/
 
 # Local SQLite database & runtime data

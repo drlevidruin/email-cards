@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { isSnapshot } from './snapshot';
+import { isLiveMode, LIVE_KEYS } from './liveMode';
 import type { Recipients } from './recipients';
 
 /** Unsent text, and who it was meant for, kept for each chat. Saved in the browser; in a snapshot it lives in memory only. */
-const STORE = 'email_cards_chat_drafts_v1';
+const SAMPLE_STORE = 'email_cards_chat_drafts_v1';
+const STORE = () => (isLiveMode() ? LIVE_KEYS.drafts : SAMPLE_STORE);
 
 export interface Draft { text: string; rec?: Recipients; threadId?: string; lastId?: string }
 
@@ -13,10 +15,10 @@ const listeners = new Set<() => void>();
 function load(): Record<string, Draft> {
   if (cache) return cache;
   cache = {};
-  // A snapshot reads nothing from storage: its drafts start empty
+  // A snapshot reads nothing from storage: its drafts start empty. Live mode has its own key.
   if (isSnapshot()) return cache;
   try {
-    const raw = window.localStorage.getItem(STORE);
+    const raw = window.localStorage.getItem(STORE());
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (parsed && typeof parsed === 'object') {
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
@@ -58,7 +60,7 @@ export function setDraft(key: string, draft: Draft): void {
   cache = { ...all };
   if (!isSnapshot()) {
     try {
-      window.localStorage.setItem(STORE, JSON.stringify(cache));
+      window.localStorage.setItem(STORE(), JSON.stringify(cache));
     } catch {
       // Not saved: the text still lives for this visit
     }
@@ -71,7 +73,7 @@ export function resetChatDrafts(): void {
   cache = {};
   if (!isSnapshot()) {
     try {
-      window.localStorage.removeItem(STORE);
+      window.localStorage.removeItem(STORE());
     } catch {
       // Storage is blocked: the memory copy is already empty
     }

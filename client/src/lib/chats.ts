@@ -7,6 +7,7 @@ import { dropSignature } from './signature';
 import { skim } from './skim';
 import { firstName } from './utils';
 import { chatCategory, type Category } from './categories';
+import { isLiveMode } from './liveMode';
 
 export interface Chat {
   key: string;
@@ -71,9 +72,8 @@ export function attachmentPreview(msg: EmailMessage): string {
   return attachmentLine(msg.attachments ?? []);
 }
 
-export function oneLine(text: string): string {
-  return text.replace(/\s+/g, ' ').trim();
-}
+import { oneLine, cutText } from './preview';
+export { oneLine, cutText, PREVIEW_MAX } from './preview';
 
 export function newestOf(t: EmailThread): EmailMessage | undefined {
   return (t.messages ?? []).reduce<EmailMessage | undefined>((a, m) => (!a || ts(m.sentAt) > ts(a.sentAt) ? m : a), undefined);
@@ -122,7 +122,7 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
     const sender = isGroup ? undefined : pending.get(key);
     const newest = threads[threads.length - 1];
     const msg = newest ? newestOf(full(newest.id) ?? newest) : undefined;
-    const words = msg ? bubbleText(msg.bodyText, msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
+    const words = msg ? bubbleText(cutText(msg.bodyText, 4000), msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
     const text = !words.trim() && msg ? attachmentPreview(msg) : words;
     const lastMine = !!msg?.isOutbound;
     const who = isGroup && msg && !lastMine ? `${firstName(msg.fromName || msg.fromEmail)}: ` : '';
@@ -137,7 +137,7 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
       preview: oneLine(who + text),
       lastMine,
       unread: threads.filter((t) => t.isUnread).length,
-      needsReply: !!openAsk(threads),
+      needsReply: !!openAsk(threads) || (isLiveMode() && threads.some(liveNeedsReply)),
       isUpdate: threads.length > 0 && threads.every(isUpdateThread),
       category: chatCategory(threads, isUpdateThread, { senderEmail: isGroup ? undefined : g.people[0].email, isGroup }),
       isNew: !!sender,
@@ -145,6 +145,9 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
   }
   return out.sort((a, b) => ts(b.lastAt) - ts(a.lastAt));
 }
+
+/** Live Gmail has no written ask: a thread a person wrote last (bucket decision), not archived, needs a reply. */
+const liveNeedsReply = (t: EmailThread) => !t.isArchived && t.bucket === 'decision';
 
 /** The chat's open asks, most urgent first: a thread that is not archived, has an ask, and is not a newsletter or receipt. */
 export function openAsk(threads: EmailThread[]): EmailThread | undefined {

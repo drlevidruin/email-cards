@@ -5,6 +5,7 @@ import type { StackId } from './lib/stacks';
 import { pruneThreadCache } from './lib/threadCache';
 import { logUndone, resetToday, seedSample } from './lib/progress';
 import { resetOnboarding } from './lib/onboarding';
+import { LIVE_SYNC_EVENT } from './lib/liveMode';
 import { NOT_SAVED, useCardActions } from './storeActions';
 import { TOAST_MS, type CountKey, type Data, type Exiting, type Session, type Toast, type UndoEntry } from './storeTypes';
 
@@ -101,6 +102,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     seedSample();
     void load(false);
+  }, [load]);
+
+  // Live mode: a sync changed the saved mail, so the list and an open email update without a reload
+  useEffect(() => {
+    const again = () => void load(true);
+    window.addEventListener(LIVE_SYNC_EVENT, again);
+    return () => window.removeEventListener(LIVE_SYNC_EVENT, again);
   }, [load]);
 
   useEffect(() => {

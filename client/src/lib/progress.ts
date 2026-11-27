@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { isSnapshot } from './snapshot';
+import { isRealMail } from './realMail';
+import { isLiveMode, LIVE_KEYS } from './liveMode';
 import type { StackId } from './stacks';
 
 /**
@@ -50,7 +51,7 @@ let cacheKey = '';
 let version = 0;
 const listeners = new Set<() => void>();
 
-const storageKey = () => (isSnapshot() ? SNAPSHOT_KEY : KEY);
+const storageKey = () => (isLiveMode() ? LIVE_KEYS.progress : isRealMail() ? SNAPSHOT_KEY : KEY);
 
 export function dayKey(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -115,7 +116,7 @@ function day(key = today()): Day {
 
 /** Sample mode only: the four days before today (Saturdays skipped) count as clear, so the demo shows a streak. */
 export function seedSample(): void {
-  if (isSnapshot()) return;
+  if (isRealMail()) return;
   const log = readLog();
   if (log.seeded) return;
   log.seeded = true;
@@ -232,6 +233,18 @@ export function resetToday(): void {
   delete log.days[today()];
   seedSample();
   writeLog();
+}
+
+/** Forgets the whole saved log (live mode's Reset). */
+export function resetProgress(): void {
+  try {
+    window.localStorage.removeItem(storageKey());
+  } catch {
+    // Nothing to clear
+  }
+  cache = null;
+  version += 1;
+  listeners.forEach((l) => l());
 }
 
 /** The cards handled in a stack today, newest first, each with what was done to it. */

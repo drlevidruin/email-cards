@@ -39,3 +39,11 @@ export function pruneThreadCache(fresh: { id: string; messageCount: number; last
     }
   }
 }
+
+/** Forgets these threads, so the next look fetches them again. */
+export function dropFromThreadCache(ids: string[]) {
+  for (const id of ids) {
+    cache.delete(id);
+    loaded.delete(id);
+  }
+}

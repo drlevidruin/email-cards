@@ -7,6 +7,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
+    "build:web": "tsc --noEmit && VITE_STATIC_DEMO=true VITE_BASE_PATH=/ VITE_LIVE_DEFAULT=true VITE_GOOGLE_CLIENT_ID=788615230831-rj1b6p1kb2fibks42eagn3ivi0titn96.apps.googleusercontent.com VITE_GMAIL_API_BASE= VITE_GOOGLE_AUTH_URL= vite build --outDir dist-web --emptyOutDir",
     "preview": "vite preview"
   },
   "dependencies": {

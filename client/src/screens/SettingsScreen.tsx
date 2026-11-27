@@ -6,6 +6,11 @@ import { setStreakOn, useStreakOn } from '../lib/prefs';
 import { resetChatPrefs } from '../lib/chatPrefs';
 import { resetChatDrafts } from '../lib/chatDraft';
 import { forgetSnapshot, isSnapshot, snapshotLabel } from '../lib/snapshot';
+import { isLiveMode } from '../lib/liveMode';
+import { connectAccount, disconnect, signInAgain, useLiveAccounts } from '../lib/liveAuth';
+import { syncNow } from '../lib/liveRun';
+import { resetProgress } from '../lib/progress';
+import { revokeLivePictures } from '../lib/pictures';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
@@ -28,6 +33,8 @@ export function SettingsScreen() {
   const { data } = store;
   const streak = useStreakOn();
   const [privacy, setPrivacy] = useState(false);
+  const liveMode = isLiveMode();
+  const liveAccounts = useLiveAccounts();
   if (!data) return <PageShell title="Settings" canvas />;
   const { settings, shabbosStatus } = data;
 
@@ -49,9 +56,15 @@ export function SettingsScreen() {
       store.resetSessions();
       resetChatPrefs();
       resetChatDrafts();
+      // Live mail: the saved mail, settings and progress go; the accounts and sign-ins stay, and the mail is read again
+      if (liveMode) {
+        resetProgress();
+        revokeLivePictures();
+      }
       await store.reload();
-      store.showToast(isSnapshot() ? 'Snapshot reset' : 'Sample inbox reset');
+      store.showToast(liveMode ? 'Reset' : isSnapshot() ? 'Snapshot reset' : 'Sample inbox reset');
       navigate('/chats');
+      if (liveMode) void syncNow();
     } catch {
       store.showToast(NOT_SAVED);
     }
@@ -67,15 +80,40 @@ export function SettingsScreen() {
     <PageShell title="Settings" canvas>
       <div className="settings">
         <h2 className="list-heading">Accounts</h2>
-        <ul className="list">
-          {data.accounts.map((a) => (
-            <li key={a.id} className="list__row settings__row">
-              <span className="settings__dot" style={{ background: a.color }} />
-              <span className="settings__label settings__grow">{a.label}</span>
-              <span className="settings__value t-subhead">{a.email}</span>
+        {liveMode ? (
+          <ul className="list">
+            {liveAccounts.map((a) => (
+              <li key={a.email} className="list__row settings__row">
+                <span className="settings__label settings__grow">{a.email}</span>
+                {a.state === 'signin' && (
+                  <button className="btn btn--secondary btn--small" onClick={() => signInAgain(a.email)}>
+                    Sign in
+                  </button>
+                )}
+              </li>
+            ))}
+            <li>
+              <button className="list__row settings__row" onClick={connectAccount}>
+                <span className="settings__label">Add account</span>
+              </button>
             </li>
-          ))}
-        </ul>
+            <li>
+              <button className="list__row settings__row" onClick={disconnect}>
+                <span className="settings__label">Disconnect</span>
+              </button>
+            </li>
+          </ul>
+        ) : (
+          <ul className="list">
+            {data.accounts.map((a) => (
+              <li key={a.id} className="list__row settings__row">
+                <span className="settings__dot" style={{ background: a.color }} />
+                <span className="settings__label settings__grow">{a.label}</span>
+                <span className="settings__value t-subhead">{a.email}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <h2 className="list-heading">Display</h2>
         <ul className="list">
           <li className="list__row settings__row">
@@ -91,6 +129,8 @@ export function SettingsScreen() {
             </button>
           </li>
         </ul>
+        {!liveMode && (
+          <>
         <h2 className="list-heading">Shabbos and Yom Tov</h2>
         <ul className="list">
           <li className="list__row settings__row">
@@ -120,7 +160,9 @@ export function SettingsScreen() {
             </li>
           )}
         </ul>
-        {isStaticDemoMode() && (
+          </>
+        )}
+        {isStaticDemoMode() && !liveMode && (
           <>
             <h2 className="list-heading">Privacy</h2>
             <ul className="list">
@@ -133,7 +175,20 @@ export function SettingsScreen() {
             </ul>
           </>
         )}
-        {(settings.demoMode || isStaticDemoMode()) && (
+        {liveMode && (
+          <>
+            <h2 className="list-heading">Saved mail</h2>
+            <ul className="list">
+              <li className="list__row settings__row">
+                <span className="settings__label">On this device</span>
+                <button className="btn btn--secondary btn--small" onClick={() => void reset()}>
+                  Reset
+                </button>
+              </li>
+            </ul>
+          </>
+        )}
+        {!liveMode && (settings.demoMode || isStaticDemoMode()) && (
           <>
             <h2 className="list-heading">Demo</h2>
             <ul className="list">
@@ -162,7 +217,7 @@ export function SettingsScreen() {
           </li>
         </ul>
       </div>
-      {isStaticDemoMode() && privacy && (
+      {isStaticDemoMode() && !liveMode && privacy && (
         <Sheet title="Privacy" onClose={() => setPrivacy(false)} dialog>
           <p className="t-subhead settings__privacy">This demo runs in your browser. Your mail stays on your device and is never used to train models.</p>
         </Sheet>

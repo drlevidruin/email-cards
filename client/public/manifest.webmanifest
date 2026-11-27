@@ -1,6 +1,6 @@
 {
-  "name": "Email Cards",
-  "short_name": "Email Cards",
+  "name": "Email Chat",
+  "short_name": "Email Chat",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
