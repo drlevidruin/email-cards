@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { isAttachedFile } from '../lib/pictureData';
 import type { EmailThread, GmailAccount } from '../lib/types';
 import { cleanSubject, counterpart } from '../lib/stacks';
 import { findQuote } from '../lib/highlight';
@@ -31,7 +32,7 @@ export function EmailCard({ thread, account, overlay, goalFirst, answers, onAnsw
   const newest = newestMessage(full);
   const kind = heroKind(thread, goalFirst);
   const who = counterpart(thread);
-  const attached = (newest?.attachments.length ?? 0) > 0;
+  const attached = (newest?.attachments.filter(isAttachedFile).length ?? 0) > 0;
   const raw = newest ? newest.bodyText : thread.snippet;
   const cut = skim(raw);
   // The sentence the Goal came from must be on the card: if skimming cut it away, the card shows the email whole

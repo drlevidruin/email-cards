@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isSnapshot } from './snapshot';
-import { canPin, emptyPrefs, parsePrefs, type ChatPrefs } from './chatPrefsCore';
+import { canPin, emptyPrefs, movePrefs, parsePrefs, type ChatPrefs } from './chatPrefsCore';
 
 /** Pin, mute, archive and the hand-set unread mark for each chat. Kept in this browser only. In a saved copy they use their own key. */
 const key = () => (isSnapshot() ? 'email_cards_snapshot_prefs_v1' : 'email_cards_chat_prefs_v1');
@@ -32,15 +32,22 @@ function commit(next: ChatPrefs): void {
 
 const copy = (p: ChatPrefs): ChatPrefs => ({ pinned: { ...p.pinned }, muted: { ...p.muted }, unread: { ...p.unread }, archived: { ...p.archived } });
 
-/** Returns false, and changes nothing, when three other chats are already pinned. */
-export function togglePin(k: string): boolean {
+/** Returns false, and changes nothing, when three other chats in `listed` are already pinned. */
+export function togglePin(k: string, listed?: Iterable<string>): boolean {
   const p = load();
   const n = copy(p);
   if (k in n.pinned) delete n.pinned[k];
-  else if (canPin(p, k)) n.pinned[k] = Date.now();
+  else if (canPin(p, k, listed)) n.pinned[k] = Date.now();
   else return false;
   commit(n);
   return true;
+}
+
+/** The chat's only email moved to another key: the pin and mute go with it. */
+export function moveChatPrefs(from: string, to: string, toExists = false): void {
+  const p = load();
+  if (!(from in p.pinned) && !(from in p.muted)) return;
+  commit(movePrefs(p, from, to, toExists));
 }
 
 export function toggleMute(k: string): void {
@@ -59,9 +66,10 @@ export function setUnread(k: string, on: boolean): void {
   commit(n);
 }
 
-export function archiveChat(k: string): void {
+/** `at` is when the chat counts as archived: never earlier than its newest email, so it stays archived. */
+export function archiveChat(k: string, at: number = Date.now()): void {
   const n = copy(load());
-  n.archived[k] = Date.now();
+  n.archived[k] = Math.max(Date.now(), at);
   commit(n);
 }
 

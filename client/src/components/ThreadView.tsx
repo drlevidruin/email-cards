@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isAttachedFile, sizeWords } from '../lib/pictureData';
 import type { ReactNode } from 'react';
 import { Paperclip } from 'lucide-react';
 import type { EmailMessage, EmailThread } from '../lib/types';
@@ -120,18 +121,18 @@ export function ThreadView({ threadId, hideSubject, quote, promise }: Props) {
             <div className="tv__body">
               <Marked text={m.bodyText} quote={i === promiseAt ? promise : i === messages.length - 1 && promiseAt < 0 ? quote : null} />
             </div>
-            {m.attachments.length > 0 && (
+            {m.attachments.some(isAttachedFile) && (
               <ul className="tv__files">
-                {m.attachments.map((a) => (
+                {m.attachments.filter(isAttachedFile).map((a) => (
                   <li key={a.id} className="tv__file">
                     <Paperclip size={18} strokeWidth={1.75} />
                     <span className="tv__file-name">{a.filename}</span>
-                    <span className="tv__file-size">{formatBytes(a.sizeBytes)}</span>
+                    <span className="tv__file-size">{sizeWords(a.sizeBytes) || formatBytes(a.sizeBytes).replace(/^0 B$/, '')}</span>
                   </li>
                 ))}
               </ul>
             )}
-            {m.attachments.length > 0 && isSampleInbox() && <p className="t-footnote tv__sample">Sample inbox. There is no real file to open.</p>}
+            {m.attachments.some(isAttachedFile) && isSampleInbox() && <p className="t-footnote tv__sample">Sample inbox. There is no real file to open.</p>}
           </section>
         );
       })}

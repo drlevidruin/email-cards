@@ -30,6 +30,7 @@ import type {
   ThreadDetailPayload,
 } from './types';
 import { buildDemoDataset } from './staticDemoData';
+import { withoutPictures } from './pictureData';
 import { buildTodo } from './todo';
 import { buildStack } from './stacks';
 import { dueParts, dueTime, isDueToday, isOverdue } from './time';
@@ -124,7 +125,7 @@ function recomputeUnreadCounts(store: DemoStore): void {
 }
 
 function createFreshStore(): DemoStore {
-  const data = deepClone(snapshotData() ?? buildDemoDataset());
+  const data = deepClone(withoutPictures(snapshotData() ?? buildDemoDataset()));
   const store: DemoStore = {
     accounts: data.accounts,
     threads: data.threads,
@@ -183,7 +184,8 @@ function saveStore(store: DemoStore): void {
   recomputeUnreadCounts(store);
   cachedStore = store;
   try {
-    window.localStorage.setItem(storageKey(), JSON.stringify(store));
+    // A blob address of a picture picked this visit is dead after a reload: keep it in memory only
+    window.localStorage.setItem(storageKey(), JSON.stringify(store, (k, v) => (k === 'previewUrl' && typeof v === 'string' && v.startsWith('blob:') ? undefined : v)));
   } catch {
     // Ignore storage quota issues in private browsing
   }

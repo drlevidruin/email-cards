@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Archive, Bell, BellOff, ChevronLeft, Mail, MailOpen, Pin, PinOff, ArchiveRestore, Search, Settings, SquarePen } from 'lucide-react';
-import { navigate } from '../router';
+import { goBack, navigate } from '../router';
 import { useStore } from '../store';
 import { buildChats, type Chat } from '../lib/chats';
 import { api } from '../lib/api';
@@ -134,7 +134,7 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
   const act = (what: RowAct, c: Chat) => {
     if (what === 'pin') {
       const was = c.key in prefs.pinned;
-      if (!togglePin(c.key)) store.showToast('You can pin up to 3 chats');
+      if (!togglePin(c.key, live.map((x) => x.key))) store.showToast('You can pin up to 3 emails');
       else store.showToast(was ? 'Unpinned' : 'Pinned');
     } else if (what === 'mute') {
       const was = c.key in prefs.muted;
@@ -150,9 +150,10 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
       }
     } else if (archivedOf(c)) {
       unarchiveChat(c.key);
-      store.showToast('Back in your chats');
+      store.showToast('Back in your emails');
     } else {
-      archiveChat(c.key);
+      const last = Date.parse(c.lastAt);
+      archiveChat(c.key, Number.isNaN(last) ? Date.now() : last);
       store.offerUndo('Archived', async () => unarchiveChat(c.key));
     }
   };
@@ -195,10 +196,10 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
     );
     const ic = { size: 22, strokeWidth: 1.75, 'aria-hidden': true } as const;
     return [
-      row('pin', pinned ? <PinOff {...ic} /> : <Pin {...ic} />, pinned ? 'Unpin chat' : 'Pin chat'),
+      row('pin', pinned ? <PinOff {...ic} /> : <Pin {...ic} />, pinned ? 'Unpin email' : 'Pin email'),
       row('mute', muted ? <Bell {...ic} /> : <BellOff {...ic} />, muted ? 'Unmute' : 'Mute'),
       row('read', asRead ? <MailOpen {...ic} /> : <Mail {...ic} />, asRead ? 'Mark as read' : 'Mark as unread'),
-      row('archive', arch ? <ArchiveRestore {...ic} /> : <Archive {...ic} />, arch ? 'Unarchive chat' : 'Archive chat'),
+      row('archive', arch ? <ArchiveRestore {...ic} /> : <Archive {...ic} />, arch ? 'Unarchive email' : 'Archive email'),
     ];
   };
 
@@ -207,23 +208,22 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
   return (
     <div className={`chatapp chatapp--${activeKey ? 'open' : 'list'}`}>
       {archivedView ? (
-        <section className="chatlist" aria-label="Archived chats">
+        <section className="chatlist" aria-label="Archived emails">
           <header className="chatlist__head chatlist__head--back">
-            <button className="chatapp__icon" aria-label="Back to chats" onClick={() => navigate('/chats')}>
+            <button className="chatapp__icon" aria-label="Back to emails" onClick={goBack}>
               <ChevronLeft size={26} strokeWidth={1.75} />
             </button>
             <h1 className="chatlist__title">Archived</h1>
           </header>
-          <p className="chatlist__quiet">A new email brings a chat back to your chats.</p>
           <div className="chatlist__scroll" onScroll={closeRow}>
-            {status === 'ready' && archivedChats.length === 0 && <p className="chatlist__empty chatlist__empty--ink">No archived chats</p>}
+            {status === 'ready' && archivedChats.length === 0 && <p className="chatlist__empty chatlist__empty--ink">No archived emails</p>}
             <ul>{archivedChats.map(rowFor)}</ul>
           </div>
         </section>
       ) : (
-        <section className="chatlist" aria-label="Chats">
+        <section className="chatlist" aria-label="Emails">
           <header className="chatlist__head">
-            <h1 className="chatlist__title">Chats</h1>
+            <h1 className="chatlist__title">Emails</h1>
             <button className="chatapp__icon" aria-label="New message" onClick={() => navigate('/new')}>
               <SquarePen size={22} strokeWidth={1.75} />
             </button>
@@ -256,7 +256,7 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
           {sum && <p className="chatlist__sum">{sum}</p>}
           {note && <p className="chatlist__sample">{note}</p>}
           <div className="chatlist__scroll" onScroll={closeRow}>
-            {status === 'ready' && rows.length === 0 && !(tab === 'all' && !needle && archivedChats.length > 0) && <p className="chatlist__empty">No chats here</p>}
+            {status === 'ready' && rows.length === 0 && !(tab === 'all' && !needle && archivedChats.length > 0) && <p className="chatlist__empty">No emails here</p>}
             <ul>
               {tab === 'all' && !needle && archivedChats.length > 0 && (
                 <li>
@@ -274,8 +274,8 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
           </div>
         </section>
       )}
-      <section className="chatpane" aria-label="Chat">
-        {active ? <ChatScreen key={active.key} chat={active} desktop={desktop} /> : <p className="chatpane__empty">{activeKey && status !== 'ready' ? '' : 'Pick a chat'}</p>}
+      <section className="chatpane" aria-label="Email">
+        {active ? <ChatScreen key={active.key} chat={active} desktop={desktop} /> : <p className="chatpane__empty">{activeKey && status !== 'ready' ? '' : 'Pick an email'}</p>}
       </section>
       {menu && (
         <Sheet title={menu.name} onClose={() => setMenu(null)} className="moresheet">

@@ -164,7 +164,7 @@ export function PeopleSheet({ rec, plan, mine, known, group, showSwitch, everyon
       <div className="psheet__foot">
         {!group && !sameRecipients(rec, plan) && (
           <button type="button" className="psheet__reset" onClick={() => onChange(plan)}>
-            Everyone in this chat
+            Everyone in this email
           </button>
         )}
         <button type="button" className="psheet__done" onClick={onClose}>

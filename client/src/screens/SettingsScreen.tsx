@@ -4,6 +4,7 @@ import pkg from '../../package.json';
 import { api, isStaticDemoMode } from '../lib/api';
 import { setStreakOn, useStreakOn } from '../lib/prefs';
 import { resetChatPrefs } from '../lib/chatPrefs';
+import { resetChatDrafts } from '../lib/chatDraft';
 import { forgetSnapshot, isSnapshot, snapshotLabel } from '../lib/snapshot';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -47,6 +48,7 @@ export function SettingsScreen() {
       await api.resetDemo();
       store.resetSessions();
       resetChatPrefs();
+      resetChatDrafts();
       await store.reload();
       store.showToast(isSnapshot() ? 'Snapshot reset' : 'Sample inbox reset');
       navigate('/chats');

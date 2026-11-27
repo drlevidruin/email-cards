@@ -38,7 +38,7 @@ const RIGHT: Group[] = [
       ['Search', ['/']],
       ['New email', ['C']],
       ['To-do', ['G', 'T']],
-      ['Chats', ['G', 'I']],
+      ['Emails', ['G', 'I']],
       ['Drafts', ['G', 'D']],
       ['This sheet', ['?']],
     ],

@@ -318,7 +318,7 @@ export function ChatRow({ chat, active, draft, pinned, muted, marked, archived, 
           </span>
         </span>
       </button>
-      <button type="button" className="chatrow__more" aria-label="Chat options" onClick={() => onMenu(chat)}>
+      <button type="button" className="chatrow__more" aria-label="Email options" onClick={() => onMenu(chat)}>
         <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
       </button>
     </li>

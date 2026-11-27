@@ -39,9 +39,26 @@ export function isArchived(p: ChatPrefs, key: string, lastAt: string): boolean {
   return Number.isNaN(last) ? true : at >= last;
 }
 
-export function canPin(p: ChatPrefs, key: string): boolean {
+/** `listed` is the keys of the chats in the current list: a pin on a key that is not there (an old key, a hidden chat) does not count. Without it every pin counts. */
+export function canPin(p: ChatPrefs, key: string, listed?: Iterable<string>): boolean {
   if (key in p.pinned) return true;
-  return Object.keys(p.pinned).filter((k) => k !== key).length < MAX_PINS;
+  const shown = listed ? new Set(listed) : null;
+  return Object.keys(p.pinned).filter((k) => k !== key && (!shown || shown.has(k))).length < MAX_PINS;
+}
+
+/** A chat's email moved to a new key and nothing is left on the old one: its pin and mute follow. Never overwrites settings already on the new key. When a chat already has the new key (`toExists`), the mute is dropped, not moved, so that chat is not muted by a move. */
+export function movePrefs(p: ChatPrefs, from: string, to: string, toExists = false): ChatPrefs {
+  if (from === to) return p;
+  const n: ChatPrefs = { pinned: { ...p.pinned }, muted: { ...p.muted }, unread: { ...p.unread }, archived: { ...p.archived } };
+  if (from in n.pinned) {
+    if (!(to in n.pinned)) n.pinned[to] = n.pinned[from];
+    delete n.pinned[from];
+  }
+  if (from in n.muted) {
+    if (!toExists) n.muted[to] = true;
+    delete n.muted[from];
+  }
+  return n;
 }
 
 /** Pinned chats first (the one pinned last on top), then the rest, newest first. */

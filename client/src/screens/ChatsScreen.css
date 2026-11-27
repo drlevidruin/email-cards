@@ -163,7 +163,6 @@
 }
 
 .chatlist__head--back { padding-left: 6px; }
-.chatlist__quiet { flex: none; margin: 0; padding: 0 16px 8px; font-size: 13px; color: var(--c-ink-2); }
 .chatlist__empty--ink { color: var(--c-ink-2); }
 
 /* A row you can swipe: the trays sit behind it */

@@ -66,6 +66,19 @@ export function setDraft(key: string, draft: Draft): void {
   listeners.forEach((l) => l());
 }
 
+/** Forgets every unsent text, in memory and in storage. */
+export function resetChatDrafts(): void {
+  cache = {};
+  if (!isSnapshot()) {
+    try {
+      window.localStorage.removeItem(STORE);
+    } catch {
+      // Storage is blocked: the memory copy is already empty
+    }
+  }
+  listeners.forEach((l) => l());
+}
+
 /** Every draft by chat key. The caller draws again when any draft changes. */
 export function useDrafts(): Record<string, Draft> {
   const [, tick] = useState(0);

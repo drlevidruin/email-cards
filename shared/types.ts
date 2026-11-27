@@ -47,6 +47,12 @@ export interface EmailAttachment {
   sizeBytes: number;
   /** A picture of the attachment that an img tag can show. Missing when there is none. */
   previewUrl?: string;
+  /** A picture from the email's body, not a file someone attached. */
+  inline?: boolean;
+  /** Pixel size of the stored picture. */
+  width?: number;
+  height?: number;
+  alt?: string;
 }
 
 export interface EmailMessage {

@@ -1,5 +1,51 @@
 # Email Cards: notes for any agent working here
 
+## Handoff, 15A (2026-11-27): real pictures and sender logos
+
+- The private snapshot can now carry the pictures from inside emails and each company's logo. All new fields are optional. `EmailAttachment` gains `inline` (a picture from the body, not an attached file), `width`, `height`, `alt`. `DemoDataset` gains `pictures` (attachment id to a jpeg, png, gif or webp base64 data URL) and `logos` (lowercase sender address to a data URL). An attachment whose picture is in `pictures` has no `previewUrl`.
+- `lib/pictureData.ts` holds the pure parts (`parseImageDataUrl`, which refuses svg and anything not base64; `withoutPictures`; `pictureRatio`; `sizeWords` and `kindLine`; `isAttachedFile`; `attachmentLine`). `lib/pictures.ts` has `pictureSrc(attachment)` and `logoSrc(email)`: a blob URL made once per picture and kept in memory only. Picture data and blob URLs never go to localStorage or sessionStorage.
+- `createFreshStore` clones the dataset through `withoutPictures`, so the saved store and the undo snapshots stay the size they were.
+- Bubbles: a single picture with a known size takes its own shape, clamped between 3:4 and 2:1, so the bubble has its final height before the picture loads. Grids stay square. The viewer shows the picture's `alt`, or no name for an inline picture. It has no download control.
+- An inline picture is a picture, never a file: list previews ("Photo", "2 photos"), the card's paperclip and the thread view's file list skip it. A file with `sizeBytes` 0 shows only its kind, for example "PDF".
+- `Avatar` shows the logo (cover, white, 1px ring) when `logoSrc(email)` has one, and falls back to initials if it fails to load. `AvatarPair` keeps letters.
+- `loadSnapshot` fetches with `cache: 'no-cache'`. The app already waits for the snapshot before drawing; while a key is present it now draws a quiet empty Chats header meanwhile, never sample mail.
+- To see it: a snapshot with `pictures` and `logos`, an attachment `{ id, filename, mimeType: 'image/jpeg', sizeBytes, inline: true, width, height }` whose id is a key of `pictures`, and a sender address that is a key of `logos`.
+
+## Handoff, 15B (2026-11-27): zoom, share, a start screen that does not jump, "Emails"
+
+- `components/ImageViewer.tsx` zooms. Pinch 1x to 4x around the point between the fingers; double tap or double click 2.5x at that point and back; one finger or a mouse drag moves a zoomed picture, clamped so its edges never pull in past the stage; wheel zooms on a laptop. At 1x a down drag closes (picture follows, `.iview__shade` fades; past 120px or a quick flick closes, else it springs back); left and right swipes change the picture only at 1x. A new picture starts at 1x.
+- The picture's place is written straight to the element (`translate3d` and `scale`) in `requestAnimationFrame`, never through React state. A 180ms transition is used only for the double tap, the spring back and the reset; none while a finger is down, none under `prefers-reduced-motion`. The pure maths is `lib/zoomMath.ts`, tested by `zoom-check.mts` in the scratchpad.
+- The stage has `touch-action: none` and non-passive touch listeners; `gesturestart` and `gesturechange` are cancelled on the document while the viewer is open. A single-finger `touchstart` is never cancelled and the picture has no `-webkit-touch-callout` or `user-select` rule, so the iOS press and hold menu stays. A pinch, pan or drag that ends sets `suppressClick` for 400ms so it never counts as a tap on the dark area.
+- Share button on the right of the top bar (lucide `Share`), shown only when `navigator.canShare` accepts a file of that picture's type. It fetches the blob from `pictureSrc`, names the file after the attachment with the extension that matches the real type (`SHIPPING_LABEL.png` holding a jpeg shares as `SHIPPING_LABEL.jpg`; `picture-1.jpg` stays), and a cancelled share is silent. With no button the old gap keeps the title centred.
+- Start screen: `main.tsx` draws the real `chatapp`, `chatlist`, `chatlist__head` and `chatlist__title` classes (title "Emails") while the snapshot downloads, so the title does not jump; an address that opens `#/chat/...` gets only the empty background. It keeps `aria-busy`.
+- `BubbleMedia`: an attached (not inline) picture with no `alt` has `aria-label` "Open picture: <filename>".
+- Owner's word, "say emails on top left corner": every visible "Chats" or "chat" is now "Emails" or "email" (list title, its aria-label, back buttons, rail row, shortcuts sheet, back-button place name, pin and archive rows, toasts, empty states, "Pick an email", "Everyone in this email", "Email options"). Routes (`#/chats`, `#/chat/...`) and code names are unchanged.
+- Not tested on a phone: pinch, double tap, drag to close, press and hold, and the share sheet. Only the maths is tested.
+
+## Handoff, 15D (2026-11-27): fixes from the review of 15B and 15C
+
+- Pinch: a pinch let go (or cancelled) below 1.1x snaps to 1x with the short transition (`pinchEndView`, `PINCH_SNAP` in `lib/zoomMath.ts`; `zoom-check.mts`).
+- Share is hidden for a picture that is really an SVG (preview address starts with `data:image/svg`, or its Blob is `image/svg+xml`, checked again once the Blob loads). Sample data unchanged.
+- Zoom centre: the bottom padding left `.iview__stage` for a `.iview__foot` bar under it (8px plus the safe-area inset); the stage has symmetric 28px top and bottom padding and `.iview__img` is `max-height: 100%`, so the picture looks the same at 1x and the stage's box is centred on the picture.
+- Flick: moves are timed with `e.timeStamp`; `flickSpeed` is 0 at touchend when the last move is over 100ms old.
+- Rotating: `resize` clamps the view and paints. The 400ms click-suppression timer is kept and cleared at touchstart, mousedown and close. A tap on the dark area within 320ms of a tap on the picture is ignored.
+- History: opening the viewer pushes an entry (same address, `{ i: depth + 1, from: current path, iview: token }`). Back or the edge swipe pops it and closes the viewer. Any other close goes `history.back()` once, only when the current entry is still its own, so no viewer entry stays. A forward entry may remain after a close until the next navigation.
+- Prefs: `moveChatPrefs(from, to, toExists)` is called only after a send that went out (not held); the mute is not moved onto a key that a chat already has (`movePrefs` fourth argument). `ChatScreen` checks this with `buildChats` before the send. Cases in `prefs-check.mts`.
+- Removed the line under the Archived title and its CSS (house rule 5).
+- Not tested on a phone: pinch, rotation, the edge swipe.
+
+## Handoff, 15C (2026-11-27): fixes from the review of 13A to 15B
+
+- Clock: `lib/demoClock.ts` also skips the pin when localStorage holds `email_cards_snapshot_key`, so a private copy reopened without `#k=` keeps real time. It reads the key in a try and does not import `snapshot.ts` (the clock must run before any module reads a date). Archiving saves `max(now, the chat's newest email)`, so an archive sticks.
+- A chat with only my own addresses: `replyPlan` sends to the chat's own address and sets `self`; the line reads "To yourself". Cases in `rec-check.mts`.
+- Pins: `canPin` counts only pins of chats in the live list. When a send moves the only email of a chat to a new key, `moveChatPrefs` moves its pin and mute to the new key. Cases in `prefs-check.mts`.
+- A picture picked in the sample is never written to storage as a `blob:` address (`saveStore` drops it); after a reload it is a file row. The paperclip and strip show in the sample inbox only (`isSampleInbox`).
+- Back from a chat opened in Archived goes back; the Archived header's Back uses `goBack`.
+- `BubbleMedia` gives file rows only to attachments that pass `isAttachedFile`; an inline picture that fails to load is left out.
+- Reset also clears unsent text (`resetChatDrafts`).
+- Share: `lib/pictures.ts` keeps each picture's Blob (`pictureBlob`, and `loadPictureBlob` for a preview-address picture, run when the viewer shows it). The tap builds the File and calls `navigator.share` with no await before it.
+- Not tested on a phone: the share sheet, and a private copy reopened from the Home Screen.
+
 ## Handoff, 11A (2026-11-27): the app is a chat
 
 - Levi: "Scrap this instead. Let's make an email interface that looks like WhatsApp, or like a chat, so instead of it just being separate emails like that, each email is like a different chat message. It looks that way. So it's through email, but I'm actually chatting."

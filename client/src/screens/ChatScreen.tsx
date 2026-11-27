@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Check, ChevronDown, ChevronLeft, Mail, MailOpen, MoreHorizontal, Paperclip, SendHorizontal, Users } from 'lucide-react';
-import { api, isStaticDemoMode } from '../lib/api';
+import { api } from '../lib/api';
 import { goBack, navigate, cameFrom } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
-import { bubbleText, isUpdateThread, keyOf, openAsk, replyThread, type Chat } from '../lib/chats';
+import { bubbleText, buildChats, isUpdateThread, keyOf, openAsk, replyThread, type Chat } from '../lib/chats';
 import { groupName, type Person } from '../lib/people';
 import { replyPlan, type Recipients } from '../lib/recipients';
 import { fullOf, useLoadedCount } from '../lib/useChatThreads';
@@ -13,9 +13,10 @@ import { cleanSubject, replyActions } from '../lib/stacks';
 import { dueText, isHot } from '../lib/time';
 import { facts, skim } from '../lib/skim';
 import { findQuote } from '../lib/highlight';
-import { demoNote } from '../lib/sample';
+import { demoNote, isSampleInbox } from '../lib/sample';
 import { dropMine } from '../lib/myDraft';
 import { getDraft, setDraft } from '../lib/chatDraft';
+import { moveChatPrefs } from '../lib/chatPrefs';
 import { linkify } from '../lib/linkify';
 import { firstName } from '../lib/utils';
 import type { EmailMessage, EmailThread } from '../lib/types';
@@ -292,7 +293,9 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     return { email, firstName: firstName(last.fromName || last.fromEmail) };
   }, [targetFull, mine]);
   const toLine =
-    plan.bccd && !edited
+    plan.self && !edited
+      ? 'To yourself'
+      : plan.bccd && !edited
       ? `To ${nameList(sendTo.to)} only \u00B7 You were bcc'd`
       : `To ${nameList(sendTo.to)}${narrower ? ' only' : ''}${sendTo.cc.length ? ` \u00B7 Cc ${copyList(sendTo.cc)}` : ''}${sendTo.bcc.length ? ` \u00B7 Bcc ${copyList(sendTo.bcc)}` : ''}`;
   const headLine = plan.bccd && ready ? 'You got a hidden copy (Bcc)' : chat.isGroup ? chat.people.map((p) => p.email).join(', ') : chat.email;
@@ -414,7 +417,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     }, 250);
   };
 
-  const back = () => (cameFrom() === '/chats' ? goBack() : navigate('/chats', { replace: true }));
+  const back = () => (cameFrom() === '/chats' || cameFrom() === '/chats/archived' ? goBack() : navigate('/chats', { replace: true }));
 
   const decide = async (d: 'approved' | 'muted') => {
     if (!sender) return;
@@ -427,6 +430,9 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     if ((!body && files.length === 0) || sending || !ready || !target || sendTo.to.length === 0) return;
     setSending(true);
     try {
+      // Does a chat already have the key this send may move the thread to? Looked at before the send changes anything.
+      const willAdd = [...sendTo.to, ...sendTo.cc].filter((a) => !chat.people.some((p) => p.email.toLowerCase() === a.toLowerCase()));
+      const newKeyTaken = willAdd.length > 0 && !!data && buildChats(data, peekThread, Date.now()).some((c) => c.key === keyOf([...chat.people, ...willAdd.map((email) => ({ email }))]));
       const subject = /^re:/i.test(target.subject) ? target.subject : `Re: ${cleanSubject(target.subject)}`;
       let d: { id: string };
       let res: { status?: string; heldByShabbos?: boolean };
@@ -476,7 +482,10 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
       // Let the refreshed chats draw first, so the new chat is there when the route changes
       if (added.length > 0) {
         await new Promise((done) => requestAnimationFrame(() => done(null)));
-        navigate(`/chat/${encodeURIComponent(keyOf([...chat.people, ...added.map((email) => ({ email }))]))}`, { replace: true });
+        const newKey = keyOf([...chat.people, ...added.map((email) => ({ email }))]);
+        // Nothing else is left under the old key, and the email was really sent (a held one adds nobody yet): its pin and mute move to the new one
+        if (!hold && chat.threads.every((t) => t.id === target.id)) moveChatPrefs(chat.key, newKey, newKeyTaken);
+        navigate(`/chat/${encodeURIComponent(newKey)}`, { replace: true });
       }
     } finally {
       setSending(false);
@@ -534,14 +543,14 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     <div className="chat">
       <header className="chat__head">
         {!desktop && (
-          <button className="chatapp__icon chat__back" aria-label="Back to chats" onClick={back}>
+          <button className="chatapp__icon chat__back" aria-label="Back to emails" onClick={back}>
             <ChevronLeft size={26} strokeWidth={1.75} />
           </button>
         )}
         {chat.isGroup ? <AvatarPair people={chat.people} small /> : <Avatar name={chat.name} email={chat.email} tone="hue" small />}
         <button
           className="chat__who"
-          aria-label="People on this chat"
+          aria-label="People on this email"
           onClick={() => {
             if (!ready) return;
             setPeopleOpen(true);
@@ -608,9 +617,9 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
             Cc/Bcc
           </button>
         </div>
-        {isStaticDemoMode() && <AttachStrip files={files} onRemove={(i) => setFiles((l) => l.filter((_, n) => n !== i))} />}
+        {isSampleInbox() && <AttachStrip files={files} onRemove={(i) => setFiles((l) => l.filter((_, n) => n !== i))} />}
         <div className="chatbar__row">
-          {isStaticDemoMode() && (
+          {isSampleInbox() && (
             <>
               <input ref={picker} type="file" multiple hidden onChange={(e) => addFiles(e.target.files)} />
               <button type="button" className="chatbar__attach" aria-label="Attach a picture or file" onClick={() => picker.current?.click()}>

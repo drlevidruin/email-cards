@@ -23,6 +23,10 @@ export interface DemoDataset {
   customViews: CustomView[];
   snapshotLabel?: string;
   snapshotId?: string;
+  /** Attachment id to a data URL (jpeg, png, gif or webp). Private snapshot only; never saved on a device. */
+  pictures?: Record<string, string>;
+  /** Lowercase sender address to a logo data URL. Private snapshot only; never saved on a device. */
+  logos?: Record<string, string>;
 }
 
 function hoursAgo(h: number): string {

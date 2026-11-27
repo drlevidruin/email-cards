@@ -39,6 +39,16 @@ function removeKeys(prefix: string, keep?: string): void {
   }
 }
 
+/** Whether this device holds, or was just given, a snapshot key: the private copy will load, so the sample inbox must not flash first. */
+export function hasSnapshotKey(): boolean {
+  if (HASH_KEY.test(window.location.hash)) return true;
+  try {
+    return !!window.localStorage.getItem(KEY_STORE);
+  } catch {
+    return false;
+  }
+}
+
 export function forgetSnapshot(): void {
   removeKeys(KEY_PREFIX);
 }
@@ -49,7 +59,7 @@ export async function loadSnapshot(): Promise<DemoDataset | null> {
   try {
     const keyText = takeKey();
     if (!keyText) return null;
-    const res = await fetch(import.meta.env.BASE_URL + 'snapshot.bin', { cache: 'no-store' });
+    const res = await fetch(import.meta.env.BASE_URL + 'snapshot.bin', { cache: 'no-cache' });
     if (res.status === 404) {
       forgetSnapshot();
       return null;

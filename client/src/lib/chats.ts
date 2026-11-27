@@ -1,4 +1,5 @@
 import type { EmailMessage, EmailThread, ScreenerSender } from './types';
+import { attachmentLine } from './pictureData';
 import type { Data } from '../storeTypes';
 import { buildStack } from './stacks';
 import { groupName, othersOf, type Person } from './people';
@@ -67,11 +68,7 @@ export function bubbleText(body: string, name?: string): string {
 
 /** What the list shows for an email with no words of its own: Photo, 2 photos, or the first filename. */
 export function attachmentPreview(msg: EmailMessage): string {
-  const files = msg.attachments ?? [];
-  if (files.length === 0) return '';
-  const pics = files.filter((a) => a.mimeType.startsWith('image/'));
-  if (pics.length === files.length) return pics.length === 1 ? 'Photo' : `${pics.length} photos`;
-  return files[0].filename;
+  return attachmentLine(msg.attachments ?? []);
 }
 
 export function oneLine(text: string): string {

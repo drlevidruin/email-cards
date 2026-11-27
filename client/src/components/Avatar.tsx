@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { getInitials } from '../lib/utils';
+import { logoSrc } from '../lib/pictures';
 import './Avatar.css';
 
 const HUES = ['#D9534A', '#C77A14', '#3A8F5C', '#2F86B8', '#7A5AC2', '#C2497F', '#1E9A8C', '#5B6FCB'];
@@ -12,6 +14,15 @@ export function hueOf(email: string): string {
 
 /** A sender's initials on the table's green. One tone for everyone: the name beside it says who. With tone="hue", one of eight solid colours picked from the address. */
 export function Avatar({ name, email, small, card, tone }: { name: string; email?: string; small?: boolean; card?: boolean; tone?: 'hue' }) {
+  const logo = logoSrc(email);
+  const [bad, setBad] = useState<string | null>(null);
+  if (logo && bad !== logo) {
+    return (
+      <span className={`avatar avatar--logo${small ? ' avatar--small' : ''}${card ? ' avatar--card' : ''}`} aria-hidden="true">
+        <img src={logo} alt="" decoding="async" onError={() => setBad(logo)} />
+      </span>
+    );
+  }
   return (
     <span
       className={`avatar${small ? ' avatar--small' : ''}${card ? ' avatar--card' : ''}${tone ? ' avatar--hue' : ''}`}

@@ -1,5 +1,5 @@
 export interface Recipients { to: string[]; cc: string[]; bcc: string[] }
-export interface ReplyPlan { rec: Recipients; /** I was bcc'd on the email being answered. */ bccd: boolean }
+export interface ReplyPlan { rec: Recipients; /** I was bcc'd on the email being answered. */ bccd: boolean; /** Nobody else is in this email: the reply goes to my own other address. */ self?: boolean }
 
 interface Msg { fromEmail: string; toEmails: string[]; ccEmails?: string[]; isOutbound: boolean; sentAt: string }
 
@@ -19,6 +19,14 @@ const newest = (list: Msg[]) => list.reduce<Msg | undefined>((a, m) => (!a || ti
 
 /** Who a reply goes to, by the newest email in the thread. Everyone goes in To. All addresses come back lower case, no repeats, never one of mine. */
 export function replyPlan(messages: Msg[], fallback: string[], mine: Set<string>, isUpdate: boolean): ReplyPlan {
+  const p = plainPlan(messages, fallback, mine, isUpdate);
+  if (p.rec.to.length > 0) return p;
+  // Nobody but me: send to the chat's own address, even though it is mine
+  const self = uniq(fallback, new Set());
+  return self.length ? { rec: { to: self, cc: [], bcc: [] }, bccd: false, self: true } : p;
+}
+
+function plainPlan(messages: Msg[], fallback: string[], mine: Set<string>, isUpdate: boolean): ReplyPlan {
   const own = new Set([...mine].map(low));
   const plan = (to: string[], bccd = false): ReplyPlan => ({ rec: { to, cc: [], bcc: [] }, bccd });
   const last = newest(messages);

@@ -5,7 +5,7 @@ export function placeName(path: string | undefined): string {
   const [head, arg] = (path ?? '').split('?')[0].split('/').filter(Boolean);
   if (head === 'cards') return isStackId(arg) ? stackLabel(arg) : 'Back';
   switch (head) {
-    case 'chats': case 'chat': return 'Chats';
+    case 'chats': case 'chat': return 'Emails';
     case 'goals': return 'To-do';
     case 'drafts': return 'Drafts';
     case 'all': return 'All mail';
