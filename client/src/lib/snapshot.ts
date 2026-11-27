@@ -1,5 +1,8 @@
 import type { DemoDataset } from './staticDemoData';
 import { isStaticDemoMode } from './api';
+import { missStep } from './snapshotMiss';
+
+export { missStep };
 
 const KEY_STORE = 'email_cards_snapshot_key';
 const KEY_PREFIX = 'email_cards_snapshot';
@@ -53,32 +56,82 @@ export function forgetSnapshot(): void {
   removeKeys(KEY_PREFIX);
 }
 
+const MISS_KEY = 'email_cards_snapshot_miss';
+
+function readMiss(): number | null {
+  try {
+    const v = Number(window.localStorage.getItem(MISS_KEY));
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearMiss(): void {
+  try {
+    window.localStorage.removeItem(MISS_KEY);
+  } catch {
+    // Nothing to clear
+  }
+}
+
+/** A missing or unreadable file: keep the key until the miss has lasted 10 minutes. */
+function noteMiss(): void {
+  const first = readMiss();
+  if (missStep(first, Date.now()) === 'forget') {
+    forgetSnapshot();
+    return;
+  }
+  // A first miss, or a clock that moved back, starts the count again
+  if (first === null || first > Date.now()) {
+    try {
+      window.localStorage.setItem(MISS_KEY, String(Date.now()));
+    } catch {
+      // Storage may be blocked
+    }
+  }
+}
+
+type Fetched = { data: DemoDataset } | 'miss' | 'other';
+
+async function fetchSnapshot(url: string, init: RequestInit, keyText: string): Promise<Fetched> {
+  const res = await fetch(url, init);
+  if (res.status === 404) return 'miss';
+  if (!res.ok) return 'other';
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length < 31 || String.fromCharCode(bytes[0], bytes[1], bytes[2]) !== 'EC1') return 'other';
+  let plain: ArrayBuffer;
+  try {
+    const raw = Uint8Array.from(atob(keyText.replace(/-/g, '+').replace(/_/g, '/') + '='), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(3, 15) }, key, bytes.slice(15));
+  } catch {
+    return 'miss';
+  }
+  const data = JSON.parse(new TextDecoder().decode(plain)) as DemoDataset;
+  return { data };
+}
+
 export async function loadSnapshot(): Promise<DemoDataset | null> {
   // Only the static build has snapshots; a build with a real server never enters this mode
   if (import.meta.env.VITE_STATIC_DEMO !== 'true') return null;
   try {
     const keyText = takeKey();
     if (!keyText) return null;
-    const res = await fetch(import.meta.env.BASE_URL + 'snapshot.bin', { cache: 'no-cache' });
-    if (res.status === 404) {
-      forgetSnapshot();
+    const base = import.meta.env.BASE_URL + 'snapshot.bin';
+    let got = await fetchSnapshot(base, { cache: 'no-cache' }, keyText);
+    if (got === 'miss') {
+      // Once more at once, past every cache: a CDN edge mid-deploy can answer 404 for a moment
+      got = await fetchSnapshot(base + '?r=' + Date.now(), { cache: 'reload' }, keyText);
+    }
+    if (got === 'miss') {
+      noteMiss();
       return null;
     }
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.length < 31 || String.fromCharCode(bytes[0], bytes[1], bytes[2]) !== 'EC1') return null;
-    let data: DemoDataset;
-    try {
-      const raw = Uint8Array.from(atob(keyText.replace(/-/g, '+').replace(/_/g, '/') + '='), (c) => c.charCodeAt(0));
-      const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
-      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(3, 15) }, key, bytes.slice(15));
-      data = JSON.parse(new TextDecoder().decode(plain)) as DemoDataset;
-    } catch {
-      // The key does not open this file: drop the key and anything saved from an older snapshot
-      forgetSnapshot();
-      return null;
-    }
+    if (got === 'other') return null;
+    const data = got.data;
     if (!data || !Array.isArray(data.accounts) || !Array.isArray(data.threads)) return null;
+    clearMiss();
     loaded = data;
     // A republished snapshot carries a new id, so a store saved from an older one is dropped
     removeKeys(STORE_PREFIX, snapshotStoreKey());

@@ -22,6 +22,15 @@
 - Owner's word, "say emails on top left corner": every visible "Chats" or "chat" is now "Emails" or "email" (list title, its aria-label, back buttons, rail row, shortcuts sheet, back-button place name, pin and archive rows, toasts, empty states, "Pick an email", "Everyone in this email", "Email options"). Routes (`#/chats`, `#/chat/...`) and code names are unchanged.
 - Not tested on a phone: pinch, double tap, drag to close, press and hold, and the share sheet. Only the maths is tested.
 
+## Handoff, 15E (2026-11-27): a private copy no longer forgets its key after one bad download
+
+- `loadSnapshot` used to drop the key and the saved copy on the first 404 or undecryptable file. A CDN edge mid-deploy did that once and the owner lost his key. Now a 404 or a file that will not decrypt is retried at once with `snapshot.bin?r=<now>` and `cache: 'reload'`. If that works, it is a normal load.
+- If the retry fails the same way, the first such time is kept in localStorage as `email_cards_snapshot_miss` (it starts with `email_cards_snapshot`, so `forgetSnapshot` clears it, and not with `email_cards_snapshot_store_`, so the store clean-up keeps it). The key and saved copy are dropped only when a miss happens and that kept time is at least 10 minutes old. This visit still returns null. A good load removes the kept time. A kept time in the future (clock moved back) is restarted.
+- Network errors, non-404 error statuses, a body that is not `EC1` and bad JSON still return null and keep the key.
+- The decision is `missStep` in `lib/snapshotMiss.ts` (re-exported from `snapshot.ts`), tested by `snap-check.mts` in the scratchpad.
+- Taking the link down now: delete the release and rerun Pages. A device drops the key and its saved copy on a visit at least 10 minutes after its first visit that finds no file.
+- Not tested against a real CDN or a real deploy; only the decision function is tested.
+
 ## Handoff, 15D (2026-11-27): fixes from the review of 15B and 15C
 
 - Pinch: a pinch let go (or cancelled) below 1.1x snaps to 1x with the short transition (`pinchEndView`, `PINCH_SNAP` in `lib/zoomMath.ts`; `zoom-check.mts`).
