@@ -1,4 +1,8 @@
 .chat { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--c-wall); }
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+  .chat { animation: chat-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+}
+@keyframes chat-in { from { transform: translateX(28px); opacity: 0; } }
 .chat__head {
   flex: none;
   display: flex;
@@ -42,6 +46,7 @@
 .chatask__due { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--c-green-ink); }
 .chatask__due--hot { color: var(--c-danger); }
 
+.chat__area { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .chat__scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px 10px 10px; background: var(--c-wall); }
 .chat__col { display: flex; flex-direction: column; min-height: 100%; justify-content: flex-end; }
 
@@ -90,12 +95,17 @@
 .bub__bold { font-weight: 600; }
 .bub__more { display: block; position: relative; height: 22px; margin-top: 2px; padding: 0; font-size: 14px; font-weight: 600; color: var(--c-green-ink); }
 .bub__more::after { content: ''; position: absolute; left: -12px; right: -12px; top: -11px; bottom: -11px; }
-.bub__file { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--c-field); font-size: 14px; color: var(--c-ink-2); }
-.bub__file svg { flex: none; }
-.bub__file span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bub__link { color: var(--c-green-ink); text-decoration: underline; overflow-wrap: anywhere; }
+.bubrow--face { position: relative; padding-left: 36px; }
+.bubrow__face { position: absolute; left: 0; bottom: 0; display: inline-flex; width: 28px; height: 28px; }
+.bubrow__face .avatar { width: 28px; height: 28px; font-size: 13px; }
 .bub__meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; font-size: 11px; line-height: 14px; color: var(--c-ink-3); }
 .bub__held { margin-right: 4px; }
 .bub__mark { min-width: 0; margin-right: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.chat__down { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; }
+.chat__downdot { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--c-line); border-radius: 50%; background: #FFFFFF; color: var(--c-ink); box-shadow: 0 2px 8px rgba(17, 27, 33, 0.18); }
+.chat__down:active .chat__downdot { background: var(--c-field); }
 
 .chatbar { flex: none; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--c-wall); }
 .chatbar__sugs { display: flex; gap: 8px; margin: 0 -10px 8px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; }
@@ -141,6 +151,8 @@
 }
 .chatbar__field:focus-visible { outline: 2px solid var(--c-green); outline-offset: 2px; }
 .chatbar__field::placeholder { color: var(--c-ink-3); }
+.chatbar__attach { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 22px; color: var(--c-ink-2); }
+.chatbar__attach:active { background: var(--c-field); }
 .chatbar__send {
   flex: none;
   display: inline-flex;

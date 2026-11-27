@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCheck, Search, Settings, SquarePen } from 'lucide-react';
+import { Check, Search, Settings, SquarePen } from 'lucide-react';
 import { navigate } from '../router';
 import { useStore } from '../store';
-import { buildChats, type Chat } from '../lib/chats';
+import { buildChats, oneLine, type Chat } from '../lib/chats';
+import { useDrafts } from '../lib/chatDraft';
 import { useLoadedCount } from '../lib/useChatThreads';
 import { peekThread } from '../lib/threadCache';
 import { relativeTime } from '../lib/time';
@@ -27,8 +28,9 @@ const pass: Record<Filter, (c: Chat) => boolean> = {
   updates: (c) => c.isUpdate,
 };
 
-function Row({ chat, open }: { chat: Chat; open: boolean }) {
+function Row({ chat, open, draft }: { chat: Chat; open: boolean; draft: string }) {
   const unread = chat.unread > 0;
+  const showDraft = !!draft.trim() && !open;
   return (
     <li>
       <button className={`chatrow${open ? ' chatrow--open' : ''}`} onClick={() => navigate(`/chat/${encodeURIComponent(chat.key)}`)}>
@@ -41,8 +43,17 @@ function Row({ chat, open }: { chat: Chat; open: boolean }) {
           </span>
           <span className="chatrow__bottom">
             <span className="chatrow__preview">
-              {chat.lastMine && <CheckCheck className="chatrow__check" size={16} strokeWidth={2} aria-label="Sent" />}
-              {chat.lastMine ? `You: ${chat.preview}` : chat.preview}
+              {showDraft ? (
+                <>
+                  <span className="chatrow__draft">Draft: </span>
+                  {oneLine(draft)}
+                </>
+              ) : (
+                <>
+                  {chat.lastMine && <Check className="chatrow__check" size={16} strokeWidth={2} aria-label="Sent" />}
+                  {chat.lastMine ? `You: ${chat.preview}` : chat.preview}
+                </>
+              )}
             </span>
             {unread && (
               <span className="chatrow__badge" aria-label={`${chat.unread} unread`}>
@@ -60,6 +71,7 @@ function Row({ chat, open }: { chat: Chat; open: boolean }) {
 export function ChatsScreen({ activeKey }: { activeKey?: string }) {
   const { data, status } = useStore();
   const desktop = useIsDesktop();
+  const drafts = useDrafts();
   const [filter, setFilter] = useState<Filter>('all');
   const [q, setQ] = useState('');
   const loaded = useLoadedCount(data?.threads ?? []);
@@ -106,7 +118,7 @@ export function ChatsScreen({ activeKey }: { activeKey?: string }) {
           {status === 'ready' && rows.length === 0 && <p className="chatlist__empty">No chats here</p>}
           <ul>
             {rows.map((c) => (
-              <Row key={c.key} chat={c} open={desktop && c.key === activeKey} />
+              <Row key={c.key} chat={c} open={desktop && c.key === activeKey} draft={drafts[c.key]?.text ?? ''} />
             ))}
           </ul>
         </div>

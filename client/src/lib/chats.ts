@@ -62,6 +62,15 @@ export function bubbleText(body: string, name?: string): string {
   return out.trim() ? out : kept;
 }
 
+/** What the list shows for an email with no words of its own: Photo, 2 photos, or the first filename. */
+export function attachmentPreview(msg: EmailMessage): string {
+  const files = msg.attachments ?? [];
+  if (files.length === 0) return '';
+  const pics = files.filter((a) => a.mimeType.startsWith('image/'));
+  if (pics.length === files.length) return pics.length === 1 ? 'Photo' : `${pics.length} photos`;
+  return files[0].filename;
+}
+
 export function oneLine(text: string): string {
   return text.replace(/\s+/g, ' ').trim();
 }
@@ -113,7 +122,8 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
     const sender = isGroup ? undefined : pending.get(key);
     const newest = threads[threads.length - 1];
     const msg = newest ? newestOf(full(newest.id) ?? newest) : undefined;
-    const text = msg ? bubbleText(msg.bodyText, msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
+    const words = msg ? bubbleText(msg.bodyText, msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
+    const text = !words.trim() && msg ? attachmentPreview(msg) : words;
     const lastMine = !!msg?.isOutbound;
     const who = isGroup && msg && !lastMine ? `${firstName(msg.fromName || msg.fromEmail)}: ` : '';
     out.push({

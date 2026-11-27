@@ -576,6 +576,7 @@ export const staticDemoApi = {
     tone?: DraftItem['tone'];
     status?: DraftItem['status'];
     createdBy?: 'user' | 'agent';
+    attachments?: DraftItem['attachments'];
   }): Promise<DraftItem> => {
     const store = loadStore();
     const draft: DraftItem = {
@@ -589,6 +590,7 @@ export const staticDemoApi = {
       bodyText: payload.bodyText,
       tone: payload.tone,
       status: payload.status || 'pending_approval',
+      ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
       scheduledFor: null,
       createdBy: payload.createdBy || 'user',
       createdAt: new Date().toISOString(),
@@ -666,7 +668,7 @@ export const staticDemoApi = {
           sentAt: new Date().toISOString(),
           isUnread: false,
           isOutbound: true,
-          attachments: [],
+          attachments: d.attachments ?? [],
         };
         store.messages.push(msg);
         const known = new Set(thread.participants.map((p) => p.email.toLowerCase()));

@@ -110,6 +110,7 @@
 .chatrow__new { flex: none; padding: 1px 6px; border-radius: 6px; background: var(--c-green-soft); color: var(--c-green-ink); font-size: 12px; font-weight: 600; }
 .chatrow__time { flex: none; margin-left: auto; font-size: 12px; color: var(--c-ink-3); }
 .chatrow__time--unread { color: var(--c-green-ink); font-weight: 600; }
+.chatrow__draft { color: var(--c-green-ink); font-weight: 600; }
 .chatrow__preview {
   flex: 1;
   min-width: 0;

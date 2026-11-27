@@ -45,6 +45,8 @@ export interface EmailAttachment {
   filename: string;
   mimeType: string;
   sizeBytes: number;
+  /** A picture of the attachment that an img tag can show. Missing when there is none. */
+  previewUrl?: string;
 }
 
 export interface EmailMessage {
@@ -168,6 +170,7 @@ export interface DraftItem {
   bodyText: string;
   tone?: DraftTone;
   status: 'draft' | 'pending_approval' | 'held_shabbos' | 'sent';
+  attachments?: EmailAttachment[];
   scheduledFor?: string | null;
   createdBy: 'user' | 'agent';
   createdAt: string;

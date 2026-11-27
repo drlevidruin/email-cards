@@ -55,11 +55,45 @@
   - A send archives the thread, and the server's `/bootstrap` leaves archived threads out (`server/src/db.ts`, near line 962), so on real mail an answered conversation would leave its chat. The chat needs archived threads too.
   - `appendOutboundMessageToThread` (`server/src/routes.ts`, near line 233) stores no Bcc and does not add new To or Cc people to the thread's participants, so the `Bcc` mark on my bubble and the move to the group chat would not happen on real mail.
   - The server changes of 11C (the `Bcc` header in both send paths, the `bcc_emails_json` column) have been typechecked but never run against a mailbox.
+  - Chats are grouped by a thread's `participants`, so the server must list every From, To and Cc person there.
   - If loading the thread being answered fails, Send stays off until the chat is reopened; it needs a retry and a word to the person.
+  - Text typed before the thread being answered has loaded is not saved as a draft until the next keystroke after it loads (the save in `screens/ChatScreen.tsx` waits for `ready` so it cannot wipe the kept people). The sample loads at once; on a slow mailbox, save the text alone while waiting.
+  - A picture sent from the sample is a `blob:` address, never released, and gone after the tab closes, when it shows as a file row. Real sending needs a stored copy.
+  - The server has no way to fetch an attachment's content or a preview, and no way to send one. The attach button shows only in the sample, and a real email's pictures have no `previewUrl`, so they show as file rows.
 
 11E (2026-11-27): after the second review
 - The people sheet cannot open before the email being answered has loaded: the header name and the More row do nothing while `ready` is false, the sheet is drawn only when ready, and `peopleOpen` resets if `ready` turns false.
 - `bubbleText` drops one quoted block (and its `wrote:` line) when the answer is written under it; with two or more quoted runs and text between them, every line stays.
+
+12A (2026-11-27): refine
+- A1: `EmailAttachment.previewUrl`; `lib/samplePictures.ts` draws three pictures in SVG (`BUILD_A`, `BUILD_B`, `DIELINE`) as data URLs; the sample's Devon and Jordan emails carry them; the sample key is now `email_cards_static_demo_v6`.
+- A2: `components/BubbleMedia.tsx` shows pictures above a bubble's text (one wide, or a grid of up to four with `+N`) and file rows below; a picture that fails to load becomes a file row. A grid of three gives the third picture the full width (a deviation from "each square", to leave no hole).
+- A3: `components/ImageViewer.tsx` is a full-screen viewer in a portal on `document.body`, with Escape, arrow keys, a swipe, and focus back to the picture's button. It is the one dark surface in the app, on purpose (`#0B0D0C` at 96%, white controls).
+- A4: the chat list reads `Photo`, `2 photos` or the first filename when the newest email has no words.
+- B1: in a group, incoming bubbles are indented 36px and the last bubble of a run has the sender's avatar (28px, one letter) in the gutter.
+- B2: the people sheet shows an `Everyone` / `Only <first name>` switch when the plan has two or more people in To and the newest email is not mine; the foot's `Everyone in this chat` button goes then. The line above the field reads `To Priya only` when the message goes to fewer people than the plan and nobody was added.
+- B3: my bubble shows one check, not two. The chat list's own check next to `You:` is still two (not in the brief).
+- C1: `lib/chatDraft.ts` keeps unsent text per chat in `email_cards_chat_drafts_v1` (memory only in a snapshot); the list shows `Draft: ` and the text.
+- C2: `lib/linkify.tsx` turns `http://` and `https://` addresses into links inside `Marked`.
+- C3: under 1024px the chat slides in over 200ms (backwards fill, no transform left behind).
+- C4: a round `Newest message` button appears when the chat is scrolled more than 400px up.
+- D: in the sample only, a paperclip left of the field picks up to 10 files of up to 10 MB each; they show in a strip (`components/AttachStrip.tsx`), go out on Send with or without text, and appear in the bubble (`DraftItem.attachments`, `createDraft`, the sample's `sendDraft`). Their object URLs die with the page, so after a reload a sent picture shows as a file row.
+- Not done: none of the steps. Not checked in a browser (none was allowed): the look of the three pictures, the slide-in, the viewer and the swipe.
+
+12B (2026-11-27): after testing 12A
+- A kept draft keeps its people: `lib/chatDraft.ts` stores `{ text, rec?, threadId? }` (an old plain string reads as text); `ChatScreen` saves `rec` only when it differs from the plan, and restores it only for the same thread with valid addresses, a non-empty To and none of mine; otherwise it resets to null.
+- The picture viewer's layer is fully opaque `#0B0D0C`, and under 1024px the two arrow buttons are hidden (swipe, arrow keys and the count stay).
+- `BUILD_A` and `BUILD_B` are recomposed so the headline, button and art sit inside the middle 750 by 750 square and survive a square crop.
+- The sample thread `Pick Troutbeck or Sea Ranch` now lists Owen in its `participants`, so it sits in the group chat and not in Devon's one to one chat.
+- The chat list's check beside `You:` is one `Check`, like the bubble's.
+
+12C (2026-11-27): after the review of 12A and 12B
+- In every group chat the people sheet shows `Everyone` / `Only <name>` (never on a bcc'd thread); `Everyone` is all the chat's people in To, `Only` is the newest sender who is not me, and with no such sender `Everyone` stands alone.
+- The to line says `only` whenever fewer people than the chat's group get the message and nobody outside the chat is on it.
+- A kept choice of people stores `lastId` (the thread's newest message) and is dropped on restore when a newer message has arrived; the restore runs once the thread is loaded.
+- `lib/linkify.tsx` trims trailing marks with a loop, not a pattern anchored at the end, so a long run of marks is not slow.
+- `lib/safePreview.ts`: a picture loads only from `blob:`, `data:image/` or the page's own origin (a picture from another server tells it the email was opened); other attachments show as file rows.
+- In a snapshot `lib/chatDraft.ts` starts empty and reads nothing from storage.
 
 ## Handoff, 10H and 10I (2026-11-27): a green table, white cards, lime for the one thing to do
 

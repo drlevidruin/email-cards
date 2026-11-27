@@ -4,7 +4,7 @@
  * over does: the older sample goes, and so does the sample's progress, so the welcome and the first hints show.
  * A private inbox and its progress are not touched. Imported first in main.tsx, before anything reads storage.
  */
-export const SAMPLE_STORE_KEY = 'email_cards_static_demo_v5';
+export const SAMPLE_STORE_KEY = 'email_cards_static_demo_v6';
 const OLD_SAMPLE_PREFIX = 'email_cards_static_demo';
 const SAMPLE_PROGRESS_KEY = 'email_cards_progress_v1';
 

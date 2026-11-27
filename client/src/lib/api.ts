@@ -255,6 +255,7 @@ export const api = {
     tone?: DraftItem['tone'];
     status?: DraftItem['status'];
     createdBy?: 'user' | 'agent';
+    attachments?: DraftItem['attachments'];
   }) =>
     staticDemoActive
       ? staticDemoApi.createDraft(payload)

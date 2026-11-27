@@ -1,3 +1,4 @@
+import { BUILD_A, BUILD_B, DIELINE } from './samplePictures';
 import type {
   AgentRule,
   CommitmentItem,
@@ -347,6 +348,7 @@ export function buildDemoDataset(): DemoDataset {
     isUnread: true,
     isOutbound: false,
     attachments: [
+      { id: 'att_dec03_3', filename: 'Dieline-Option-B.png', mimeType: 'image/png', sizeBytes: 301577, previewUrl: DIELINE },
       {
         id: 'att_dec03_2',
         filename: 'Solis-Final-Dieline-Mechanical.pdf',
@@ -413,6 +415,8 @@ export function buildDemoDataset(): DemoDataset {
     isUnread: true,
     isOutbound: false,
     attachments: [
+      { id: 'att_dec05_2', filename: 'Build-A-prism.png', mimeType: 'image/png', sizeBytes: 842113, previewUrl: BUILD_A },
+      { id: 'att_dec05_3', filename: 'Build-B-mesh.png', mimeType: 'image/png', sizeBytes: 517904, previewUrl: BUILD_B },
       {
         id: 'att_dec05_1',
         filename: 'Kestrel-Hero-Benchmark-Notes.pdf',
@@ -1743,6 +1747,7 @@ export function buildDemoDataset(): DemoDataset {
       participants: [
         { name: 'Devon Takahashi', email: 'devon@meridianstudio.co' },
         { name: 'Alex Chen', email: 'alex@meridianstudio.co' },
+        { name: 'Owen Alvarez', email: 'owen@meridianstudio.co' },
       ],
       messageCount: 1,
       lastMessageAt: hoursAgo(26),

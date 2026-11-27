@@ -1,0 +1,15 @@
+.bmedia__pics { margin: 0 -6px 8px; overflow: hidden; border-radius: 12px; border: 1px solid var(--c-line); background: var(--c-field); }
+.bub > .bmedia__pics:first-child { margin-top: -2px; }
+.bmedia__pics--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; border: 0; }
+.bmedia__pic { position: relative; display: block; width: 100%; padding: 0; border: 0; background: var(--c-field); cursor: pointer; overflow: hidden; }
+.bmedia__pics--one .bmedia__pic { aspect-ratio: 16 / 10; }
+.bmedia__pics--grid .bmedia__pic { aspect-ratio: 1; }
+.bmedia__pics--three .bmedia__pic:last-child { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.bmedia__pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bmedia__more { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); color: #FFFFFF; font-size: 22px; font-weight: 600; }
+
+.bmedia__file { display: flex; align-items: center; gap: 10px; min-height: 48px; margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: var(--c-field); }
+.bmedia__icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--c-surface); color: var(--c-ink-2); }
+.bmedia__words { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bmedia__name { font-size: 15px; line-height: 19px; color: var(--c-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bmedia__kind { font-size: 12px; line-height: 16px; color: var(--c-ink-3); }

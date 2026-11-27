@@ -23,11 +23,19 @@ interface Props {
   mine: Set<string>;
   /** Everyone the app knows, for the address suggestions and the names on the chips. */
   known: Person[];
+  /** True in a group chat (two or more other people). */
+  group: boolean;
+  /** Shows the Everyone or Only switch: a group chat where I was not bcc'd on the email being answered. */
+  showSwitch: boolean;
+  /** Every other person in the chat, addresses in lower case, none of mine. */
+  everyone: string[];
+  /** The sender of the newest email that is not mine, if the thread has one. */
+  replyTo?: { email: string; firstName: string };
   onChange: (rec: Recipients) => void;
   onClose: () => void;
 }
 
-export function PeopleSheet({ rec, plan, mine, known, onChange, onClose }: Props) {
+export function PeopleSheet({ rec, plan, mine, known, group, showSwitch, everyone, replyTo, onChange, onClose }: Props) {
   const listId = useId();
   const [draft, setDraft] = useState<Record<Row, string>>({ to: '', cc: '', bcc: '' });
   const [bad, setBad] = useState<Record<Row, boolean>>({ to: false, cc: false, bcc: false });
@@ -65,10 +73,27 @@ export function PeopleSheet({ rec, plan, mine, known, onChange, onClose }: Props
     setBad((b) => ({ ...b, [row]: false }));
   };
 
+  const onlyRec: Recipients | null = replyTo ? { to: [replyTo.email.toLowerCase()], cc: [], bcc: [] } : null;
+  const allRec: Recipients = { to: everyone, cc: [], bcc: [] };
+  const isAll = sameRecipients(rec, allRec);
+  const isOnly = !!onlyRec && sameRecipients(rec, onlyRec);
+
   const options = known.filter((p) => p.email).slice(0, 200);
 
   return (
     <Sheet title="Who gets your message" onClose={onClose} className="psheet">
+      {showSwitch && (
+        <div className="psheet__switch" role="group" aria-label="Who to reply to">
+          <button type="button" className={`psheet__opt${isAll ? ' psheet__opt--on' : ''}`} aria-pressed={isAll} onClick={() => onChange(allRec)}>
+            Everyone
+          </button>
+          {replyTo && onlyRec && (
+            <button type="button" className={`psheet__opt${isOnly ? ' psheet__opt--on' : ''}`} aria-pressed={isOnly} onClick={() => onChange(onlyRec)}>
+              {`Only ${replyTo.firstName}`}
+            </button>
+          )}
+        </div>
+      )}
       <div className="psheet__rows">
         {ROWS.map(({ id, label, sub, aria }) => (
           <div key={id} className="psheet__row">
@@ -137,7 +162,7 @@ export function PeopleSheet({ rec, plan, mine, known, onChange, onClose }: Props
         )}
       </p>
       <div className="psheet__foot">
-        {!sameRecipients(rec, plan) && (
+        {!group && !sameRecipients(rec, plan) && (
           <button type="button" className="psheet__reset" onClick={() => onChange(plan)}>
             Everyone in this chat
           </button>

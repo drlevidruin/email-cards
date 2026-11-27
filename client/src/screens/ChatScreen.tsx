@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCheck, ChevronLeft, Mail, MailOpen, MoreHorizontal, Paperclip, SendHorizontal, Users } from 'lucide-react';
-import { api } from '../lib/api';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Check, ChevronDown, ChevronLeft, Mail, MailOpen, MoreHorizontal, Paperclip, SendHorizontal, Users } from 'lucide-react';
+import { api, isStaticDemoMode } from '../lib/api';
 import { goBack, navigate, cameFrom } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
@@ -15,10 +15,15 @@ import { facts, skim } from '../lib/skim';
 import { findQuote } from '../lib/highlight';
 import { isSampleInbox } from '../lib/sample';
 import { dropMine } from '../lib/myDraft';
+import { getDraft, setDraft } from '../lib/chatDraft';
+import { linkify } from '../lib/linkify';
 import { firstName } from '../lib/utils';
 import type { EmailMessage, EmailThread } from '../lib/types';
 import { Avatar, AvatarPair, hueOf } from '../components/Avatar';
 import { PeopleSheet, sameRecipients } from '../components/PeopleSheet';
+import { BubbleMedia, isPicture } from '../components/BubbleMedia';
+import { ImageViewer } from '../components/ImageViewer';
+import { AttachStrip } from '../components/AttachStrip';
 import { Sheet } from '../components/Sheet';
 import './ChatScreen.css';
 
@@ -95,23 +100,25 @@ function Marked({ text, quote }: { text: string; quote?: string | null }) {
     if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
     else merged.push([r[0], r[1]]);
   }
-  const bits: JSX.Element[] = [];
+  const bits: ReactNode[] = [];
   let at = 0;
   merged.forEach(([a, b], i) => {
-    if (a > at) bits.push(<Fragment key={`t${i}`}>{text.slice(at, a)}</Fragment>);
-    bits.push(<strong key={`b${i}`} className="bub__bold">{text.slice(a, b)}</strong>);
+    if (a > at) bits.push(<Fragment key={`t${i}`}>{linkify(text.slice(at, a), `t${i}`)}</Fragment>);
+    bits.push(<strong key={`b${i}`} className="bub__bold">{linkify(text.slice(a, b), `b${i}`)}</strong>);
     at = b;
   });
-  if (at < text.length) bits.push(<Fragment key="end">{text.slice(at)}</Fragment>);
+  if (at < text.length) bits.push(<Fragment key="end">{linkify(text.slice(at), 'end')}</Fragment>);
   return <>{bits}</>;
 }
 
-function Bubble({ item, first, fresh, who, whoColor, mark, whole, setRef, onFold }: { item: Extract<Item, { kind: 'msg' }>; first: boolean; fresh: boolean; who: string | null; whoColor?: string; mark: string | null; whole: boolean; setRef: (el: HTMLElement | null) => void; onFold: () => void }) {
+function Bubble({ item, first, fresh, who, whoColor, face, mark, whole, setRef, onFold }: { item: Extract<Item, { kind: 'msg' }>; first: boolean; fresh: boolean; who: string | null; whoColor?: string; face?: { name: string; email: string; show: boolean }; mark: string | null; whole: boolean; setRef: (el: HTMLElement | null) => void; onFold: () => void }) {
   const { msg, thread } = item;
   const mine = msg.isOutbound;
   const [all, setAll] = useState(false);
   const [long, setLong] = useState(false);
   const body = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<number | null>(null);
+  const pictures = msg.attachments.filter(isPicture);
   const full = item.held ? msg.bodyText : whole ? msg.bodyText.trim() : bubbleText(msg.bodyText, msg.fromName);
   // Fold by rendered lines: a text more than four lines taller than its 12-line box gets Read more; a shorter overflow is shown whole
   useLayoutEffect(() => {
@@ -123,30 +130,34 @@ function Bubble({ item, first, fresh, who, whoColor, mark, whole, setRef, onFold
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [full, all]);
   return (
-    <div ref={setRef} className={`bubrow bubrow--${mine ? 'out' : 'in'}${first ? ' bubrow--first' : ''}${fresh ? ' bubrow--fresh' : ''}`}>
+    <div ref={setRef} className={`bubrow bubrow--${mine ? 'out' : 'in'}${first ? ' bubrow--first' : ''}${fresh ? ' bubrow--fresh' : ''}${face ? ' bubrow--face' : ''}`}>
+      {face?.show && (
+        <span className="bubrow__face">
+          <Avatar name={face.name.trim().charAt(0)} email={face.email} tone="hue" />
+        </span>
+      )}
       <div className="bub">
         {who && <div className="bub__who" style={whoColor ? { color: whoColor } : undefined}>{who}</div>}
-        <div ref={body} className={`bub__text${all || !long ? '' : ' bub__text--clamp'}`}>
-          <Marked text={full} quote={thread.goalQuote} />
-        </div>
-        {long && !all && (
-          <button className="bub__more" onClick={() => setAll(true)}>
-            Read more
-          </button>
-        )}
-        {msg.attachments.map((a) => (
-          <div key={a.id} className="bub__file">
-            <Paperclip size={16} strokeWidth={1.75} aria-hidden="true" />
-            <span>{a.filename}</span>
-          </div>
-        ))}
+        <BubbleMedia attachments={msg.attachments} onOpen={setView}>
+          {full.trim() && (
+            <div ref={body} className={`bub__text${all || !long ? '' : ' bub__text--clamp'}`}>
+              <Marked text={full} quote={thread.goalQuote} />
+            </div>
+          )}
+          {long && !all && (
+            <button className="bub__more" onClick={() => setAll(true)}>
+              Read more
+            </button>
+          )}
+        </BubbleMedia>
         <div className="bub__meta">
           {item.held && <span className="bub__held">Held until after Shabbos</span>}
           {mark && <span className="bub__mark">{mark}</span>}
           <span>{clock(msg.sentAt)}</span>
-          {mine && !item.held && <CheckCheck size={15} strokeWidth={2} aria-label="Sent" />}
+          {mine && !item.held && <Check size={15} strokeWidth={2} aria-label="Sent" />}
         </div>
       </div>
+      {view !== null && <ImageViewer pictures={pictures} index={view} onIndex={setView} onClose={() => setView(null)} />}
     </div>
   );
 }
@@ -223,7 +234,31 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     [targetFull, chat.people, mine]
   );
   const [rec, setRec] = useState<Recipients | null>(null);
-  useEffect(() => setRec(null), [target?.id]);
+  // Set by the restore below so the save that runs in the same pass does not wipe the stored people
+  const skipSave = useRef(false);
+  const restoredFor = useRef<string | undefined>(undefined);
+  // The newest message in the thread: a kept choice of people is only good while this is still the newest
+  const newestId = useMemo(() => {
+    const msgs = targetFull?.messages ?? [];
+    return msgs.reduce<EmailMessage | undefined>((a, m) => (!a || ts(m.sentAt) > ts(a.sentAt) ? m : a), undefined)?.id;
+  }, [targetFull]);
+  useEffect(() => {
+    if (!ready) {
+      if (restoredFor.current !== target?.id) setRec(null);
+      return;
+    }
+    if (restoredFor.current === target?.id) return;
+    restoredFor.current = target?.id;
+    const d = getDraft(chat.key);
+    const r = d?.rec;
+    const okList = (l: unknown) => Array.isArray(l) && l.every((a) => typeof a === 'string' && a.includes('@'));
+    const valid =
+      !!d && !!r && !!target && d.threadId === target.id && !!newestId && d.lastId === newestId && okList(r.to) && okList(r.cc) && okList(r.bcc) && r.to.length > 0 &&
+      ![...r.to, ...r.cc, ...r.bcc].some((a) => mine.has(a.toLowerCase()));
+    skipSave.current = true;
+    setRec(valid && r ? { to: [...r.to], cc: [...r.cc], bcc: [...r.bcc] } : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target?.id, ready]);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => {
@@ -245,10 +280,21 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   };
   const copyList = (l: string[]) => order(l).map((a) => nameOf(a)).join(', ');
   const wentTo = [...sendTo.to, ...sendTo.cc];
+  const chatAddrs = chat.people.map((p) => p.email.toLowerCase()).filter((a) => !mine.has(a));
+  const narrower = chat.isGroup && wentTo.length < chatAddrs.length && sendTo.bcc.length === 0 && wentTo.every((a) => chatAddrs.includes(a.toLowerCase()));
+  // The sender of the newest email that is not mine: the sheet offers Everyone or Only them
+  const replyTo = useMemo(() => {
+    const msgs = targetFull?.messages ?? [];
+    const theirs = msgs.filter((m) => !m.isOutbound && !mine.has(m.fromEmail.toLowerCase()));
+    const last = theirs.reduce<EmailMessage | undefined>((a, m) => (!a || ts(m.sentAt) > ts(a.sentAt) ? m : a), undefined);
+    if (!last) return undefined;
+    const email = last.fromEmail.toLowerCase();
+    return { email, firstName: firstName(last.fromName || last.fromEmail) };
+  }, [targetFull, mine]);
   const toLine =
     plan.bccd && !edited
       ? `To ${nameList(sendTo.to)} only \u00B7 You were bcc'd`
-      : `To ${nameList(sendTo.to)}${sendTo.cc.length ? ` \u00B7 Cc ${copyList(sendTo.cc)}` : ''}${sendTo.bcc.length ? ` \u00B7 Bcc ${copyList(sendTo.bcc)}` : ''}`;
+      : `To ${nameList(sendTo.to)}${narrower ? ' only' : ''}${sendTo.cc.length ? ` \u00B7 Cc ${copyList(sendTo.cc)}` : ''}${sendTo.bcc.length ? ` \u00B7 Bcc ${copyList(sendTo.bcc)}` : ''}`;
   const headLine = plan.bccd && ready ? 'You got a hidden copy (Bcc)' : chat.isGroup ? chat.people.map((p) => p.email).join(', ') : chat.email;
   const suggestions = (() => {
     const t = ready && data ? replyThread(chat, data) : undefined;
@@ -259,10 +305,42 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   const field = useRef<HTMLTextAreaElement>(null);
   const els = useRef(new Map<string, HTMLElement>());
   const known = useRef<Set<string> | null>(null);
-  const [text, setText] = useState('');
+  const [text, setTextState] = useState(() => getDraft(chat.key)?.text ?? '');
+  const setText = (t: string) => setTextState(t);
+  useEffect(() => {
+    // Until the thread is loaded the kept people have not been restored: saving now would wipe them
+    if (target && !ready) return;
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
+    }
+    const keep = rec && !sameRecipients(rec, plan.rec) ? rec : undefined;
+    setDraft(chat.key, { text, rec: keep, threadId: target?.id, lastId: keep ? newestId : undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, rec, plan, target?.id, ready, newestId]);
   const [sending, setSending] = useState(false);
   const [whole, setWhole] = useState(false);
   const [folds, setFolds] = useState(0);
+  const [away, setAway] = useState(false);
+  // Sample inbox only: files chosen for the next message
+  const [files, setFiles] = useState<File[]>([]);
+  const picker = useRef<HTMLInputElement>(null);
+  const addFiles = (list: FileList | null) => {
+    const chosen = Array.from(list ?? []);
+    if (picker.current) picker.current.value = '';
+    const room = Math.max(0, 10 - files.length);
+    const fit = chosen.filter((f) => f.size <= 10 * 1024 * 1024).slice(0, room);
+    if (fit.length < chosen.length) store.showToast('That file is too big to send.');
+    if (fit.length > 0) setFiles((l) => [...l, ...fit]);
+  };
+  const onScroll = () => {
+    const el = scroller.current;
+    if (el) setAway(el.scrollHeight - el.scrollTop - el.clientHeight > 400);
+  };
+  const toNewest = () => {
+    const el = scroller.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
 
   // Opening a chat marks its unread threads read
   const marked = useRef(new Set<string>());
@@ -330,7 +408,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
 
   const send = async () => {
     const body = text.trim();
-    if (!body || sending || !ready || !target || sendTo.to.length === 0) return;
+    if ((!body && files.length === 0) || sending || !ready || !target || sendTo.to.length === 0) return;
     setSending(true);
     try {
       const subject = /^re:/i.test(target.subject) ? target.subject : `Re: ${cleanSubject(target.subject)}`;
@@ -345,6 +423,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
           ...(sendTo.bcc.length ? { bccEmails: sendTo.bcc } : {}),
           subject,
           bodyText: body,
+          ...(files.length ? { attachments: files.map((f, i) => ({ id: `att_up_${Date.now()}_${i}`, filename: f.name, mimeType: f.type || 'application/octet-stream', sizeBytes: f.size, ...(f.type.startsWith('image/') ? { previewUrl: URL.createObjectURL(f) } : {}) })) } : {}),
           createdBy: 'user',
           status: 'pending_approval',
         });
@@ -363,6 +442,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
       const went = sendTo;
       const names = nameList([...went.to, ...went.cc]);
       setText('');
+      setFiles([]);
       setRec(null);
       const hold = res.status === 'held_shabbos' || !!res.heldByShabbos;
       try {
@@ -400,7 +480,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   };
 
   let prev: Item | undefined;
-  const rows = items.map((it) => {
+  const rows = items.map((it, idx) => {
     const before = prev;
     prev = it;
     if (it.kind === 'sample') return <div key={it.id} className="chatpill chatpill--note">Sample inbox. Nothing is really sent.</div>;
@@ -414,6 +494,8 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
       );
     const same = before?.kind === 'msg' && before.msg.isOutbound === it.msg.isOutbound && before.msg.fromEmail.toLowerCase() === it.msg.fromEmail.toLowerCase();
     const theirs = !it.msg.isOutbound;
+    const next = items[idx + 1];
+    const lastOfRun = !(next?.kind === 'msg' && next.msg.isOutbound === it.msg.isOutbound && next.msg.fromEmail.toLowerCase() === it.msg.fromEmail.toLowerCase());
     const other = chat.isGroup ? theirs && !same : theirs && it.msg.fromEmail.toLowerCase() !== chat.key;
     return (
       <Bubble
@@ -422,6 +504,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
         first={!same}
         fresh={fresh.has(it.id)}
         who={other ? it.msg.fromName || it.msg.fromEmail : null}
+        face={chat.isGroup && theirs ? { name: it.msg.fromName || it.msg.fromEmail, email: it.msg.fromEmail, show: lastOfRun } : undefined}
         whoColor={chat.isGroup ? `color-mix(in srgb, ${hueOf(it.msg.fromEmail)} 72%, #000)` : undefined}
         mark={it.held ? null : markOf(it.msg, it.thread, chat, mine, nameOf)}
         whole={whole}
@@ -479,8 +562,17 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
           </button>
         </div>
       )}
-      <div className="chat__scroll" ref={scroller}>
-        <div className="chat__col">{rows}</div>
+      <div className="chat__area">
+        <div className="chat__scroll" ref={scroller} onScroll={onScroll}>
+          <div className="chat__col">{rows}</div>
+        </div>
+        {away && (
+          <button type="button" className="chat__down" aria-label="Newest message" onClick={toNewest}>
+            <span className="chat__downdot">
+              <ChevronDown size={22} strokeWidth={2} aria-hidden="true" />
+            </span>
+          </button>
+        )}
       </div>
       <div className="chatbar">
         {suggestions.length > 0 && (
@@ -500,7 +592,16 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
             Cc/Bcc
           </button>
         </div>
+        {isStaticDemoMode() && <AttachStrip files={files} onRemove={(i) => setFiles((l) => l.filter((_, n) => n !== i))} />}
         <div className="chatbar__row">
+          {isStaticDemoMode() && (
+            <>
+              <input ref={picker} type="file" multiple hidden onChange={(e) => addFiles(e.target.files)} />
+              <button type="button" className="chatbar__attach" aria-label="Attach a picture or file" onClick={() => picker.current?.click()}>
+                <Paperclip size={22} strokeWidth={1.75} aria-hidden="true" />
+              </button>
+            </>
+          )}
           <textarea
             ref={field}
             className="chatbar__field"
@@ -511,7 +612,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKey}
           />
-          <button className="chatbar__send" aria-label="Send" disabled={!text.trim() || sending || !ready || sendTo.to.length === 0} onClick={() => void send()}>
+          <button className="chatbar__send" aria-label="Send" disabled={(!text.trim() && files.length === 0) || sending || !ready || sendTo.to.length === 0} onClick={() => void send()}>
             <SendHorizontal size={22} strokeWidth={2} />
           </button>
         </div>
@@ -541,7 +642,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
           </button>
         </Sheet>
       )}
-      {peopleOpen && ready && <PeopleSheet rec={sendTo} plan={plan.rec} mine={mine} known={everyone} onChange={setRec} onClose={() => setPeopleOpen(false)} />}
+      {peopleOpen && ready && <PeopleSheet rec={sendTo} plan={plan.rec} mine={mine} known={everyone} group={chat.isGroup} showSwitch={chat.isGroup && !plan.bccd} everyone={chatAddrs} replyTo={replyTo} onChange={setRec} onClose={() => setPeopleOpen(false)} />}
     </div>
   );
 }
