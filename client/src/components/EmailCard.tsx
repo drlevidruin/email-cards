@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { EmailThread, GmailAccount } from '../lib/types';
 import { cleanSubject, counterpart } from '../lib/stacks';
+import { findQuote } from '../lib/highlight';
+import { skim } from '../lib/skim';
 import { relativeTime } from '../lib/time';
 import { useThread } from '../lib/useThread';
 import { CardAnswers } from './CardAnswers';
@@ -23,21 +25,27 @@ interface Props {
   onAnswer?: (qa: string) => void;
 }
 
-/** An email as four blocks: who it is from, the ask, as much of the email as fits, and the answers. */
+/** An email on one sheet: who it is from, the ask, as much of the email as fits (without its hello and sign-off), and the answers. */
 export function EmailCard({ thread, account, overlay, goalFirst, answers, onAnswer }: Props) {
   const full = useThread(thread.id);
   const newest = newestMessage(full);
   const kind = heroKind(thread, goalFirst);
   const who = counterpart(thread);
-  const subject = kind === 'subject' ? undefined : cleanSubject(thread.subject);
   const attached = (newest?.attachments.length ?? 0) > 0;
+  const raw = newest ? newest.bodyText : thread.snippet;
+  const cut = skim(raw);
+  // The sentence the Goal came from must be on the card: if skimming cut it away, the card shows the email whole
+  const skimmed = kind === 'goal' && !findQuote(cut, thread.goalQuote) && findQuote(raw, thread.goalQuote) ? raw : cut;
+  // The card's headline is the subject: an email that opens by repeating it loses that first line
+  const title = cleanSubject(thread.subject).trim().toLowerCase();
+  const firstLine = skimmed.split('\n', 1)[0];
+  const words = kind === 'subject' && title && firstLine.trim().toLowerCase() === title ? skimmed.slice(firstLine.length).trimStart() || skimmed : skimmed;
   return (
     <article className={`card card--mail${answers ? ' card--answers' : ''}`}>
-      <CardHeader name={who.name} email={who.email} account={account} age={relativeTime(thread.lastMessageAt)} subject={subject} attached={attached} />
+      <CardHeader name={who.name} email={who.email} account={account} age={relativeTime(thread.lastMessageAt)} attached={attached} />
       <Hero thread={thread} goalFirst={goalFirst} />
       <section className="cardwords">
-        <div className="cardwords__label t-caption">The email</div>
-        <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} />
+        <CardBody text={words} quote={kind === 'goal' ? thread.goalQuote : null} />
       </section>
       {answers && <CardAnswers thread={thread} onAnswer={onAnswer} />}
       {overlay}

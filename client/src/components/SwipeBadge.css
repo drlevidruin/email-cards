@@ -8,10 +8,10 @@
 }
 .stamp--accent { color: var(--accent); }
 .stamp--ink { color: var(--ink); }
-.stamp--quiet { color: var(--skip); }
-.stamp--danger { color: var(--stop); }
-.stamp--later { color: var(--later); }
-.stamp--todo { color: var(--todo); }
+.stamp--quiet { color: var(--ink-3); }
+.stamp--danger { color: var(--danger); }
+.stamp--later { color: var(--ink); }
+.stamp--todo { color: var(--ink); }
 .stamp--right { --rot: -11deg; left: 26px; top: 86px; }
 .stamp--left { --rot: 9deg; right: 26px; top: 86px; }
 .stamp--up { --rot: -5deg; left: 0; right: 0; margin: 0 auto; bottom: 150px; }

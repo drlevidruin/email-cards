@@ -1,38 +1,54 @@
+/* The deck is a table: deep green with a soft light behind the card. Cards are white paper on it. */
 .cards {
   display: flex;
   flex-direction: column;
   height: 100dvh;
   overflow: hidden;
   padding-top: env(safe-area-inset-top);
+  background: radial-gradient(85% 52% at 50% 36%, var(--table-glow), transparent 72%), var(--brand-deep);
 }
 .cards__col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .cards .topbar { padding: 0 8px; }
-.cards__deck { flex: 1; min-height: 0; display: flex; padding: 12px 16px 22px; }
+/* The pile's name is in the app's own voice */
+.cards .topbar__title { font-family: var(--font-display); font-size: 19px; line-height: 24px; font-weight: 700; letter-spacing: -0.012em; }
+.cards__deck { flex: 1; min-height: 0; display: flex; padding: 10px 16px 22px; --shadow-card: var(--shadow-table); }
 .cards__deck--today { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-.cards__bar-space { flex: none; height: calc(88px + env(safe-area-inset-bottom)); }
+.cards__bar-space { flex: none; height: calc(86px + env(safe-area-inset-bottom)); }
+
+/* Anything drawn straight on the table reads in cream: the top bar, the first cards' hint, the moves and Today's words.
+   The menu and the Later sheet are children of .cards too and stay on paper, so the inks are turned here and not on .cards. */
+.cards .topbar, .cards .pointer, .cards .actionbar, .cards .today {
+  --ink: var(--on-brand); --ink-2: var(--on-brand-2); --ink-3: var(--on-brand-3); --ink-4: rgba(246, 244, 238, 0.46);
+  --line: var(--on-brand-line); --line-strong: rgba(246, 244, 238, 0.32); --surface-2: rgba(246, 244, 238, 0.12);
+  --danger: #FFB4A6; --accent: var(--signal);
+  color: var(--ink);
+}
+/* Paper laid on the table takes the paper inks back */
+.cards .today__stack {
+  --ink: var(--p-ink); --ink-2: var(--p-ink-2); --ink-3: var(--p-ink-3); --ink-4: var(--p-ink-4);
+  --line: var(--p-line); --line-strong: var(--p-line-strong); --surface-2: var(--p-surface-2);
+  --danger: var(--p-danger); --accent: var(--p-accent);
+  color: var(--ink);
+}
+.cards .segbar { background: var(--on-brand-line); }
+.cards .segbar__fill { background: var(--signal); }
 
 @media (min-width: 1024px) {
   /* One frame for every screen on the deck: Today, a card, the covers and the finish.
-     The card is the same height everywhere (440 at least, 620 at most, else the window less 300),
-     the bar sits 16px under its edge, and card and bar are centered together under the title row.
+     The card is the same height everywhere (440 at least, 620 at most, else the window less 314),
+     the moves sit 16px under its edge, and card and moves are centered together under the title row.
      The side panel reads --stage-top too, so Up next starts level with the card's top edge. */
   :root {
-    --deck-h: clamp(440px, calc(100dvh - 300px), 620px);
-    --stage-top: max(16px, calc((100dvh - var(--deck-h) - 153px) / 2));
+    --deck-h: clamp(440px, calc(100dvh - 314px), 620px);
+    --stage-top: max(16px, calc((100dvh - var(--deck-h) - 167px) / 2));
     --card-top: calc(var(--stage-top) + 73px);
   }
-  .cards { height: 100%; align-items: center; justify-content: flex-start; padding: var(--stage-top) 0 0; }
+  /* On a laptop the table is a rounded board set into the page */
+  .cards { height: calc(100% - 24px); margin: 12px; border-radius: 28px; align-items: center; justify-content: flex-start; padding: calc(var(--stage-top) - 12px) 0 0; }
   /* The card at a reading width: 600px, less in a narrow window, never under 440 */
   .cards__col { flex: none; width: min(600px, max(440px, 100% - 48px)); }
   .cards .topbar { padding: 0; }
-  .cards .topbar__title { font-size: 15px; }
+  .cards .topbar__title { font-size: 17px; }
   .cards__deck, .cards__deck--today { flex: none; height: var(--deck-h); padding: 0; margin-top: 12px; }
-  .cards__bar-space { height: 80px; }
+  .cards__bar-space { height: 94px; }
 }
-
-/* A finished pile: the deck column goes green, top bar and all */
-.cards--clear { background: var(--brand-deep); }
-.cards--clear .topbar__title, .cards--clear .icon-btn { color: var(--on-brand); }
-.cards--clear .icon-btn:active { background: rgba(246, 244, 238, 0.12); }
-.cards--clear .segbar { background: rgba(246, 244, 238, 0.16); }
-.cards--clear .segbar__fill { background: var(--on-brand); }

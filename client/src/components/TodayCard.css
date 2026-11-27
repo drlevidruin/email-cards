@@ -8,7 +8,7 @@
 .today__duetoday svg { flex: none; color: var(--ink-4); }
 .today__stack {
   flex: none; display: block; width: 100%; margin-top: 4px; text-align: left;
-  border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card);
 }
 .today__stack:active { background: var(--surface-2); }
 .today__duetoday + .today__stack { margin-top: 0; }
@@ -21,10 +21,10 @@
 .today__from { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-3); }
 .today__cap {
   flex: none; display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; border-radius: var(--radius-pill);
-  background: var(--accent); color: #fff; box-shadow: var(--shadow-inset), var(--shadow-btn);
+  background: var(--signal); color: var(--on-signal); box-shadow: var(--shadow-btn);
 }
-.today__cap-n { font-weight: 400; color: rgba(255, 255, 255, 0.7); }
-.today__stack:active .today__cap { background: var(--accent-press); }
+.today__cap-n { font-weight: 400; color: rgba(10, 58, 45, 0.62); }
+.today__stack:active .today__cap { background: var(--signal-press); }
 .today__next { flex: none; overflow: hidden; margin-top: 16px; }
 .today__next.is-empty { height: 0; visibility: hidden; }
 .today__label { margin: 0 0 4px 4px; font-weight: 600; color: var(--ink-3); }

@@ -1,59 +1,58 @@
-/* The moves sit in a white dock under the card. Each has its own colour, the same one its stamp uses: Later amber,
-   To-do indigo, Skip grey, Done green, Block red. The one the screen most wants is filled; the rest are tinted. */
-.actionbar {
-  flex: none;
-  display: flex;
-  gap: 6px;
-  height: 64px;
-  margin: 0 16px calc(16px + env(safe-area-inset-bottom));
-  padding: 7px;
-  border: 1px solid var(--card-edge);
-  border-radius: 21px;
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(20, 24, 34, 0.05), 0 8px 20px -10px rgba(20, 24, 34, 0.18);
+/* On the deck the moves sit on the table under the card: a round button for each direction a card can go, its name under it.
+   Cream on green, no colours of their own. The one the screen most wants is the solid disc. */
+.actionbar { flex: none; display: flex; }
+.actionbar__btn { min-width: 0; -webkit-tap-highlight-color: transparent; }
+.actionbar__label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+.actionbar--deck { justify-content: space-between; height: 78px; margin: 0 16px calc(8px + env(safe-area-inset-bottom)); padding: 0 12px; }
+.actionbar--deck .actionbar__btn { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.actionbar__disc {
+  flex: none; display: flex; align-items: center; justify-content: center; width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(246, 244, 238, 0.10); box-shadow: inset 0 0 0 1px rgba(246, 244, 238, 0.28); color: var(--on-brand);
+  transition: transform 140ms var(--ease), background 140ms, color 140ms, box-shadow 140ms;
 }
-.actionbar__btn {
-  --tone: var(--skip); --soft: var(--skip-soft);
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-width: 0;
-  height: 100%;
-  padding: 0 4px;
-  border-radius: 14px;
-  background: var(--soft);
-  color: var(--tone);
-  transition: transform 120ms var(--ease), background 120ms, color 120ms, box-shadow 120ms;
+.actionbar--deck .actionbar__label { font-size: 13px; line-height: 16px; font-weight: 600; letter-spacing: 0.01em; color: var(--on-brand); }
+.actionbar--deck .actionbar__btn:active .actionbar__disc { transform: scale(0.93); background: rgba(246, 244, 238, 0.20); }
+/* The lime one: Done on a card with no answers, and Allow. A move that is already on (To-do) is solid cream. */
+.actionbar--deck .actionbar__btn--primary .actionbar__disc { background: var(--signal); color: var(--on-signal); box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.55); }
+.actionbar--deck .actionbar__btn.is-on .actionbar__disc { background: var(--on-brand); color: var(--brand-deep); box-shadow: none; }
+.actionbar--deck .actionbar__btn--primary .actionbar__label, .actionbar--deck .actionbar__btn.is-on .actionbar__label { color: var(--on-brand); }
+.actionbar--deck .actionbar__btn--primary:active .actionbar__disc { background: var(--signal-press); }
+/* Dragging toward a move rings its disc. Past the commit point it fills, the way the stamp goes solid. */
+.actionbar--deck .actionbar__btn.is-active .actionbar__disc { background: rgba(246, 244, 238, 0.20); box-shadow: inset 0 0 0 2px var(--on-brand); }
+.actionbar--deck .actionbar__btn.is-past .actionbar__disc { background: var(--signal); color: var(--on-signal); box-shadow: none; animation: badge-pop 150ms var(--ease); }
+.actionbar--deck .actionbar__btn.is-active .actionbar__label { color: var(--on-brand); }
+.actionbar--deck .actionbar__cap { background: rgba(246, 244, 238, 0.12); border-color: transparent; box-shadow: none; color: var(--on-brand-2); }
+
+/* The reader's bar is on paper: a white dock of word buttons, Done lime. */
+.actionbar--read {
+  gap: 6px; height: 64px; margin: 0 16px calc(16px + env(safe-area-inset-bottom)); padding: 7px; border-radius: 21px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 8px 24px -10px rgba(14, 22, 18, 0.22);
 }
-.actionbar__btn--later { --tone: var(--later); --soft: var(--later-soft); }
-.actionbar__btn--todo, .actionbar__btn--newsletters { --tone: var(--todo); --soft: var(--todo-soft); }
-.actionbar__btn--done, .actionbar__btn--allow, .actionbar__btn--reply { --tone: var(--done); --soft: var(--done-soft); }
-.actionbar__btn--block { --tone: var(--stop); --soft: var(--stop-soft); }
-.actionbar__btn svg { flex: none; }
-.actionbar__arrow { color: inherit; }
-.actionbar__label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; white-space: nowrap; }
-.actionbar__btn:active { transform: scale(0.97); }
-/* The filled one: Done on a card with no answers, Allow, and Done in the reader */
-.actionbar__btn--primary { background: var(--accent); color: #fff; }
-.actionbar__btn--primary:active { background: var(--accent-press); }
-/* Dragging toward a button rings it in its colour. Past the commit point it fills, the way the stamp goes solid. */
-.actionbar__btn.is-active { box-shadow: inset 0 0 0 2px var(--tone); }
-.actionbar__btn.is-past { background: var(--tone); color: #fff; box-shadow: none; animation: badge-pop 150ms var(--ease); }
-.actionbar__btn.is-on { background: var(--tone); color: #fff; }
-.actionbar__cap { background: rgba(255, 255, 255, 0.6); border-color: transparent; box-shadow: none; color: inherit; }
-.actionbar__btn--primary .actionbar__cap, .actionbar__btn.is-past .actionbar__cap, .actionbar__btn.is-on .actionbar__cap { background: rgba(255, 255, 255, 0.22); }
+.actionbar--read .actionbar__btn {
+  flex: 1 1 auto; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 4px; border-radius: 14px;
+  background: var(--surface-2); color: var(--ink); transition: transform 120ms var(--ease), background 120ms, color 120ms;
+}
+.actionbar--read .actionbar__label { font-size: 15px; line-height: 20px; font-weight: 600; }
+.actionbar--read .actionbar__btn:active { transform: scale(0.97); }
+.actionbar--read .actionbar__btn--primary { background: var(--signal); color: var(--on-signal); }
+.actionbar--read .actionbar__btn.is-on { background: var(--ink); color: #fff; }
+.actionbar--read .actionbar__btn--primary:active { background: var(--signal-press); }
+.actionbar--read .actionbar__cap { background: rgba(14, 22, 18, 0.06); border-color: transparent; box-shadow: none; color: inherit; }
+.actionbar--read .actionbar__btn--primary .actionbar__cap { background: rgba(10, 58, 45, 0.10); }
+.actionbar--read .actionbar__btn.is-on .actionbar__cap { background: rgba(255, 255, 255, 0.18); }
 
 @media (max-width: 380px) {
-  .actionbar { gap: 4px; margin-left: 10px; margin-right: 10px; padding: 6px; }
-  .actionbar__btn { gap: 3px; padding: 0 2px; }
-  .actionbar__label { gap: 4px; font-size: 14px; }
-  .actionbar__btn > svg, .actionbar__label > svg { width: 16px; height: 16px; }
+  .actionbar--deck { margin-left: 8px; margin-right: 8px; padding: 0 6px; }
+  .actionbar--read { gap: 4px; margin-left: 10px; margin-right: 10px; padding: 6px; }
+  .actionbar--read .actionbar__label { gap: 4px; font-size: 14px; }
 }
 
 @media (min-width: 1024px) {
-  .actionbar { width: 100%; margin: 16px 0 0; }
-  .actionbar__btn:hover { box-shadow: inset 0 0 0 2px var(--tone); }
-  .actionbar__btn--primary:hover { background: var(--accent-press); box-shadow: none; }
+  .actionbar--deck { align-self: center; width: min(440px, 100%); margin: 16px 0 0; padding: 0; }
+  .actionbar--deck .actionbar__btn:hover .actionbar__disc { background: rgba(246, 244, 238, 0.20); }
+  .actionbar--deck .actionbar__btn--primary:hover .actionbar__disc { background: var(--signal-press); }
+  .actionbar--read { width: 100%; margin: 16px 0 0; }
+  .actionbar--read .actionbar__btn:hover { background: var(--line); }
+  .actionbar--read .actionbar__btn--primary:hover { background: var(--signal-press); }
 }

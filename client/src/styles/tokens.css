@@ -1,46 +1,48 @@
 :root {
   color-scheme: light;
-  --canvas: #E6E9EF;
+  /* Three colours (Levi, 2026-11-27: "be brave. Change anything. Change colors"): the table's deep green, white paper, green-black ink.
+     Lime (--signal) is the one loud colour: it is on the one thing a screen wants done (its main button), on the progress line, and under the sentence that asks. Words on lime are --on-signal. The --p-* values are the paper inks;
+     words drawn straight on the table swap --ink and the rest for cream (CardsScreen.css) and paper laid on it swaps them back. */
+  --p-ink: #0E1612;
+  --p-ink-2: #3B4540;
+  --p-ink-3: #68726D;
+  --p-ink-4: #9AA39E;
+  --p-line: rgba(14, 22, 18, 0.10);
+  --p-line-strong: rgba(14, 22, 18, 0.18);
+  --p-surface-2: #EEF1EE;
+  --p-accent: #0B7A5A;
+  --p-danger: #C2362B;
+  --canvas: #F2F4F1;
   --surface: #FFFFFF;
-  --surface-2: #F1F3F6;
-  --line: rgba(20, 24, 34, 0.12);
-  --line-strong: rgba(20, 24, 34, 0.22);
-  --ink: #14161A;
-  --ink-2: #353942;
-  --ink-3: #5A5F6A;
-  --ink-4: #8C919B;
-  --ink-body: #1A1D23;
-  --accent: #0B7A5A;
+  --surface-2: var(--p-surface-2);
+  --line: var(--p-line);
+  --line-strong: var(--p-line-strong);
+  --ink: var(--p-ink);
+  --ink-2: var(--p-ink-2);
+  --ink-3: var(--p-ink-3);
+  --ink-4: var(--p-ink-4);
+  --ink-body: #1E2823;
+  --ink-press: #26302B;
+  --accent: var(--p-accent);
   --accent-press: #08654A;
   --accent-soft: #DDF2E9;
   --accent-tint: #F1F8F5;
   --accent-mark: rgba(11, 122, 90, 0.16);
   --accent-line: rgba(11, 122, 90, 0.10);
-  /* One colour per job (Levi, 2026-11-27): a deep tone for words and icons, a soft tone for fills.
-     Later is amber, To-do and Newsletter indigo, Skip grey, Done, Allow and the answers green, Block red.
-     The deadline chip is amber too: amber is time. Yellow is the marker on the sentence that asks. */
-  --later: #9A4B00;
-  --later-soft: #FDECCB;
-  --todo: #3B46C4;
-  --todo-soft: #E2E5FC;
-  --skip: #4A4E57;
-  --skip-soft: #E8EAEF;
-  --done: #08654A;
-  --done-soft: #DDF2E9;
-  --stop: #A82A20;
-  --stop-soft: #FBE3E0;
-  --mark: #FFE27A;
-  --accent-rule: rgba(11, 122, 90, 0.26);
-  --card-edge: rgba(20, 24, 34, 0.16);
-  --danger: #C2362B;
+  --signal: #B9F25E;
+  --signal-press: #A8E24B;
+  --on-signal: #0A3A2D;
+  --mark: #D9F7A3;
+  --danger: var(--p-danger);
   --ok: var(--accent);
-  --radius-card: 26px;
+  --radius-card: 28px;
   --radius-l: 16px;
   --radius-m: 14px;
   --radius-s: 10px;
   --radius-xs: 4px;
   --radius-pill: 999px;
-  --shadow-card: 0 0 0 1px rgba(20, 24, 34, 0.05), 0 2px 4px rgba(20, 24, 34, 0.06), 0 16px 36px -10px rgba(20, 24, 34, 0.22);
+  --shadow-card: 0 0 0 1px rgba(14, 22, 18, 0.04), 0 2px 4px rgba(14, 22, 18, 0.05), 0 14px 32px -10px rgba(14, 22, 18, 0.18);
+  --shadow-table: 0 1px 2px rgba(0, 0, 0, 0.20), 0 18px 40px -14px rgba(0, 0, 0, 0.55);
   --shadow-float: 0 0 0 1px rgba(28, 25, 20, 0.05), 0 10px 28px -6px rgba(28, 25, 20, 0.16);
   --shadow-btn: 0 1px 2px rgba(28, 25, 20, 0.06), 0 2px 8px rgba(28, 25, 20, 0.05);
   --shadow-pop: var(--shadow-float);
@@ -55,11 +57,13 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* The app's own voice: the system serif, no font file. */
   --font-display: ui-serif, Charter, "Bitstream Charter", "Iowan Old Style", "Sitka Text", Cambria, Georgia, serif;
-  /* The welcome screen is the one place on this field. */
-  --brand-deep: #0A5A44;
+  /* The table: the deck, the welcome, How it works and All clear are on this green. */
+  --brand-deep: #0A4435;
+  --table-glow: rgba(72, 196, 150, 0.16);
   --on-brand: #F6F4EE;
-  --on-brand-2: rgba(246, 244, 238, 0.74);
-  --on-brand-3: rgba(246, 244, 238, 0.52);
+  --on-brand-2: rgba(246, 244, 238, 0.78);
+  --on-brand-3: rgba(246, 244, 238, 0.60);
+  --on-brand-line: rgba(246, 244, 238, 0.18);
   --on-brand-pressed: #E6E3DA;
 }
 

@@ -14,9 +14,9 @@
 .finish__row-bits { color: var(--on-brand-2); }
 .finish__row svg { flex: none; color: var(--on-brand-3); }
 .finish__action { flex: none; padding-top: 16px; }
-.finish__primary { width: 100%; height: 56px; border-radius: 18px; background: var(--on-brand); color: var(--brand-deep); font-size: 17px; font-weight: 600; }
-.finish__primary:active { background: var(--on-brand-pressed); }
-.finish__primary:focus-visible { outline: 2px solid var(--on-brand); outline-offset: 3px; }
+.finish__primary { width: 100%; height: 56px; border-radius: 18px; background: var(--signal); color: var(--on-signal); font-size: 17px; font-weight: 600; }
+.finish__primary:active { background: var(--signal-press); }
+.finish__primary:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
 .finish__primary-count { font-weight: 400; opacity: 0.75; }
 @media (max-height: 720px) {
   .finish__title { font-size: 48px; line-height: 50px; }

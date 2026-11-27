@@ -26,7 +26,8 @@ export function CardHeader({ name, email, account, age, subject, attached }: Pro
           {account.label}
         </span>
       )}
-      {age && <span className="t-num">{age}</span>}
+      {age && <span className="cardhead__age t-num">{age}</span>}
+      {attached && subject === undefined && <Paperclip className="cardhead__clip" size={14} strokeWidth={1.75} aria-label="Has an attachment" />}
     </div>
   );
   return (

@@ -24,11 +24,11 @@
 .how__act { position: sticky; bottom: 0; margin: 24px -24px 0; padding: 10px 24px calc(18px + env(safe-area-inset-bottom)); background: var(--brand-deep); }
 .how__button {
   display: flex; align-items: center; justify-content: center; width: 100%; height: 54px;
-  border-radius: var(--radius-m); background: var(--on-brand); color: var(--brand-deep);
+  border-radius: var(--radius-m); background: var(--signal); color: var(--on-signal);
   font-size: 17px; line-height: 22px; font-weight: 600;
 }
-.how__button:active { background: var(--on-brand-pressed); }
-.how__button:focus-visible { outline: 2px solid var(--on-brand); outline-offset: 3px; }
+.how__button:active { background: var(--signal-press); }
+.how__button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
 
 @media (min-width: 1024px) {
   .how { height: 100%; }

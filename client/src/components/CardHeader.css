@@ -1,19 +1,16 @@
 .cardhead { flex: none; display: flex; align-items: center; gap: 12px; min-height: 40px; }
 .cardhead__who { flex: 1; min-width: 0; }
-.cardhead__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-/* On a card the header is a band in the account's colour, so the inbox a card came from shows before a word is read */
-.card--mail .cardhead { padding: 12px var(--pad); background: color-mix(in srgb, var(--acct, #98A0AC) 16%, #fff); border-bottom: 1px solid var(--line-strong); }
-.cardhead__name { color: var(--ink); }
-.cardhead__meta { display: flex; align-items: center; gap: 8px; color: var(--ink-2); white-space: nowrap; }
-.cardhead__acct {
-  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px 0 7px; border-radius: var(--radius-pill);
-  background: var(--surface); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acct, #98A0AC) 60%, #fff);
-  color: var(--ink); font-size: 12px; line-height: 16px; font-weight: 600;
-}
-.cardhead__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--acct, #98A0AC); }
+.cardhead__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ink); }
+/* One quiet line under the name: a dot in the account's colour, the account, how long ago */
+.cardhead__meta { display: flex; align-items: center; gap: 6px; color: var(--ink-3); white-space: nowrap; }
+.cardhead__acct { display: inline-flex; align-items: center; gap: 6px; }
+.cardhead__acct + .cardhead__age::before { content: '\00B7'; margin-right: 6px; }
+.cardhead__dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--acct, #98A0AC); }
 .cardhead__line { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
 .cardhead__line .cardhead__name { flex: 1; min-width: 0; }
 .cardhead__line .cardhead__meta { flex: none; }
 .cardhead__subject { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--ink-2); }
 .cardhead__clip { flex: none; color: var(--ink-3); }
 .cardhead__subject-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.card--mail .cardhead { padding: var(--pad) var(--pad) 0; }
+.card--mail .cardhead__name { font-size: 16px; line-height: 21px; }

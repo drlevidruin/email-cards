@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { GmailAccount, ScreenerSender } from '../lib/types';
+import { skim } from '../lib/skim';
 import { useThread } from '../lib/useThread';
 import { CardBody } from './CardBody';
 import { CardHeader } from './CardHeader';
@@ -22,9 +23,8 @@ export function ScreenerCard({ sender, account, overlay }: Props) {
       <CardHeader name={sender.name} email={sender.email} account={account} />
       <SenderHero sender={sender} />
       <section className="cardwords">
-        <div className="cardwords__label t-caption">Their first email</div>
         <h2 className="card__subject t-headline">{full ? full.subject : sender.sampleSubject}</h2>
-        <CardBody text={first ? first.bodyText : sender.sampleSnippet} />
+        <CardBody text={skim(first ? first.bodyText : sender.sampleSnippet)} />
       </section>
       {overlay}
     </article>

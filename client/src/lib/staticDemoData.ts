@@ -140,7 +140,7 @@ export function buildDemoDataset(): DemoDataset {
     subject: "Dad's 70th: dinner on Sunday?",
     snippet: "Surprise dinner at Lucia's on Sunday at 6 for Dad's 70th. Can you make it? I need a headcount by 6 tonight.",
     bodyText:
-      "Hi Alex,\n\nDad turns 70 on Sunday, and I'm planning a surprise dinner at Lucia's at 6. Mom is in, and so are Ben and the kids.\n\nCan you make it? I have to give them a headcount by 6 tonight.\n\nMaya",
+      "Hi Alex,\n\nDad turns 70 on Sunday, and I'm planning a surprise dinner at Lucia's at 6. Can you make it? I have to give them a headcount by 6 tonight.\n\nMaya",
     sentAt: hoursAgo(1),
     isUnread: true,
     isOutbound: false,

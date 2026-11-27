@@ -23,7 +23,7 @@ const TODO: Item = { action: 'todo', label: 'To-do', dir: 'up' };
 const SKIP: Item = { action: 'skip', label: 'Skip', dir: 'down' };
 const DONE: Item = { action: 'done', label: 'Done', dir: 'right', primary: true };
 
-/** The deck's bar: the four moves, each drawn as the direction it goes. */
+/** The deck's moves: a round button for each direction a card can go. */
 const DECK: Record<BarVariant, Item[]> = {
   default: [LATER, TODO, SKIP, DONE],
   plain: [LATER, TODO, SKIP, DONE],
@@ -83,11 +83,11 @@ export function ActionBar({ variant, active, past, onAction, todoOn, reader, ans
   const lit = active ? BY_DIR[variant][active] : undefined;
   const desktop = useIsDesktop();
   return (
-    <div className={`actionbar actionbar--${variant} no-select`}>
+    <div className={`actionbar actionbar--${variant} ${reader ? 'actionbar--read' : 'actionbar--deck'} no-select`}>
       {(reader ? READER : DECK)[variant].map(({ action, label, dir, primary }) => {
         const on = action === 'todo' && !!todoOn;
         const accent = !!primary && (reader || variant === 'senders' || !answers);
-        const Arrow = dir ? ARROWS[dir] : null;
+        const Arrow = !reader && dir ? ARROWS[dir] : null;
         const key = desktop && (reader || action !== 'reply') ? BAR_KEY[action] : null;
         return (
           <button
@@ -97,13 +97,16 @@ export function ActionBar({ variant, active, past, onAction, todoOn, reader, ans
             aria-label={on ? 'On To-do' : undefined}
             onClick={() => onAction(action)}
           >
-            {dir !== 'right' && Arrow && <Arrow className="actionbar__arrow" size={18} strokeWidth={2} aria-hidden="true" />}
-            <span className="actionbar__label t-callout">
+            {Arrow && (
+              <span className="actionbar__disc" aria-hidden="true">
+                <Arrow size={22} strokeWidth={2.25} />
+              </span>
+            )}
+            <span className="actionbar__label">
               {on && reader ? <ListChecks size={18} strokeWidth={2} aria-hidden="true" /> : null}
               {label}
               {key && <kbd className="keycap actionbar__cap">{key}</kbd>}
             </span>
-            {dir === 'right' && Arrow && <Arrow className="actionbar__arrow" size={18} strokeWidth={2} aria-hidden="true" />}
           </button>
         );
       })}

@@ -46,12 +46,14 @@ export function Hero({ thread, goalFirst }: { thread: EmailThread; goalFirst?: b
   );
 }
 
-/** The hero of a new-sender card: why it is new, the address, and the reason. */
+/** The hero of a new-sender card: the question the card asks, then the address and why it is new. */
 export function SenderHero({ sender }: { sender: ScreenerSender }) {
+  const who = sender.name && sender.name !== sender.email ? sender.name : 'this sender';
   return (
     <div className="hero">
       <div className="hero__label hero__label--quiet t-caption">New sender</div>
-      <p className="hero__text t-title-2">{sender.email}</p>
+      <p className="hero__text t-title voice">Allow {who}?</p>
+      <p className="hero__addr t-subhead">{sender.email}</p>
       <p className="hero__reason t-subhead">{sender.aiReason}</p>
     </div>
   );

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Paperclip } from 'lucide-react';
 import type { EmailMessage, EmailThread } from '../lib/types';
 import { findQuote } from '../lib/highlight';
+import { facts, parts } from '../lib/skim';
 import { loadThread } from '../lib/threadCache';
 import { formatBytes, formatClockTime } from '../lib/utils';
 import { isSampleInbox } from '../lib/sample';
@@ -16,14 +18,43 @@ interface Props {
   promise?: string | null;
 }
 
+/** A stretch of the email with its dates, times and amounts set bold. */
+function Facts({ text }: { text: string }) {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const [a, z] of facts(text)) {
+    if (a > last) out.push(text.slice(last, a));
+    out.push(
+      <strong key={a} className="tv__fact">
+        {text.slice(a, z)}
+      </strong>
+    );
+    last = z;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return <>{out}</>;
+}
+
+/** One email for reading: the hello and the sign-off fade back, the facts are bold, and the sentence the Goal came from is marked. */
 function Marked({ text, quote }: { text: string; quote?: string | null }) {
-  const at = findQuote(text, quote);
-  if (!at) return <>{text}</>;
+  const split = parts(text);
+  // The marked sentence wins: if it sits in what would fade, nothing fades
+  const whole = !findQuote(split.body, quote) && !!findQuote(text, quote);
+  const { hello, body, bye } = whole ? { hello: '', body: text, bye: '' } : split;
+  const at = findQuote(body, quote);
   return (
     <>
-      {text.slice(0, at[0])}
-      <mark className="tv__mark">{text.slice(at[0], at[1])}</mark>
-      {text.slice(at[1])}
+      {hello && <span className="tv__aside">{hello}</span>}
+      {at ? (
+        <>
+          <Facts text={body.slice(0, at[0])} />
+          <mark className="tv__mark">{body.slice(at[0], at[1])}</mark>
+          <Facts text={body.slice(at[1])} />
+        </>
+      ) : (
+        <Facts text={body} />
+      )}
+      {bye && <span className="tv__aside">{bye}</span>}
     </>
   );
 }

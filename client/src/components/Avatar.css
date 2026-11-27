@@ -8,6 +8,8 @@
   border-radius: 50%;
   font-size: 15px;
   font-weight: 600;
+  background: var(--brand-deep);
+  color: var(--on-brand);
 }
 .avatar--small { width: 36px; height: 36px; font-size: 13px; }
-.avatar--card { width: 36px; height: 36px; font-size: 13px; }
+.avatar--card { width: 40px; height: 40px; font-size: 14px; }

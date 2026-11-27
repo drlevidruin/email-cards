@@ -7,7 +7,7 @@
 .tv__name { font-size: 16px; font-weight: 600; }
 .tv__time { flex: none; font-size: 14px; color: var(--ink-3); }
 .tv__to { margin-top: 2px; font-size: 14px; color: var(--ink-3); overflow-wrap: anywhere; }
-.tv__body { margin-top: 12px; font-size: 16px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tv__body { max-width: 34em; margin-top: 12px; font-size: 17px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
 .tv__collapsed {
   display: block; width: 100%; min-height: 44px; padding: 12px 0;
   border-top: 1px solid var(--line); text-align: left;
@@ -21,4 +21,6 @@
 .tv__file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; color: var(--ink); }
 .tv__sample { margin: 8px 0 0; color: var(--ink-3); }
 .tv__file-size { flex: none; font-size: 14px; color: var(--ink-3); }
-.tv__mark { padding: 0 2px; border-radius: 3px; background: var(--mark); color: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.tv__aside { color: var(--ink-3); }
+.tv__fact { font-weight: 600; color: var(--ink); }
+.tv__mark { background: linear-gradient(to top, var(--signal) 0, var(--signal) 22%, transparent 22%); color: var(--ink); font-weight: 600; box-decoration-break: clone; -webkit-box-decoration-break: clone; }

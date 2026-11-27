@@ -37,8 +37,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   font-size: 16px;
   font-weight: 600;
 }
-.btn--primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-inset), var(--shadow-btn); }
-.btn--primary:active { background: var(--accent-press); }
+.btn--primary { background: var(--signal); color: var(--on-signal); box-shadow: var(--shadow-btn); }
+.btn--primary:active { background: var(--signal-press); }
 .btn--primary:disabled { opacity: 0.4; }
 .btn--secondary { background: transparent; color: var(--ink); border: 1px solid var(--line-strong); }
 .btn--text { height: 44px; padding: 0 12px; color: var(--ink); font-weight: 600; background: none; }

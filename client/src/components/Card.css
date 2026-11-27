@@ -1,4 +1,4 @@
-/* The shell shared by EmailCard, ScreenerCard and CoverCard. */
+/* The shell shared by EmailCard, ScreenerCard and CoverCard: one sheet of white paper. */
 .card {
   position: relative;
   display: flex;
@@ -6,9 +6,8 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  padding: 20px;
+  padding: 22px;
   border-radius: var(--radius-card);
-  border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
@@ -19,18 +18,16 @@
   overflow-wrap: anywhere;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
-/* An email's card is four blocks, each on its own ground with a line between: who it is from, the ask, the email, your answers. */
-.card--mail { padding: 0; --pad: 20px; border-color: var(--card-edge); }
-/* The email itself, on a faint ground so the ask above it is the only pure white */
+/* An email's card, top to bottom: who it is from, the ask in the largest type, one hairline, the email, the answers.
+   No tinted zones: the type sizes and the one line do the separating. */
+.card--mail { padding: 0; --pad: 22px; }
 .cardwords {
   flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
-  padding: 12px var(--pad) 0; border-top: 1px solid var(--line-strong); background: var(--surface-2);
-  --zone: var(--surface-2); --zone-0: rgba(241, 243, 246, 0);
+  margin: 0 var(--pad); padding-top: 14px; border-top: 1px solid var(--line-strong);
 }
-.cardwords__label { flex: none; color: var(--ink-3); }
-.cardwords .card__subject { margin-top: 4px; }
-.cardwords .cardbody { margin-top: 4px; }
-.card--mail:not(.card--answers) .cardwords { padding-bottom: 16px; }
+.cardwords .card__subject { margin-bottom: 4px; }
+.cardwords .cardbody { margin-top: 0; }
+.card--mail:not(.card--answers) .cardwords { margin-bottom: 20px; }
 .card__rule { flex: none; width: 100%; height: 1px; margin: 16px 0; border: 0; background: var(--line); }
 
 @media (min-width: 1024px) {

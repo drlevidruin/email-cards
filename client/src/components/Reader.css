@@ -13,6 +13,10 @@
 .reader__top { flex: none; display: flex; align-items: center; height: 52px; padding: 0 8px; }
 .reader__back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 12px 0 4px; color: var(--ink-2); }
 .reader__scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 20px calc(64px + 24px + env(safe-area-inset-bottom)); }
+/* On a phone the last line fades out above the bar, so no line is cut in half */
+@media (max-width: 1023px) {
+  .reader__scroll { -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 36px), transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 36px), transparent 100%); }
+}
 .reader__rule { width: 100%; height: 1px; margin: 16px 0; border: 0; background: var(--line); }
 .reader__subject { margin-bottom: 12px; color: var(--ink); overflow-wrap: anywhere; }
 .reader .tv__body { margin-top: 8px; color: var(--ink-body); }
@@ -25,6 +29,6 @@
   .reader--desk.is-leaving { animation: none; }
   .reader--desk .reader__col { flex: none; width: min(680px, 100% - 48px); max-width: none; max-height: 100%; overflow: hidden; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card); }
   .reader__actions { flex: none; padding: 0 20px 12px; }
-  .reader__actions .actionbar { margin-top: 0; background: var(--surface-2); box-shadow: none; border-color: transparent; }
+  .reader__actions .actionbar { height: 48px; margin: 0; padding: 0; background: none; box-shadow: none; }
   .reader--desk .reader__scroll { padding: 4px 32px 28px; border-top: 1px solid var(--line); padding-top: 16px; }
 }

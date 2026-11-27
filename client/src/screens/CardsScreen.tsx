@@ -251,7 +251,8 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
     );
   }
 
-  useBrandChrome(finished && !covered);
+  // The deck is green whenever it shows; a reader or editor over it is on paper
+  useBrandChrome(!covered);
   const showBar = status === 'ready' && !finished && !cover && !today && !covered;
   const showCount = status === 'ready' && !finished && !cover && !today && base.length > 0;
   return (
