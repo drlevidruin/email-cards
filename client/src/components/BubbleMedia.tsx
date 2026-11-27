@@ -52,14 +52,25 @@ export function BubbleMedia({ attachments, onOpen, children }: { attachments: Em
   const cells = shown.slice(0, 4);
   const extra = shown.length - 4;
   const ratio = shown.length === 1 ? pictureRatio(shown[0].width, shown[0].height) : null;
+  // Pictures from an email's own page: the first shows whole at full width, the rest sit in one row of squares below it
+  const banner = shown.length > 0 && shown.every((a) => !!a.remoteSrc);
   const grid = `bmedia__pics bmedia__pics--${many ? 'grid' : 'one'}${shown.length === 3 ? ' bmedia__pics--three' : ''}`;
   return (
     <>
-      {shown.length > 0 && (
+      {banner && (
+        <div className="bmedia__pics bmedia__pics--wide">
+          {shown.map((a, i) => (
+            <button key={a.id} type="button" className={i === 0 ? 'bmedia__pic bmedia__pic--first' : 'bmedia__pic bmedia__pic--small'} aria-label={a.alt ? `Open picture: ${a.alt}` : 'Open picture'} onClick={() => pictureSrc(a) && onOpen(pictures.indexOf(a))}>
+              {pictureSrc(a) && <img src={pictureSrc(a)} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBroken((b) => new Set(b).add(a.id))} />}
+            </button>
+          ))}
+        </div>
+      )}
+      {!banner && shown.length > 0 && (
         <div className={grid}>
           {cells.map((a, i) => (
             <button key={a.id} type="button" className="bmedia__pic" style={!many && ratio ? { aspectRatio: String(ratio) } : undefined} aria-label={a.alt ? `Open picture: ${a.alt}` : !a.inline && a.filename ? `Open picture: ${a.filename}` : 'Open picture'} onClick={() => pictureSrc(a) && onOpen(pictures.indexOf(a))}>
-              {pictureSrc(a) && <img src={pictureSrc(a)} width={a.width || undefined} height={a.height || undefined} alt="" loading="lazy" decoding="async" onError={() => setBroken((b) => new Set(b).add(a.id))} />}
+              {pictureSrc(a) && <img src={pictureSrc(a)} width={a.width || undefined} height={a.height || undefined} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBroken((b) => new Set(b).add(a.id))} />}
               {i === 3 && extra > 0 && <span className="bmedia__more">{`+${extra}`}</span>}
             </button>
           ))}

@@ -199,6 +199,7 @@ export function revokeLivePictures(): void {
 
 /** The address a picture tag can show for an attachment: its safe preview, else the saved picture from the snapshot. */
 export function pictureSrc(a: EmailAttachment): string | undefined {
+  if (a.remoteSrc) return isLiveMode() && /^https:\/\//i.test(a.remoteSrc) ? a.remoteSrc : undefined;
   if (isLivePicture(a)) return made.get(`p:${a.id}`) ?? undefined;
   const safe = safePreview(a.previewUrl);
   if (safe) return safe;

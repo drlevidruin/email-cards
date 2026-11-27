@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { aloneOnLine, shortLink } from './cleanText';
 
 const ADDRESS = /https?:\/\/[^\s<>"]+/gi;
 const TRAIL_MARKS = '.,)!?;:';
@@ -17,7 +18,7 @@ export function linkify(text: string, keyBase: string): ReactNode[] {
     if (start > at) out.push(<Fragment key={`${keyBase}-t${n}`}>{text.slice(at, start)}</Fragment>);
     out.push(
       <a key={`${keyBase}-a${n}`} className="bub__link" href={href} target="_blank" rel="noopener noreferrer">
-        {href}
+        {aloneOnLine(text, start, start + href.length) ? shortLink(href) : href}
       </a>
     );
     at = start + href.length;

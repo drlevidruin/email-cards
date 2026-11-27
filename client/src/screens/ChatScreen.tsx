@@ -18,9 +18,10 @@ import { dropMine } from '../lib/myDraft';
 import { getDraft, setDraft } from '../lib/chatDraft';
 import { moveChatPrefs } from '../lib/chatPrefs';
 import { linkify } from '../lib/linkify';
+import { cleanEmailText } from '../lib/cleanText';
 import { firstName } from '../lib/utils';
 import type { EmailMessage, EmailThread } from '../lib/types';
-import { Avatar, AvatarPair, hueOf } from '../components/Avatar';
+import { Avatar, ChatAvatar, hueOf } from '../components/Avatar';
 import { PeopleSheet, sameRecipients } from '../components/PeopleSheet';
 import { PeopleList } from '../components/PeopleList';
 import { BubbleMedia, isPicture } from '../components/BubbleMedia';
@@ -124,7 +125,9 @@ function Bubble({ item, first, fresh, who, whoColor, face, mark, whole, setRef, 
   const [view, setView] = useState<number | null>(null);
   usePictureVersion();
   const pictures = msg.attachments.filter(isPicture);
-  const full = item.held ? msg.bodyText : whole ? msg.bodyText.trim() : bubbleText(msg.bodyText, msg.fromName);
+  const cleaned = item.held ? msg.bodyText : whole ? cleanEmailText(msg.bodyText).trim() : bubbleText(msg.bodyText, msg.fromName);
+  // An email with no words left shows its subject, unless it carries pictures
+  const full = cleaned.trim() || msg.attachments.some(isPicture) ? cleaned : msg.subject || '';
   // Fold by rendered lines: a text more than four lines taller than its 12-line box gets Read more; a shorter overflow is shown whole
   useLayoutEffect(() => {
     const el = body.current;
@@ -198,6 +201,8 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   const items = useMemo(() => buildItems(threads, held, demoNote()), [threads, held]);
   const sender = chat.isGroup ? undefined : data?.screener.find((s) => s.status === 'pending' && s.email.toLowerCase() === chat.key);
   const ask = openAsk(chat.threads);
+  // A company chat answers its newest sender, not every address the company used
+  const replyPeople = chat.isCompany ? chat.people.slice(0, 1) : chat.people;
   const target = replyThread(chat, data!) ?? chat.threads[chat.threads.length - 1];
   const mine = useMemo(() => {
     const out = new Set((data?.accounts ?? []).map((a) => a.email.toLowerCase()));
@@ -235,8 +240,8 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   }, [target?.id, ready]);
   const targetFull = target && ready ? fullOf(target) : undefined;
   const plan = useMemo(
-    () => replyPlan(targetFull?.messages ?? [], chat.people.map((p) => p.email), mine, !!targetFull && isUpdateThread(targetFull)),
-    [targetFull, chat.people, mine]
+    () => replyPlan(targetFull?.messages ?? [], replyPeople.map((p) => p.email), mine, !!targetFull && isUpdateThread(targetFull)),
+    [targetFull, replyPeople, mine]
   );
   const [rec, setRec] = useState<Recipients | null>(null);
   // Set by the restore below so the save that runs in the same pass does not wipe the stored people
@@ -525,7 +530,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     const theirs = !it.msg.isOutbound;
     const next = items[idx + 1];
     const lastOfRun = !(next?.kind === 'msg' && next.msg.isOutbound === it.msg.isOutbound && next.msg.fromEmail.toLowerCase() === it.msg.fromEmail.toLowerCase());
-    const other = chat.isGroup ? theirs && !same : theirs && it.msg.fromEmail.toLowerCase() !== chat.key;
+    const other = chat.isGroup ? theirs && !same : chat.isCompany ? theirs && (it.msg.fromName || it.msg.fromEmail) !== chat.name : theirs && it.msg.fromEmail.toLowerCase() !== chat.key;
     return (
       <Bubble
         key={it.id}
@@ -553,7 +558,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
             <ChevronLeft size={26} strokeWidth={1.75} />
           </button>
         )}
-        {chat.isGroup ? <AvatarPair people={chat.people} small /> : <Avatar name={chat.name} email={chat.email} tone="hue" small />}
+        <ChatAvatar chat={chat} small />
         <button
           className="chat__who"
           aria-label="People on this email"

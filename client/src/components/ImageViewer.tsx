@@ -467,7 +467,7 @@ export function ImageViewer({ pictures, index, onIndex, onClose }: { pictures: E
         )}
       </div>
       <div ref={stageRef} className="iview__stage">
-        <img ref={imgRef} className="iview__img" src={pictureSrc(pic)} alt={pic.alt ?? ''} />
+        <img ref={imgRef} className="iview__img" src={pictureSrc(pic)} alt={pic.alt ?? ''} referrerPolicy="no-referrer" />
       </div>
       <div className="iview__foot" />
       {many && (

@@ -7,6 +7,7 @@ export interface SyncDeps {
   fetch: FetchFn;
   base: string;
   sleep?: (ms: number) => Promise<void>;
+  now?: () => number;
 }
 
 export type SyncOutcome = 'ok' | 'unauthorized' | 'forbidden' | 'later' | 'failed';
@@ -23,6 +24,8 @@ export interface SyncChanges {
 }
 
 export const MAX_AT_ONCE = 4;
+/** Gmail allows 250 units a second for each user and a thread costs 10, so thread requests start at most this far apart. */
+export const START_GAP_MS = 100;
 
 /**
  * Lists the inbox, then fetches only the threads that are new or whose history id changed, four at a time.
@@ -50,10 +53,17 @@ export async function fetchChanges(
   const out: SyncChanges = { outcome: 'ok', changed: [], goneIds: [], listed: named.length, requests: 0 };
   let stop: SyncOutcome | null = null;
   let next = 0;
+  const now = deps.now ?? Date.now;
+  const pause = deps.sleep ?? ((ms: number) => new Promise<void>((done) => setTimeout(done, ms)));
+  let slot = 0;
   const worker = async () => {
     while (stop === null && next < todo.length) {
       const t = todo[next++];
       out.requests += 1;
+      // Starts are spread out: each takes the next free tenth of a second
+      const at = Math.max(now(), slot);
+      slot = at + START_GAP_MS;
+      if (at > now()) await pause(at - now());
       const got = await gmailGet(deps.fetch, deps.base, `users/me/threads/${encodeURIComponent(t.id)}?format=full`, token, opts);
       if (got.status === 'ok') {
         try {

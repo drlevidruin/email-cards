@@ -39,6 +39,7 @@ import { isSnapshot, ownerName, snapshotData, snapshotStoreKey } from './snapsho
 import { SAMPLE_STORE_KEY } from './freshSample';
 import { isLiveMode, liveStopped, LIVE_KEYS } from './liveMode';
 import { liveAccounts } from './liveAuth';
+import { trustedHistory, trimmedEntry, trimmedHistory } from './gmailParse';
 import { dropOldest, liveGmailAccount, mergeChanges, reconcileAccounts } from './liveMerge';
 import type { SyncChanges } from './liveSync';
 
@@ -240,7 +241,7 @@ function trimOldest(store: DemoStore): number {
   if (n === 0) return 0;
   const now = new Set(store.threads.map((t) => t.id));
   const gone: Record<string, string> = {};
-  for (const [id, h] of before) if (!now.has(id) && h) gone[id] = h;
+  for (const [id, h] of before) if (!now.has(id) && h) gone[id] = trimmedEntry(h);
   rememberTrimmed(gone, []);
   return n;
 }
@@ -432,8 +433,8 @@ function searchThreadsLocal(threads: EmailThread[], query: string, accountId?: s
 /** Live mode: each saved thread of the account with the history id it was read at. */
 export function liveKnown(accountId: string): Map<string, string | undefined> {
   const known = new Map<string, string | undefined>();
-  for (const [id, h] of Object.entries(readTrimmed())) if (id.startsWith(`${accountId}~`)) known.set(id, h);
-  for (const t of loadStore().threads) if (t.accountId === accountId) known.set(t.id, t.historyId);
+  for (const [id, h] of Object.entries(readTrimmed())) if (id.startsWith(`${accountId}~`)) known.set(id, trimmedHistory(h));
+  for (const t of loadStore().threads) if (t.accountId === accountId) known.set(t.id, trustedHistory(t.parseVersion, t.historyId));
   return known;
 }
 

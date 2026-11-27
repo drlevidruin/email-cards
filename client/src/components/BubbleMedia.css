@@ -5,6 +5,10 @@
 .bmedia__pics--one .bmedia__pic { aspect-ratio: 16 / 10; }
 .bmedia__pics--grid .bmedia__pic { aspect-ratio: 1; }
 .bmedia__pics--three .bmedia__pic:last-child { grid-column: 1 / -1; aspect-ratio: 2 / 1; }
+.bmedia__pics--wide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border: 0; }
+.bmedia__pic--first { grid-column: 1 / -1; max-height: 420px; }
+.bmedia__pic--first img { height: auto; max-height: 420px; object-fit: cover; }
+.bmedia__pic--small { aspect-ratio: 1; }
 .bmedia__pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .bmedia__more { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); color: #FFFFFF; font-size: 22px; font-weight: 600; }
 

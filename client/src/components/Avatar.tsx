@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { Chat } from '../lib/chats';
+import { isLiveMode } from '../lib/liveMode';
 import { getInitials } from '../lib/utils';
 import { logoSrc } from '../lib/pictures';
 import './Avatar.css';
@@ -50,4 +52,42 @@ export function AvatarPair({ people, small }: { people: { name: string; email: s
       )}
     </span>
   );
+}
+
+/** The smallest logo, in pixels across, that is used. A smaller one looks blurry, so the initials stay. */
+const LOGO_MIN_PX = 48;
+
+/** A company's logo from its domain, live mode only. It shows only once it has loaded at 48 pixels or more across; until then, and if it fails, the initials. */
+function CompanyAvatar({ name, email, domain, small }: { name: string; email: string; domain: string; small?: boolean }) {
+  const [state, setState] = useState<'wait' | 'ok' | 'bad'>('wait');
+  const src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+  return (
+    <span className={`avatar avatar--hue avatar--company${small ? ' avatar--small' : ''}`} style={{ background: hueOf(email || name), color: '#FFFFFF' }} aria-hidden="true">
+      {getInitials(name)}
+      {state !== 'bad' && (
+        <img
+          className="avatar__logo"
+          src={src}
+          alt=""
+          decoding="async"
+          referrerPolicy="no-referrer"
+          style={state === 'ok' ? undefined : { visibility: 'hidden' }}
+          onLoad={(e) => setState(e.currentTarget.naturalWidth >= LOGO_MIN_PX ? 'ok' : 'bad')}
+          onError={() => setState('bad')}
+        />
+      )}
+    </span>
+  );
+}
+
+/** A chat's avatar: a pair for a group, the company's logo for a company chat, else the person's initials. */
+export function ChatAvatar({ chat, small }: { chat: Chat; small?: boolean }) {
+  if (chat.isGroup) return <AvatarPair people={chat.people} small={small} />;
+  if (chat.isCompany && chat.domain) {
+    if (isLiveMode()) return <CompanyAvatar name={chat.name} email={chat.email} domain={chat.domain} small={small} />;
+    // The sample and the private copy use their bundled logos, looked up by any address in the chat
+    const logoEmail = chat.people.find((p) => logoSrc(p.email))?.email ?? chat.email;
+    return <Avatar name={chat.name} email={logoEmail} tone="hue" small={small} />;
+  }
+  return <Avatar name={chat.name} email={chat.email} tone="hue" small={small} />;
 }

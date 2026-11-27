@@ -3,7 +3,7 @@ import { Archive, ArchiveRestore, Bell, BellOff, Check, ChevronDown, Mail, MailO
 import { navigate } from '../router';
 import { oneLine, type Chat } from '../lib/chats';
 import { relativeTime } from '../lib/time';
-import { Avatar, AvatarPair } from '../components/Avatar';
+import { ChatAvatar } from '../components/Avatar';
 
 export type Side = 'left' | 'right';
 export type RowAct = 'archive' | 'mute' | 'pin' | 'read';
@@ -285,7 +285,7 @@ export function ChatRow({ chat, active, draft, pinned, muted, marked, archived, 
         style={{ transform: x === 0 ? undefined : `translateX(${x}px)` }}
         onClick={click}
       >
-        {chat.isGroup ? <AvatarPair people={chat.people} /> : <Avatar name={chat.name} email={chat.email} tone="hue" />}
+        <ChatAvatar chat={chat} />
         <span className="chatrow__main">
           <span className="chatrow__top">
             <span className="chatrow__name">{chat.name}</span>

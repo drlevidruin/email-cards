@@ -1,3 +1,4 @@
+import { extractImages } from './htmlImages.ts';
 import type { EmailAttachment, EmailMessage, EmailThread, PriorityBucket } from './types';
 
 /**
@@ -34,6 +35,24 @@ export interface LiveAccountInfo {
   email: string;
   color: string;
   label: string;
+}
+
+/** Raised whenever the parser starts saving something new, so older saved threads are read once more. */
+export const PARSE_VERSION = 2;
+
+/** The history id a sync may trust for a saved thread, or a value that never matches when it was parsed by an older parser. */
+export function trustedHistory(version: number | undefined, historyId: string | undefined): string | undefined {
+  return version === PARSE_VERSION ? historyId : 'stale';
+}
+
+/** A trimmed entry keeps the parser version with its history id. */
+export function trimmedEntry(historyId: string): string {
+  return `${PARSE_VERSION}|${historyId}`;
+}
+export function trimmedHistory(entry: string): string | undefined {
+  const i = entry.indexOf('|');
+  if (i < 0) return 'stale';
+  return trustedHistory(Number(entry.slice(0, i)), entry.slice(i + 1));
 }
 
 export const BODY_CAP = 30000;
@@ -476,7 +495,11 @@ function parseMessage(raw: RawMessage, account: LiveAccountInfo, mine: Set<strin
   const bcc = parseAddresses(headerOf(headers, 'bcc')).map((a) => a.email);
   const w: Walk = { plain: [], html: [], files: [] };
   walk(raw.payload, w);
-  const text = w.plain.length > 0 ? w.plain.join('\n\n') : w.html.map(htmlToText).filter(Boolean).join('\n\n');
+  // An empty text part falls back to the html part
+  const plainText = w.plain.join('\n\n');
+  const text = plainText.trim() ? plainText : w.html.map(htmlToText).filter(Boolean).join('\n\n');
+  // Pictures inside the html, shown in the open chat only: up to 4 https addresses, loaded by the browser with no referrer
+  const remote = extractImages(w.html.map((h) => h.slice(0, HTML_CAP)).join('\n'));
   const internal = Number(raw.internalDate);
   const dateHeader = Date.parse(headerOf(headers, 'date') ?? '');
   const when = Number.isFinite(internal) && internal > 0 ? internal : Number.isFinite(dateHeader) ? dateHeader : 0;
@@ -497,6 +520,9 @@ function parseMessage(raw: RawMessage, account: LiveAccountInfo, mine: Set<strin
     isOutbound: labels.includes('SENT') || (fromEmail !== '' && mine.has(fromEmail)),
     attachments: attachmentsOf(raw.id, w.files),
   };
+  remote.forEach((r, n) => {
+    msg.attachments.push({ id: `r:${raw.id}:${n}`, filename: r.alt || 'Picture', mimeType: 'image/remote', sizeBytes: 0, inline: true, remoteSrc: r.src, ...(r.alt ? { alt: r.alt } : {}) });
+  });
   if (cc.length > 0) msg.ccEmails = cc;
   if (bcc.length > 0) msg.bccEmails = bcc;
   return msg;
@@ -524,6 +550,14 @@ export function parseThread(raw: RawThread, account: LiveAccountInfo, mine: stri
     note(parseAddresses(headerOf(h, 'cc')));
   }
 
+  // Senders that are a mailing, an update or an automatic address: their addresses form one chat per organization
+  const automatic = new Set<string>();
+  rawMsgs.forEach((r, i) => {
+    const m = messages[i];
+    if (m.isOutbound || !m.fromEmail) return;
+    const input = { outbound: false, fromEmail: m.fromEmail, labels: r.labelIds ?? [], headers: headerMap(r.payload?.headers) };
+    if (isBulk(input) || input.labels.includes('CATEGORY_UPDATES')) automatic.add(m.fromEmail.toLowerCase());
+  });
   const kind = threadBucket(
     rawMsgs.map((r, i) => ({ outbound: messages[i].isOutbound, fromEmail: messages[i].fromEmail, labels: r.labelIds ?? [], headers: headerMap(r.payload?.headers) })),
   );
@@ -553,6 +587,8 @@ export function parseThread(raw: RawThread, account: LiveAccountInfo, mine: stri
     relatedThreadIds: [],
     senderTrust: 'approved',
     receiptInfo: null,
+    companySenders: [...automatic],
+    parseVersion: PARSE_VERSION,
     ...(raw.historyId ? { historyId: raw.historyId } : {}),
   };
   return { thread, messages };

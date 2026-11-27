@@ -6,7 +6,9 @@ import { groupName, othersOf, type Person } from './people';
 import { dropSignature } from './signature';
 import { skim } from './skim';
 import { firstName } from './utils';
-import { chatCategory, type Category } from './categories';
+import { chatCategory, looksBulk, type Category } from './categories';
+import { companyName, groupThreads } from './orgChats';
+import { cleanEmailText } from './cleanText';
 import { isLiveMode } from './liveMode';
 
 export interface Chat {
@@ -27,13 +29,17 @@ export interface Chat {
   /** The kind of mail the chat's newest thread is. */
   category: Category;
   isNew: boolean;
+  /** One company: every sender address of one organization shares this chat. */
+  isCompany?: boolean;
+  /** The organization's domain, for a company chat. */
+  domain?: string;
 }
 
 const ts = (iso?: string | null) => (iso ? new Date(iso).getTime() : 0);
 
 /** The email as a bubble shows it: no quoted earlier email at its end, no hello, no sign-off. */
 export function bubbleText(body: string, name?: string): string {
-  const whole = body.replace(/\r/g, '').trim();
+  const whole = cleanEmailText(body).trim();
   const lines = whole.split('\n');
   const bottom = () => lines.length - 1;
   // An answer written under one quoted email: drop the attribution line and the quote, keep the answer
@@ -102,48 +108,76 @@ export const isUpdateThread = (t: EmailThread) => t.bucket === 'feed' || t.bucke
 export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitments' | 'tasks' | 'accounts'>, full: (id: string) => EmailThread | undefined, now = Date.now()): Chat[] {
   const muted = new Set(data.screener.filter((s) => s.status === 'muted').map((s) => s.email.toLowerCase()));
   const pending = new Map<string, ScreenerSender>(data.screener.filter((s) => s.status === 'pending').map((s) => [s.email.toLowerCase(), s]));
-  const groups = new Map<string, { people: Person[]; threads: EmailThread[] }>();
-  for (const t of data.threads) {
-    const people = othersOf(t, mineOf(data.accounts, t));
-    const key = keyOf(people);
-    if (!key) continue;
-    if (people.length < 2 && muted.has(key)) continue;
-    const g = groups.get(key) ?? { people, threads: [] };
-    g.threads.push(t);
-    groups.set(key, g);
-  }
+  const groups = groupThreads({
+    threads: data.threads,
+    mine: (t) => mineOf(data.accounts, t),
+    muted,
+    isUpdate: isUpdateThread,
+    looksBulk,
+  });
   for (const [key, s] of pending) {
-    if (!groups.has(key)) groups.set(key, { people: [{ name: s.name || s.email, email: s.email }], threads: [] });
+    const listed = [...groups.values()].some((g) => g.people.some((p) => p.email.toLowerCase() === key));
+    if (!groups.has(key) && !listed) groups.set(key, { key, people: [{ name: s.name || s.email, email: s.email }], threads: [], company: false });
   }
   const out: Chat[] = [];
   for (const [key, g] of groups) {
-    const isGroup = g.people.length >= 2;
+    const isGroup = !g.company && g.people.length >= 2;
     const threads = [...g.threads].sort((a, b) => ts(a.lastMessageAt) - ts(b.lastMessageAt));
-    const sender = isGroup ? undefined : pending.get(key);
+    const sender = isGroup || g.company ? undefined : pending.get(key);
     const newest = threads[threads.length - 1];
     const msg = newest ? newestOf(full(newest.id) ?? newest) : undefined;
     const words = msg ? bubbleText(cutText(msg.bodyText, 4000), msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
-    const text = !words.trim() && msg ? attachmentPreview(msg) : words;
+    const text = (!words.trim() && msg ? attachmentPreview(msg) : words) || (newest ? oneLine(newest.subject || '') : '');
     const lastMine = !!msg?.isOutbound;
     const who = isGroup && msg && !lastMine ? `${firstName(msg.fromName || msg.fromEmail)}: ` : '';
+    // A company chat shows the subject of its newest email; its body only when there is no subject
+    const subject = g.company && newest ? oneLine(newest.subject || msg?.subject || '') : '';
+    const newestFirst = [...threads].reverse();
+    const people = g.company ? orderedSenders(g.people, newestFirst) : g.people;
+    const name = isGroup
+      ? groupName(g.people)
+      : g.company
+      ? companyName(senderNames(people, threads), g.domain ?? '')
+      : g.people[0].name || g.people[0].email;
     out.push({
       key,
-      name: isGroup ? groupName(g.people) : g.people[0].name || g.people[0].email,
-      email: g.people[0].email,
-      people: g.people,
+      name,
+      email: people[0].email,
+      people,
       isGroup,
       threads,
       lastAt: newest?.lastMessageAt ?? sender?.firstSeenAt ?? '',
-      preview: oneLine(who + text),
+      preview: subject || oneLine(who + text),
       lastMine,
       unread: threads.filter((t) => t.isUnread).length,
-      needsReply: !!openAsk(threads) || (isLiveMode() && threads.some(liveNeedsReply)),
+      needsReply: !g.company && (!!openAsk(threads) || (isLiveMode() && threads.some(liveNeedsReply))),
       isUpdate: threads.length > 0 && threads.every(isUpdateThread),
-      category: chatCategory(threads, isUpdateThread, { senderEmail: isGroup ? undefined : g.people[0].email, isGroup }),
+      category: chatCategory(threads, isUpdateThread, { senderEmail: isGroup ? undefined : people[0].email, isGroup }),
       isNew: !!sender,
+      ...(g.company ? { isCompany: true, domain: g.domain } : {}),
     });
   }
   return out.sort((a, b) => ts(b.lastAt) - ts(a.lastAt));
+}
+
+/** A company chat's sender addresses, the newest sender first. */
+function orderedSenders(people: Person[], newestFirst: EmailThread[]): Person[] {
+  const rank = (p: Person) => {
+    const i = newestFirst.findIndex((t) => t.participants.some((x) => x.email.toLowerCase() === p.email.toLowerCase()));
+    return i < 0 ? newestFirst.length : i;
+  };
+  return [...people].sort((a, b) => rank(a) - rank(b));
+}
+
+/** The display names a company chat's senders use, oldest first (so the newest is last). */
+function senderNames(people: Person[], threads: EmailThread[]): { name: string }[] {
+  const out: { name: string }[] = [];
+  for (const t of threads) {
+    for (const p of t.participants) {
+      if (people.some((x) => x.email.toLowerCase() === (p.email || '').toLowerCase())) out.push({ name: p.name || '' });
+    }
+  }
+  return out;
 }
 
 /** Live Gmail has no written ask: a thread a person wrote last (bucket decision), not archived, needs a reply. */

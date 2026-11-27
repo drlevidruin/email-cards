@@ -86,7 +86,7 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
   const rows = useMemo(() => {
     // Search also finds archived chats
     const pool = (needle ? chats : live).filter((c) => matches(tab, c));
-    return sortChats(pool.filter((c) => !needle || `${c.name} ${c.email} ${c.preview}`.toLowerCase().includes(needle)), prefs);
+    return sortChats(pool.filter((c) => !needle || `${c.name} ${c.email} ${c.people.map((p) => p.email).join(' ')} ${c.preview}`.toLowerCase().includes(needle)), prefs);
   }, [chats, live, tab, needle, prefs]);
   const sum = useMemo(() => (tab === 'bills' ? receiptLine(live.filter((c) => matches(tab, c))) : null), [tab, live]);
   useEffect(() => {
