@@ -1,7 +1,6 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { useTransform, type MotionValue } from 'framer-motion';
 import type { Dir } from '../components/ActionBar';
-import { FORCE } from '../components/SwipeBadge';
 
 export const LOCK_PX = 10;
 export const FLICK_PX_PER_S = 700;
@@ -14,8 +13,6 @@ type Axis = 'x' | 'y';
 interface Options {
   x: MotionValue<number>;
   y: MotionValue<number>;
-  /** While a teaching nudge runs: the number of the direction being shown (FORCE), else 0. The pill shows outlined, never filled. */
-  nudging: MotionValue<number>;
   el: RefObject<HTMLElement | null>;
   enabled: Dir[];
   /** True while the card is flying out or held; the card ignores touches. */
@@ -24,7 +21,8 @@ interface Options {
   onActive: (dir: Dir | null, past?: boolean) => void;
   onCommit: (dir: Dir) => void;
   onSpring: () => void;
-  onTap: () => void;
+  /** A press that stayed put; the event says where, so the deck can see what is under the finger. */
+  onTap: (e: ReactPointerEvent<HTMLElement>) => void;
 }
 
 /** Which way a drag that has locked to an axis is heading. */
@@ -37,17 +35,16 @@ function headed(axis: Axis, dx: number, dy: number): Dir {
  * card follows on that axis only. A pointer that never travels 10px is a tap.
  */
 export function useCardGesture(o: Options) {
-  const { x, y, nudging, el, enabled, blocked, onActive, onCommit, onSpring, onTap } = o;
+  const { x, y, el, enabled, blocked, onActive, onCommit, onSpring, onTap } = o;
   const dims = useRef({ w: 360, h: 600 });
   const st = useRef<{ id: number; sx: number; sy: number; axis: Axis | null; trail: { t: number; x: number; y: number }[] } | null>(null);
   const dragged = useRef(false);
 
-  const toward = (v: number, n: number, dir: Dir, sign: number, full: number) =>
-    n ? (n === FORCE[dir] ? 0.8 * clamp01((sign * v) / 6) : 0) : clamp01((sign * v) / full);
-  const right = useTransform([x, nudging], ([v, n]: number[]) => toward(v, n, 'right', 1, dims.current.w * H_COMMIT));
-  const left = useTransform([x, nudging], ([v, n]: number[]) => toward(v, n, 'left', -1, dims.current.w * H_COMMIT));
-  const up = useTransform([y, nudging], ([v, n]: number[]) => toward(v, n, 'up', -1, dims.current.h * V_COMMIT));
-  const down = useTransform([y, nudging], ([v, n]: number[]) => toward(v, n, 'down', 1, dims.current.h * V_COMMIT));
+  const toward = (v: number, sign: number, full: number) => clamp01((sign * v) / full);
+  const right = useTransform(x, (v) => toward(v, 1, dims.current.w * H_COMMIT));
+  const left = useTransform(x, (v) => toward(v, -1, dims.current.w * H_COMMIT));
+  const up = useTransform(y, (v) => toward(v, -1, dims.current.h * V_COMMIT));
+  const down = useTransform(y, (v) => toward(v, 1, dims.current.h * V_COMMIT));
 
   const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
     if (st.current || blocked() || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -94,7 +91,7 @@ export function useCardGesture(o: Options) {
     const dy = e.clientY - s.sy;
     if (!s.axis) {
       // Only a press that stayed put is a tap
-      if (!cancelled && Math.hypot(dx, dy) < LOCK_PX) onTap();
+      if (!cancelled && Math.hypot(dx, dy) < LOCK_PX) onTap(e);
       return;
     }
     if (cancelled) return onSpring();
@@ -118,12 +115,8 @@ export function useCardGesture(o: Options) {
     dragged.current = false;
   };
 
-  /** A drag has started (the pointer has travelled 10px) and has not ended. */
-  const isDragging = () => !!st.current?.axis;
-
   return {
     reset,
-    isDragging,
     progress: { right, left, up, down } as Record<Dir, MotionValue<number>>,
     handlers: {
       onPointerDown,

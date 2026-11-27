@@ -4,7 +4,7 @@
 .hero__text {
   margin-top: 2px;
   color: var(--ink);
-  overflow-wrap: anywhere;
+  overflow-wrap: anywhere; text-wrap: balance;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
 }
 .hero__reason { margin-top: 4px; color: var(--ink-2); }

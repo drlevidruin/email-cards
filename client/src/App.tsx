@@ -5,13 +5,16 @@ import { isStackId, type StackId } from './lib/stacks';
 import { DesktopShell } from './components/DesktopShell';
 import { ShortcutsDialog } from './components/ShortcutsDialog';
 import { Toast } from './components/Toast';
+import { Welcome } from './components/Welcome';
 import { useGlobalKeys } from './components/useGlobalKeys';
 import { useIsDesktop } from './lib/useIsDesktop';
+import { useWelcome } from './lib/welcome';
 import { AllMailScreen } from './screens/AllMailScreen';
 import { AskScreen } from './screens/AskScreen';
 import { CardsScreen } from './screens/CardsScreen';
 import { DraftsScreen } from './screens/DraftsScreen';
 import { GoalsScreen } from './screens/GoalsScreen';
+import { HowScreen } from './screens/HowScreen';
 import { NewEmailScreen } from './screens/NewEmailScreen';
 import { ReadScreen } from './screens/ReadScreen';
 import { ReplyScreen } from './screens/ReplyScreen';
@@ -21,6 +24,7 @@ const PAGES: Record<string, () => JSX.Element> = {
   goals: GoalsScreen,
   drafts: DraftsScreen,
   ask: AskScreen,
+  how: HowScreen,
   new: NewEmailScreen,
   settings: SettingsScreen,
 };
@@ -74,12 +78,25 @@ function Frame() {
   );
 }
 
+/** The app, and over it the welcome. While the welcome is up the app behind it takes no taps, keys or focus. */
+function Shell() {
+  const { up } = useWelcome();
+  return (
+    <>
+      <div style={{ display: 'contents' }} {...(up ? { inert: '' as unknown as boolean } : {})}>
+        <Frame />
+        <GlobalKeys />
+        <Toast />
+      </div>
+      <Welcome />
+    </>
+  );
+}
+
 export function App() {
   return (
     <StoreProvider>
-      <Frame />
-      <GlobalKeys />
-      <Toast />
+      <Shell />
     </StoreProvider>
   );
 }

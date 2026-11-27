@@ -4,6 +4,7 @@ import type { EmailMessage, EmailThread } from '../lib/types';
 import { findQuote } from '../lib/highlight';
 import { loadThread } from '../lib/threadCache';
 import { formatBytes, formatClockTime } from '../lib/utils';
+import { isSampleInbox } from '../lib/sample';
 import './ThreadView.css';
 
 interface Props {
@@ -99,6 +100,7 @@ export function ThreadView({ threadId, hideSubject, quote, promise }: Props) {
                 ))}
               </ul>
             )}
+            {m.attachments.length > 0 && isSampleInbox() && <p className="t-footnote tv__sample">Sample inbox. There is no real file to open.</p>}
           </section>
         );
       })}

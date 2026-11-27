@@ -3,6 +3,7 @@ import type { EmailThread, GmailAccount } from '../lib/types';
 import { cleanSubject, counterpart } from '../lib/stacks';
 import { relativeTime } from '../lib/time';
 import { useThread } from '../lib/useThread';
+import { CardAnswers } from './CardAnswers';
 import { CardBody } from './CardBody';
 import { CardHeader } from './CardHeader';
 import { Hero, heroKind } from './Hero';
@@ -16,20 +17,27 @@ interface Props {
   overlay?: ReactNode;
   /** The To-do deck: show the Goal even on a receipt. */
   goalFirst?: boolean;
+  /** Show the answer rows at the foot of the card. */
+  answers?: boolean;
+  /** A row was pressed from the keyboard or an assistive tool: `qa` is a chip id, `@own` or `@choose`. */
+  onAnswer?: (qa: string) => void;
 }
 
-/** A calm letter: who it is from, the Goal, the subject and as much of the email as fits. */
-export function EmailCard({ thread, account, overlay, goalFirst }: Props) {
+/** A calm letter: who it is from and the subject, the Goal, as much of the email as fits, and the answers. */
+export function EmailCard({ thread, account, overlay, goalFirst, answers, onAnswer }: Props) {
   const full = useThread(thread.id);
   const newest = newestMessage(full);
   const kind = heroKind(thread, goalFirst);
+  const who = counterpart(thread);
+  const subject = kind === 'subject' ? undefined : cleanSubject(thread.subject);
+  const attached = (newest?.attachments.length ?? 0) > 0;
   return (
-    <article className="card">
-      <CardHeader name={counterpart(thread).name} email={counterpart(thread).email} account={account} age={relativeTime(thread.lastMessageAt)} />
+    <article className={`card${answers ? ' card--answers' : ''}`}>
+      <CardHeader name={who.name} email={who.email} account={account} age={relativeTime(thread.lastMessageAt)} subject={subject} attached={attached} />
       <Hero thread={thread} goalFirst={goalFirst} />
       <hr className="card__rule" />
-      {kind !== 'subject' && <h2 className="card__subject t-headline">{cleanSubject(thread.subject)}</h2>}
-      <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} attachments={newest?.attachments ?? []} />
+      <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} />
+      {answers && <CardAnswers thread={thread} onAnswer={onAnswer} />}
       {overlay}
     </article>
   );

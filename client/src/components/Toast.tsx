@@ -1,14 +1,21 @@
-import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useStore } from '../store';
 import { TOAST_MS } from '../storeTypes';
 import './Toast.css';
 
 interface Spot {
   style: CSSProperties;
+  /** Over the top bar of a deck screen, not at the bottom. */
+  top?: boolean;
 }
 
-/** The toast sits at the bottom: 12px above the action bar on a deck screen, else 16px above the bottom edge. It never covers the top bar or a title. */
+/** The toast sits at the top bar on a deck screen, else at the bottom: 12px above the action bar on a deck screen, else 16px above the bottom edge. It never covers the top bar or a title. */
 function place(): Spot {
+  // On a deck screen the notice sits over the middle of the top bar (the title and the count), clear of the menu and search buttons
+  const head = document.querySelector('.cards__col .topbar')?.getBoundingClientRect();
+  if (head && head.height > 0 && !document.querySelector('.reader')) {
+    return { top: true, style: { top: Math.round(head.top + 2), bottom: 'auto', left: Math.round(head.left + 52), right: Math.round(window.innerWidth - head.right + 52), padding: 0 } };
+  }
   const bars = [...document.querySelectorAll('.actionbar')];
   const bar = bars[bars.length - 1]?.getBoundingClientRect();
   const main = document.querySelector('.dshell__main')?.getBoundingClientRect();
@@ -72,14 +79,24 @@ function usePlace(active: boolean, id: number | undefined): Spot | undefined {
   return spot;
 }
 
+/** The button's name never breaks across two lines, as in the pointer. */
+function keepWords(text: string): ReactNode {
+  return text.split(/(To-do)/).map((part, i) => (part === 'To-do' ? <span key={i} className="toast__word">{part}</span> : part));
+}
+
 export function Toast() {
   const { toast, undo } = useStore();
   const spot = usePlace(!!toast, toast?.id);
   if (!toast) return null;
+  // A second line, set after a line break, is lighter
+  const [line, note] = toast.text.split('\n');
   return (
     <div className="toast-wrap" style={spot?.style}>
-      <div className="toast" role="status" key={toast.id}>
-        <span className="toast__text t-subhead">{toast.text}</span>
+      <div className={`toast${spot?.top ? ' toast--top' : ''}`} role="status" key={toast.id}>
+        <span className="toast__text t-subhead">
+          {keepWords(line)}
+          {note && <span className="toast__note t-footnote">{note}</span>}
+        </span>
         {toast.undoable && (
           <button className="toast__undo t-callout" onClick={() => void undo()}>
             Undo

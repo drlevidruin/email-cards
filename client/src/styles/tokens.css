@@ -37,6 +37,14 @@
   --confetti-2: #B7E0D1;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* The app's own voice: the system serif, no font file. */
+  --font-display: ui-serif, Charter, "Bitstream Charter", "Iowan Old Style", "Sitka Text", Cambria, Georgia, serif;
+  /* The welcome screen is the one place on this field. */
+  --brand-deep: #0A5A44;
+  --on-brand: #F6F4EE;
+  --on-brand-2: rgba(246, 244, 238, 0.74);
+  --on-brand-3: rgba(246, 244, 238, 0.52);
+  --on-brand-pressed: #E6E3DA;
 }
 
 /* The type scale. Counts use tabular numbers. */
@@ -50,3 +58,6 @@
 .t-footnote { font-size: 13px; line-height: 18px; font-weight: 400; }
 .t-caption { font-size: 12px; line-height: 16px; font-weight: 600; }
 .t-num { font-variant-numeric: tabular-nums; }
+
+/* The serif is the app speaking in its own words: the welcome, Today's headline and lead card, the ask line on a card and in the reader, and the finish headline. */
+.voice { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.012em; font-variant-numeric: lining-nums; }

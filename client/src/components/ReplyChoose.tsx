@@ -67,7 +67,7 @@ export function ReplyChoose({ first, to, goal, due, chips, yours, drafting, onPi
         {goal && (
           <div className="choose__goal">
             <DueLine label={due} />
-            <p className="t-callout choose__goal-text">{goal}</p>
+            <p className="t-callout voice choose__goal-text">{goal}</p>
           </div>
         )}
         {drafting ? (

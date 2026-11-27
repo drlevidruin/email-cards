@@ -12,13 +12,14 @@
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
-.card__rule { flex: none; width: 100%; height: 1px; margin: 16px 0; border: 0; background: var(--line); }
+/* A new sender's card keeps its bold subject under the rule. */
 .card__subject {
   flex: none;
   color: var(--ink);
   overflow-wrap: anywhere;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
+.card__rule { flex: none; width: 100%; height: 1px; margin: 16px 0; border: 0; background: var(--line); }
 
 @media (min-width: 1024px) {
   .card { padding: 28px 32px; }

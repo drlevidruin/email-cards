@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#EEF0F3" />
+    <meta name="theme-color" content="#F2F1ED" />
     <title>Email Cards</title>
-    <meta name="description" content="Your inbox, one card at a time." />
+    <meta name="description" content="Clear your inbox, one email at a time. Try it on a sample inbox." />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="icon-180.png" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta property="og:title" content="Email Cards" />
-    <meta property="og:description" content="Your inbox, one card at a time." />
+    <meta property="og:description" content="Clear your inbox, one email at a time. Try it on a sample inbox." />
     <meta property="og:url" content="https://drlevidruin.github.io/email-cards/" />
     <meta property="og:image" content="https://drlevidruin.github.io/email-cards/share.jpg" />
     <meta property="og:image:width" content="1200" />
@@ -22,6 +22,16 @@
     <meta property="og:site_name" content="Email Cards" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>html.boot-welcome, html.boot-welcome body { background: #0A5A44; }</style>
+    <script>
+      // A first visit to the sample inbox starts on the welcome's green, not a flash of beige
+      try {
+        if ('%VITE_STATIC_DEMO%' === 'true' && !/^#k=/.test(location.hash) && !localStorage.getItem('email_cards_snapshot_key')) {
+          var p = JSON.parse(localStorage.getItem('email_cards_progress_v1') || '{}');
+          if (!p.welcomed) document.documentElement.className = 'boot-welcome';
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

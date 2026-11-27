@@ -84,7 +84,7 @@ function PlainRead({ threadId }: { threadId: string }) {
             </button>
           </header>
           <div className="reader__actions">
-            <ActionBar variant="default" active={null} onAction={act} todoOn={thread.isStarred} />
+            <ActionBar reader variant="default" active={null} onAction={act} todoOn={thread.isStarred} />
           </div>
           <div className="reader__scroll">
             <ThreadView threadId={thread.id} />
@@ -99,7 +99,7 @@ function PlainRead({ threadId }: { threadId: string }) {
     <PageShell
       footer={
         <div className="read__bar">
-          <ActionBar variant="default" active={null} onAction={act} todoOn={thread.isStarred} />
+          <ActionBar reader variant="default" active={null} onAction={act} todoOn={thread.isStarred} />
         </div>
       }
     >

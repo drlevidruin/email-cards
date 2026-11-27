@@ -42,7 +42,7 @@
 .today__links > li + li { border-top: 1px solid var(--line); }
 .today__link { display: flex; align-items: center; gap: 8px; width: 100%; height: 48px; padding: 0 4px; text-align: left; }
 .today__link-label { flex: 1; color: var(--ink); }
-.today__link-value { color: var(--ink-3); }
+.today__link-num { flex: none; width: 34px; font-size: 22px; line-height: 26px; font-weight: 700; color: var(--ink); }
 .today__link svg { flex: none; color: var(--ink-4); }
 @media (min-width: 1024px) {
   .today { align-items: center; padding-top: 16px; }

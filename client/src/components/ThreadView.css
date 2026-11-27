@@ -19,5 +19,6 @@
 .tv__files { margin-top: 16px; }
 .tv__file { display: flex; align-items: center; gap: 8px; min-height: 44px; border-top: 1px solid var(--line); color: var(--ink-2); }
 .tv__file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; color: var(--ink); }
+.tv__sample { margin: 8px 0 0; color: var(--ink-3); }
 .tv__file-size { flex: none; font-size: 14px; color: var(--ink-3); }
 .tv__mark { padding: 0 2px; border-radius: 3px; background: var(--accent-mark); color: inherit; box-decoration-break: clone; -webkit-box-decoration-break: clone; }

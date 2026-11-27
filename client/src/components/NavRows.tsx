@@ -7,18 +7,27 @@ interface RowProps {
   label: string;
   count?: number;
   cap?: string;
+  /** A line of the contents: its count is a numeral at the left, and a row with none leaves that column empty. */
+  list?: boolean;
+  /** The one line under the name, in the first session. */
+  hint?: string;
+  /** The line as a hover title, for a row that shows no hint. */
+  title?: string;
   here?: boolean;
   onClick: () => void;
 }
 
-/** One line of the way around the app: the words, a key cap if it has one, and the count at the right. No icon. */
-export function NavRow({ label, count, cap, here, onClick }: RowProps) {
+/** One line of the way around the app: a serif count at the left for the piles, the words, and a key cap if it has one. No icon. */
+export function NavRow({ label, count, cap, list, hint, title, here, onClick }: RowProps) {
   return (
     <li>
-      <button className={`navrow${here ? ' is-current' : ''}`} aria-current={here ? 'page' : undefined} onClick={onClick}>
-        <span className="t-subhead navrow__label">{label}</span>
+      <button className={`navrow${here ? ' is-current' : ''}`} title={title} aria-current={here ? 'page' : undefined} onClick={onClick}>
+        {list && <span className="voice t-num navrow__num">{count !== undefined && count > 0 ? count : ''}</span>}
+        <span className="navrow__text">
+          <span className="t-subhead navrow__label">{label}</span>
+          {hint && <span className="t-footnote navrow__hint">{hint}</span>}
+        </span>
         {cap && <kbd className="keycap">{cap}</kbd>}
-        {count !== undefined && count > 0 && <span className="t-subhead t-num navrow__count">{count}</span>}
       </button>
     </li>
   );
@@ -70,7 +79,9 @@ export function AccountPicker() {
         </ul>
       )}
       <button className="navrow acct__row" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span className="t-subhead navrow__label">{current}</span>
+        <span className="navrow__text">
+          <span className="t-subhead navrow__label">{current}</span>
+        </span>
         <ChevronsUpDown size={14} strokeWidth={1.75} className="acct__chev" />
       </button>
     </div>

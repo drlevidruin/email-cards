@@ -34,7 +34,7 @@ export function Hero({ thread, goalFirst }: { thread: EmailThread; goalFirst?: b
     return (
       <div className="hero">
         <DueLine label={thread.deadlineLabel} />
-        <p className="hero__text t-title">{thread.distilledAsk}</p>
+        <p className="hero__text t-title voice">{thread.distilledAsk}</p>
       </div>
     );
   }

@@ -1,4 +1,5 @@
 import type { DemoDataset } from './staticDemoData';
+import { isStaticDemoMode } from './api';
 
 const KEY_STORE = 'email_cards_snapshot_key';
 const KEY_PREFIX = 'email_cards_snapshot';
@@ -103,5 +104,7 @@ export function snapshotLabel(): string | null {
 
 /** The toast for a send: in snapshot mode nothing leaves, and the toast says so. */
 export function sentToast(text: string): string {
-  return isSnapshot() ? 'Snapshot. Nothing was sent.' : text;
+  if (isSnapshot()) return 'Snapshot. Nothing was sent.';
+  // A second, lighter line in the sample inbox; the toast splits on the line break
+  return isStaticDemoMode() ? `${text}\nSample inbox: nothing really went out.` : text;
 }

@@ -2,8 +2,10 @@ import { useCallback, useMemo, type Dispatch, type MutableRefObject, type SetSta
 import { api } from './lib/api';
 import { sentToast } from './lib/snapshot';
 import { logMoves, logUndone } from './lib/progress';
+import { takeFirstDone } from './lib/onboarding';
 import type { EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
+import { noticeWho } from './lib/noticeName';
 import type { CountKey, Data, Exiting, Session, Snap, UndoEntry } from './storeTypes';
 
 /** What the finish card calls each move. */
@@ -20,7 +22,8 @@ interface CommitSpec {
   kind?: string;
   local: (s: Snap) => Snap;
   call: () => Promise<unknown>;
-  toast: string;
+  /** Said once the save has worked, so a wording used up on a failed save is not lost. */
+  toast: string | (() => string);
   /** Keep the message up with no timer. */
   sticky?: boolean;
   undoFallback?: () => Promise<unknown>;
@@ -96,7 +99,7 @@ export function useCardActions(core: Core) {
           },
         };
         setCanUndo(true);
-        showToast(spec.toast, true, spec.sticky);
+        showToast(typeof spec.toast === 'function' ? spec.toast() : spec.toast, true, spec.sticky);
       } catch {
         if (sess) {
           spec.ids.forEach((id) => sess.dismissed.delete(id));
@@ -156,7 +159,11 @@ export function useCardActions(core: Core) {
           for (const id of promises) await api.resolveCommitment(id);
           return res;
         },
-        toast: 'Done',
+        toast: () => {
+          const { first, full } = noticeWho(t, stack);
+          const said = first ? `${first}'s email is done` : `Done: ${full}`;
+          return takeFirstDone() ? `${said}. It's out of your inbox, kept in All mail.` : said;
+        },
         undoFallback: async () => {
           await api.unarchiveThread(t.id);
           if (starred) await api.starThread(t.id, true);
@@ -177,7 +184,10 @@ export function useCardActions(core: Core) {
         count: on ? 'bookmarked' : 'done',
         local: (s) => ({ ...s, threads: s.threads.map((x) => (x.id === t.id ? { ...x, isStarred: on } : x)) }),
         call: () => api.starThread(t.id, on),
-        toast: on ? 'Moved to To-do' : 'Removed from To-do',
+        toast: () => {
+          const { first, full } = noticeWho(t, stack);
+          return on ? (first ? `${first}'s email is on your To-do list` : `${full} is on your To-do list`) : 'Removed from To-do';
+        },
         undoFallback: () => api.starThread(t.id, !on),
       }),
     [commit]
@@ -194,7 +204,10 @@ export function useCardActions(core: Core) {
           threads: s.threads.map((x) => (x.id === t.id ? { ...x, isSnoozedUntil: until.toISOString() } : x)),
         }),
         call: () => api.snoozeThread(t.id, until.toISOString()),
-        toast: `Later: ${when}`,
+        toast: () => {
+          const { first, full } = noticeWho(t, stack);
+          return first ? `${first}'s email comes back ${when}` : `${full} comes back ${when}`;
+        },
       }),
     [commit]
   );
@@ -202,7 +215,7 @@ export function useCardActions(core: Core) {
   const decide = useCallback(
     (s: ScreenerSender, stack: StackId, d: 'approved' | 'feed' | 'muted') => {
       const status = d === 'muted' ? 'muted' : d === 'feed' ? 'feed' : 'approved';
-      const toast = d === 'muted' ? `Blocked ${s.name}` : d === 'feed' ? `Moved ${s.name} to Newsletters` : `Allowed ${s.name}`;
+      const toast = d === 'muted' ? `Blocked ${s.name}` : d === 'feed' ? `Moved ${s.name} to Newsletters` : `Allowed ${s.name}. Now in Needs you.`;
       return commit({
         stack,
         ids: [s.email],

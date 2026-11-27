@@ -91,7 +91,7 @@ export function Reader({ thread, stack, senderEmail, promise }: Props) {
         </header>
         {desktop && (
           <div className="reader__actions">
-            <ActionBar variant={variant} active={null} onAction={onAction} />
+            <ActionBar reader variant={variant} active={null} onAction={onAction} />
           </div>
         )}
         <div className="reader__scroll">
@@ -101,7 +101,7 @@ export function Reader({ thread, stack, senderEmail, promise }: Props) {
           {(sender || kind !== 'subject') && <h2 className="reader__subject t-headline">{cleanSubject(thread.subject)}</h2>}
           <ThreadView threadId={thread.id} hideSubject promise={promise} quote={sender || kind !== 'goal' ? null : thread.goalQuote} />
         </div>
-        {!desktop && <ActionBar variant={variant} active={null} onAction={onAction} />}
+        {!desktop && <ActionBar reader variant={variant} active={null} onAction={onAction} />}
       </div>
       {later && <LaterSheet onPick={pick} onClose={() => setLater(false)} />}
     </div>

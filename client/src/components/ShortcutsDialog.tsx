@@ -13,6 +13,8 @@ const LEFT: Group[] = [
       ['To-do', ['T', '↑']],
       ['Skip', ['J', '↓']],
       ['Open email', ['Enter']],
+      ['Open an answer', ['1', '2']],
+      ['Write my own', ['R']],
       ['Undo', ['Z']],
       ['Allow sender', ['A']],
       ['Block sender', ['B']],
@@ -24,7 +26,6 @@ const RIGHT: Group[] = [
   {
     title: 'Reply',
     rows: [
-      ['Reply', ['R']],
       ['Pick a reply', ['1', '2', '3']],
       ['Write my own', ['W']],
       ['Send', ['⌘', 'Enter']],

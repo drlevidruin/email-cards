@@ -1,19 +1,20 @@
 .swipewash { position: absolute; inset: 0; z-index: 2; background: #fff; pointer-events: none; }
-.swipeslot { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; pointer-events: none; }
-.swipeslot__item { grid-area: 1 / 1; }
-.swipepill {
-  display: flex; align-items: center; gap: 10px;
-  height: 48px; padding: 6px 18px 6px 6px; border-radius: var(--radius-pill);
-  --tone: var(--ink-2); background: var(--surface); box-shadow: var(--shadow-float); color: var(--ink);
+.stamp {
+  position: absolute; z-index: 5; width: fit-content; max-width: calc(100% - 24px);
+  font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1; letter-spacing: 0.005em;
+  padding: 9px 18px 12px; border: 3.5px solid currentColor; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9); box-shadow: inset 0 0 0 2.5px #fff, inset 0 0 0 4px currentColor;
+  white-space: nowrap; pointer-events: none; transform: rotate(var(--rot));
 }
-.swipepill--accent { --tone: var(--accent); }
-.swipepill--danger { --tone: var(--danger); }
-.swipepill__disc {
-  display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 2px solid var(--tone); color: var(--tone);
-}
-.swipepill__label { white-space: nowrap; }
-.swipepill.is-filled { background: var(--tone); color: #fff; animation: badge-pop 150ms var(--ease); }
-.swipepill.is-filled .swipepill__disc { border-color: #fff; color: #fff; }
+.stamp--accent { color: var(--accent); }
+.stamp--ink { color: var(--ink); }
+.stamp--quiet { color: var(--ink-3); }
+.stamp--danger { color: var(--danger); }
+.stamp--right { --rot: -11deg; left: 26px; top: 86px; }
+.stamp--left { --rot: 9deg; right: 26px; top: 86px; }
+.stamp--up { --rot: -5deg; left: 0; right: 0; margin: 0 auto; bottom: 150px; }
+.stamp--down { --rot: 4deg; left: 0; right: 0; margin: 0 auto; top: 110px; }
+.stamp.is-solid { animation: stamp-pop 120ms var(--ease); }
+@keyframes stamp-pop { from { transform: rotate(var(--rot)) scale(1.06); } to { transform: rotate(var(--rot)) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .stamp.is-solid { animation: none; } }
 @keyframes badge-pop { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }

@@ -29,3 +29,10 @@
   .cards__deck, .cards__deck--today { flex: none; height: var(--deck-h); padding: 0; margin-top: 12px; }
   .cards__bar-space { height: 80px; }
 }
+
+/* A finished pile: the deck column goes green, top bar and all */
+.cards--clear { background: var(--brand-deep); }
+.cards--clear .topbar__title, .cards--clear .icon-btn { color: var(--on-brand); }
+.cards--clear .icon-btn:active { background: rgba(246, 244, 238, 0.12); }
+.cards--clear .segbar { background: rgba(246, 244, 238, 0.16); }
+.cards--clear .segbar__fill { background: var(--on-brand); }

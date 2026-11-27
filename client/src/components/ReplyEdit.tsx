@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { commitmentsIn, openBlankList } from '../lib/commitments';
+import { isSampleInbox } from '../lib/sample';
 import { BlankText } from './BlankText';
-import { BlankRows } from './BlankRows';
+import { BlankRows, type BlankRowsHandle, type Fill } from './BlankRows';
 import './ReplyChoose.css';
 
 interface Props {
@@ -16,12 +17,14 @@ interface Props {
   sending: boolean;
   desktop: boolean;
   onBody: (text: string) => void;
+  /** Opened from a card row: the top left says `Cancel` and leaves for the deck. */
+  cancel?: boolean;
   onBack: () => void;
   onSend: () => void;
 }
 
 /** The whole reply, with its greeting and sign-off, ready to change. Send is the only way anything leaves. */
-export function ReplyEdit({ first, to, subject, body, blanks: draftBlanks, drafting, sending, desktop, onBody, onBack, onSend }: Props) {
+export function ReplyEdit({ first, to, subject, body, blanks: draftBlanks, drafting, sending, desktop, onBody, cancel, onBack, onSend }: Props) {
   const box = useRef<HTMLTextAreaElement>(null);
   const open = openBlankList(body, draftBlanks);
   const blanks = open.length;
@@ -66,23 +69,49 @@ export function ReplyEdit({ first, to, subject, body, blanks: draftBlanks, draft
     el.focus();
     el.setSelectionRange(el.value.length, el.value.length);
   }, [body, rendered]);
-  const fill = (blank: string, value: string) => {
-    refocus.current = true;
-    onBody(body.split(blank).join(value));
+  const fill: Fill = (pairs, quiet) => {
+    if (!quiet) refocus.current = true;
+    onBody(pairs.reduce((text, [blank, value]) => text.split(blank).join(value), body));
+  };
+  // Send while a fill-in is open only adds what is typed; the press is remembered at pointer down, because the field's blur
+  // adds the fill-in and closes it before the click arrives, and that click must not send.
+  const rows = useRef<BlankRowsHandle>(null);
+  const pressedAt = useRef(0);
+  const press = () => {
+    // The remembered press counts for about a second, so a press that slid off Send cannot make a later one do nothing
+    const was = (pressedAt.current > 0 && performance.now() - pressedAt.current < 1000) || blanks > 0;
+    pressedAt.current = 0;
+    if (!was) return onSend();
+    rows.current?.addTyped();
+    // An empty fill-in gets the cursor, once the typed ones have been added
+    window.setTimeout(() => wrap.current?.querySelector<HTMLInputElement>('.blank__input')?.focus(), 0);
   };
 
   return (
     <div className="composer composer--edit" ref={wrap}>
       <header className="composer__head">
-        <button className="composer__back t-subhead" onClick={onBack}>
-          <ChevronLeft size={20} strokeWidth={1.75} />
-          Replies
-        </button>
+        {cancel ? (
+          <button className="composer__cancel t-subhead" onMouseDown={(e) => e.preventDefault()} onClick={onBack}>
+            Cancel
+          </button>
+        ) : (
+          <button className="composer__back t-subhead" onMouseDown={(e) => e.preventDefault()} onClick={onBack}>
+            <ChevronLeft size={20} strokeWidth={1.75} />
+            Replies
+          </button>
+        )}
         <h1 className="t-headline composer__title">Reply to {first}</h1>
-        <button className="composer__send" disabled={!body.trim() || drafting || sending || blanks > 0} onClick={onSend}>
+        <button
+          className="composer__send"
+          disabled={!body.trim() || drafting || sending}
+          aria-disabled={blanks > 0 || undefined}
+          onPointerDown={() => (pressedAt.current = blanks > 0 ? performance.now() : 0)}
+          onClick={press}
+        >
           <span className="composer__send-pill t-callout">Send</span>
         </button>
       </header>
+      {isSampleInbox() && <p className="t-subhead edit__sample">Sample inbox. Nothing is really sent.</p>}
       <div className="edit__rows">
         <div className="edit__row t-subhead">
           <span className="edit__label">To</span>
@@ -95,7 +124,7 @@ export function ReplyEdit({ first, to, subject, body, blanks: draftBlanks, draft
           <span className="edit__value">{subject}</span>
         </div>
       </div>
-      {!drafting && <BlankRows blanks={open} onFill={fill} />}
+      {!drafting && <BlankRows ref={rows} blanks={open} onFill={fill} />}
       {commits.length > 0 && !drafting && (
         <div className="edit__commits">
           <div className="t-footnote edit__commits-label">You're committing to</div>

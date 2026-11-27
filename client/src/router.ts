@@ -61,6 +61,8 @@ export function navigate(path: string, opts: { replace?: boolean } = {}) {
     window.history.replaceState({ i: depth(), from: cameFrom() }, '', url);
   } else {
     const here = window.location.hash.replace(/^#/, '') || '/';
+    // Already showing: a second tap on the same row adds nothing to the history
+    if (here === path) return;
     window.history.pushState({ i: depth() + 1, from: here }, '', url);
   }
   notify();

@@ -3,15 +3,22 @@ import { Menu as MenuIcon, Search } from 'lucide-react';
 import { useStore } from '../store';
 import { navigate } from '../router';
 import { finishInfo } from '../lib/finish';
-import { claimFirstSession, handledToday, isFirstSession, markClear, markStart, markTaught, taughtMoves, useProgressLog } from '../lib/progress';
+import { handledToday, markClear, markStart, useProgressLog } from '../lib/progress';
+import { claimFirstSession, markTaught } from '../lib/onboarding';
 import { applySkips, buildStack, stackCounts, stackLabel, type DeckItem, type StackId } from '../lib/stacks';
+import { answerForKey, answerPath, hasReady } from '../components/CardAnswers';
+import { noticeWho } from '../lib/noticeName';
 import { loadThread } from '../lib/threadCache';
 import { describeWake, type LaterOption } from '../lib/time';
 import { useCelebrate } from '../lib/useCelebrate';
 import { useIsDesktop } from '../lib/useIsDesktop';
+import { useWelcome } from '../lib/welcome';
 import { ActionBar, type BarAction, type BarVariant, type Dir } from '../components/ActionBar';
 import type { BadgeLabels } from '../components/SwipeBadge';
+import { deckConfig } from '../lib/deckConfig';
 import { useDeckKeys } from '../components/useDeckKeys';
+import { CardPointer } from '../components/CardPointer';
+import { useBrandChrome } from '../components/useBrandChrome';
 import { CoverCard } from '../components/CoverCard';
 import { Deck, type DeckHandle } from '../components/Deck';
 import { FinishCard } from '../components/FinishCard';
@@ -20,6 +27,7 @@ import { Menu } from '../components/Menu';
 import { SegmentBar } from '../components/SegmentBar';
 import { TodayCard } from '../components/TodayCard';
 import { TopBar } from '../components/TopBar';
+import { useCardPointer } from '../components/useCardPointer';
 import './CardsScreen.css';
 
 /** `covered` means the reader is open over the deck: the deck stays put but takes no keys and shows no bar. */
@@ -64,25 +72,10 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
 
   const celebrate = useCelebrate(`${stack}|${account}`, status === 'ready' && !today && (base.length > 0 || !!exitingItem), finished);
 
-  const isSender = stack === 'new-senders';
-  const noReplies = stack === 'newsletters' || stack === 'receipts';
-  const onTodo = stack === 'bookmarked';
-  const variant: BarVariant = isSender ? 'senders' : noReplies ? 'plain' : onTodo ? 'todo' : 'default';
-  // On the To-do deck the card is already on To-do, so up does nothing
-  const enabled: Dir[] = onTodo ? ['left', 'right', 'down'] : ['left', 'right', 'up', 'down'];
-  // Done, To-do, Skip and the sender moves fly the card out. Later opens its sheet first and the card waits.
-  const flyDirs: Dir[] = isSender ? enabled : ['right', 'up', 'down'];
-  const labels: BadgeLabels = isSender
-    ? { right: 'Allow', left: 'Block', up: 'Newsletters', down: 'Skip' }
-    : onTodo
-      ? { right: 'Done', left: 'Later', down: 'Skip' }
-      : { right: 'Done', left: 'Later', up: 'To-do', down: 'Skip' };
+  const { isSender, noReplies, onTodo, variant, enabled, flyDirs, labels, answers } = deckConfig(stack);
 
-  const overlay = menu || !!laterFor || !!covered;
-  // First session: the first four cards each show one move, in turn
-  // Only the session the log was first used in teaches; a later visit never nudges
-  const taught = taughtMoves();
-  const teach = isFirstSession() ? (['right', 'left', 'up', 'down'] as Dir[]).find((d) => enabled.includes(d) && !taught.includes(d)) ?? null : null;
+  const { up: welcomeUp } = useWelcome();
+  const overlay = menu || !!laterFor || !!covered || welcomeUp;
   useEffect(() => claimFirstSession(), []);
   const multi = (data?.accounts.length ?? 0) > 1 && account === 'all';
 
@@ -115,21 +108,25 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
   }, [session, stack, store]);
 
   const skip = useCallback(
-    (id: string) => {
+    (item: DeckItem) => {
+      const id = item.id;
       session.skipped = [...session.skipped.filter((s) => s !== id), id];
       store.touch();
       // Skip has its own Undo, so Z after a Skip brings the skipped card back, not the move before it
-      store.offerUndo('Moved to the end of the pile', async () => {
+      const { first, full } = item.type === 'thread' ? noticeWho(item.thread, stack) : { first: null, full: item.sender.name };
+      store.offerUndo(first ? `${first}'s email went to the back of the pile` : `${full} went to the back of the pile`, async () => {
         session.skipped = session.skipped.filter((s) => s !== id);
         store.touch();
       });
     },
-    [session, store]
+    [session, store, stack]
   );
 
   const onDirection = useCallback(
     (dir: Dir, item: DeckItem) => {
-      if (dir === 'down') return skip(item.id);
+      // A move the person makes is a move they know: its pointer line never shows again
+      markTaught(item.type === 'sender' && dir !== 'down' ? `s-${dir}` : dir);
+      if (dir === 'down') return skip(item);
       if (item.type === 'sender') {
         void store.decide(item.sender, stack, dir === 'left' ? 'muted' : dir === 'up' ? 'feed' : 'approved');
         return;
@@ -143,22 +140,27 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
 
   const open = useCallback(
     (item: DeckItem) => {
+      markTaught('open');
       if (item.type === 'thread') navigate(`/read/${item.id}?from=${stack}`);
       else if (item.sender.threadIds?.[0]) navigate(`/read/${item.sender.threadIds[0]}?from=${stack}&sender=${encodeURIComponent(item.sender.email)}`);
     },
     [stack]
   );
 
-  const reply = () => {
-    const top = items[0];
-    if (top?.type === 'thread' && !noReplies) navigate(`/reply/${top.id}?from=deck`);
+  const answer = (item: DeckItem, qa: string) => {
+    if (item.type !== 'thread') return;
+    markTaught('answer');
+    navigate(answerPath(item.id, qa));
   };
+  const top = items[0];
+  // The card shows answer rows; the accent, Done's colour and the pointer's answer lesson need a ready answer among them
+  const topRows = answers && top?.type === 'thread';
+  const topAnswers = topRows && hasReady(top.thread);
 
   const onBar = (action: BarAction) => {
-    const dirs: Partial<Record<BarAction, Dir>> = { later: 'left', todo: 'up', done: 'right', block: 'left', newsletters: 'up', allow: 'right' };
+    const dirs: Partial<Record<BarAction, Dir>> = { later: 'left', todo: 'up', skip: 'down', done: 'right', block: 'left', newsletters: 'up', allow: 'right' };
     const dir = dirs[action];
     if (dir) deck.current?.trigger(dir);
-    else reply();
   };
 
   const pickLater = (o: LaterOption) => {
@@ -178,11 +180,17 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
     cards: !cover && !finished && !today,
     onDir: (dir) => deck.current?.trigger(dir),
     onOpen: () => items[0] && open(items[0]),
-    onReply: reply,
+    onAnswer: (key) => {
+      const qa = top?.type === 'thread' && topRows ? answerForKey(top.thread, key) : null;
+      if (qa) answer(top, qa);
+    },
     onUndo: () => void store.undo(),
     onMenu: desktop ? undefined : () => setMenu(true),
     senders: isSender,
   });
+
+  const deckShown = status === 'ready' && !!data && !finished && !today && !cover;
+  const pointer = useCardPointer({ topId: items[0]?.id, nextId: items[1]?.id, pile: `${stack}:${account}`, enabled, ready: deckShown && !overlay && !exitingItem, senders: isSender, answers: topAnswers });
 
   let content;
   if (status === 'loading' || !data) {
@@ -205,13 +213,7 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
   } else if (finished) {
     const info = finishInfo(data, stack, account);
     content = (
-      <FinishCard
-        stack={stack}
-        account={account}
-        celebrate={celebrate}
-        dayClear={info.needsYouClear}
-        next={info.next}
-      />
+      <FinishCard stack={stack} account={account} celebrate={celebrate} dayClear={info.needsYouClear} next={info.next} />
     );
   } else if (today) {
     content = <TodayCard items={base} account={account} keys={!overlay} onStart={start} onOpen={open} />;
@@ -243,16 +245,17 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
         onActive={onActive}
         onExitDone={store.clearExiting}
         goalFirst={onTodo}
-        nudge={overlay ? null : teach}
-        onNudged={markTaught}
+        answers={answers}
+        onAnswer={answer}
       />
     );
   }
 
+  useBrandChrome(finished && !covered);
   const showBar = status === 'ready' && !finished && !cover && !today && !covered;
-  const showCount = status === 'ready' && !finished && !cover && !today && total > 0;
+  const showCount = status === 'ready' && !finished && !cover && !today && base.length > 0;
   return (
-    <div className="cards">
+    <div className={`cards${finished ? ' cards--clear' : ''}`}>
       <div className="cards__col">
         <TopBar
           left={
@@ -271,16 +274,13 @@ export function CardsScreen({ stack, covered }: { stack: StackId; covered?: bool
           }
         >
           {!today && <span className="topbar__title t-headline">{stackLabel(stack)}</span>}
-          {showCount && (
-            <span className="topbar__count t-footnote t-num">
-              {Math.min(shown + 1, total)} of {total}
-            </span>
-          )}
+          {showCount && <span className="topbar__count t-footnote t-num">{base.length} left</span>}
         </TopBar>
         <SegmentBar handled={shown} total={total} hidden={today} full={finished} />
         <div className={`cards__deck${today || finished || cover ? ' cards__deck--today' : ''}`}>{content}</div>
+        {showBar && pointer && <CardPointer move={pointer} desktop={desktop} />}
         {showBar ? (
-          <ActionBar variant={variant} active={active} past={past} onAction={onBar} />
+          <ActionBar variant={variant} active={active} past={past} onAction={onBar} answers={topAnswers} />
         ) : (
           !today && !finished && !cover && <div className="cards__bar-space" />
         )}

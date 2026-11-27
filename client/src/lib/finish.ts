@@ -1,4 +1,4 @@
-import { stackCounts, stackLabel, STACKS, type StackId } from './stacks';
+import { stackCounts, stackLabel, type StackId } from './stacks';
 import type { Data } from '../storeTypes';
 
 export interface NextRow {
@@ -17,13 +17,11 @@ export interface FinishInfo {
 /** What the finish card needs: the way on, its kicker, and whether the day is really clear. */
 export function finishInfo(data: Data, stack: StackId, account: string): FinishInfo {
   const counts = stackCounts(data, account);
-  const lead = (['new-senders', 'newsletters', 'receipts'] as StackId[]).find((id) => id !== stack && counts[id] > 0);
-  const others = STACKS.filter((s) => s.id !== stack && s.id !== lead && s.id !== 'bookmarked' && counts[s.id] > 0);
-  const next: NextRow[] = [...(lead ? [lead] : []), ...others.map((s) => s.id)].map((id) => ({
-    path: `/cards/${id}`,
-    label: stackLabel(id),
-    count: counts[id],
-  }));
+  // Needs you comes first whenever it still has cards and is not the pile on screen; then the three sorted piles, then Later
+  const order: StackId[] = ['needs-you', 'new-senders', 'newsletters', 'receipts', 'later'];
+  const next: NextRow[] = order
+    .filter((id) => id !== stack && counts[id] > 0)
+    .map((id) => ({ path: `/cards/${id}`, label: stackLabel(id), count: counts[id] }));
   return {
     next,
     needsYouClear: stackCounts(data, 'all')['needs-you'] === 0,

@@ -129,6 +129,42 @@ export function buildDemoDataset(): DemoDataset {
   // 1. SEVEN HIGH-STAKES DECISION THREADS
   // =========================================================================
 
+  // DEC-00 (Personal): the one anyone understands, first in Needs you
+  addMsg({
+    id: 'msg_dec00_1',
+    threadId: 'thr_dec_00',
+    accountId: 'acc_personal',
+    fromName: 'Maya Chen',
+    fromEmail: 'maya.chen@fastmail.com',
+    toEmails: ['alex.chen.home@gmail.com'],
+    subject: "Dad's 70th: dinner on Sunday?",
+    snippet: "Surprise dinner at Lucia's on Sunday at 6 for Dad's 70th. Can you make it? I need a headcount by 6 tonight.",
+    bodyText:
+      "Hi Alex,\n\nDad turns 70 on Sunday, and I'm planning a surprise dinner at Lucia's at 6. Mom is in, and so are Ben and the kids.\n\nCan you make it? I have to give them a headcount by 6 tonight.\n\nMaya",
+    sentAt: hoursAgo(1),
+    isUnread: true,
+    isOutbound: false,
+    attachments: [],
+  });
+
+  // DEC-00b (Personal): an email that needs nothing but a look, so Done is the right move on the card that teaches Done
+  addMsg({
+    id: 'msg_dec00b_1',
+    threadId: 'thr_dec_00b',
+    accountId: 'acc_personal',
+    fromName: 'Sam Ortiz',
+    fromEmail: 'sam.ortiz@icloud.com',
+    toEmails: ['alex.chen.home@gmail.com'],
+    subject: 'Thanks for Sunday',
+    snippet: 'Thank you for giving up your Sunday to help us move. Dinner is on us once the boxes are unpacked.',
+    bodyText:
+      'Alex,\n\nThank you for giving up your Sunday to help us move. We would still be staring at that couch on the stairs without you.\n\nDinner is on us once the boxes are unpacked. No need to reply, I just wanted to say thanks.\n\nSam',
+    sentAt: hoursAgo(1.5),
+    isUnread: true,
+    isOutbound: false,
+    attachments: [],
+  });
+
   // DEC-01 (Studio): Atelier Loft Keynote Venue Contract & Deposit
   addMsg({
     id: 'msg_dec01_1',
@@ -584,9 +620,9 @@ export function buildDemoDataset(): DemoDataset {
     fromEmail: 'devon@meridianstudio.co',
     toEmails: ['alex@meridianstudio.co', 'owen@meridianstudio.co'],
     subject: 'Q1 Studio Offsite: Hudson Valley vs Sea Ranch Shortlist',
-    snippet: 'Put together a quick Notion comparison for our February 3-day creative retreat with travel estimates.',
+    snippet: 'Two finalists for the February retreat: Troutbeck or Sea Ranch. Which one gets your vote?',
     bodyText:
-      'Team,\n\nNarrowed our February 3-day creative retreat down to two standout properties:\n1. Troutbeck (Hudson Valley) - easy train access for East Coast team, great fireplace library.\n2. Sea Ranch Lodge (Sonoma Coast) - unreal architectural light, pairs well if we are already on the West Coast.\n\nNo rush this week; let\'s pick a winner over coffee next Monday.\n\nDevon',
+      'Team,\n\nTwo finalists for the February retreat:\nTroutbeck: easy train, fireplace library.\nSea Ranch: unreal light, but a flight.\n\nWhich one gets your vote? No rush, we pick the winner over coffee next Monday.\n\nDevon',
     sentAt: hoursAgo(26),
     isUnread: false,
     isOutbound: false,
@@ -1026,6 +1062,80 @@ export function buildDemoDataset(): DemoDataset {
   const threads: EmailThread[] = [
     // --- 7 HIGH-STAKES DECISIONS ---
     {
+      id: 'thr_dec_00',
+      ...meta('acc_personal'),
+      subject: "Dad's 70th: dinner on Sunday?",
+      snippet: "Surprise dinner at Lucia's on Sunday at 6 for Dad's 70th. Can you make it? I need a headcount by 6 tonight.",
+      participants: [
+        { name: 'Maya Chen', email: 'maya.chen@fastmail.com' },
+        { name: 'Alex Chen', email: 'alex.chen.home@gmail.com' },
+      ],
+      messageCount: 1,
+      lastMessageAt: hoursAgo(1),
+      isUnread: true,
+      isStarred: false,
+      isArchived: false,
+      isSnoozedUntil: null,
+      labels: ['Family'],
+      bucket: 'decision',
+      urgencyScore: 91,
+      distilledAsk: 'Tell Maya if you can make dinner Sunday',
+      goalQuote: 'Can you make it? I have to give them a headcount by 6 tonight.',
+      aiSummaryBullets: [
+        "Dinner is Sunday at 6 at Lucia's for Dad's 70th.",
+        'Maya needs a headcount by 6 tonight.',
+      ],
+      deadlineAt: onDay(11, 24, 18),
+      deadlineLabel: 'Today 6:00 PM',
+      quickActions: [
+        {
+          id: 'qa_dec00_1',
+          label: "Yes, I'll be there",
+          kind: 'reply',
+          draftHint: "Tell Maya you will be at Lucia's on Sunday at 6",
+          draftBody: "Hi Maya,\n\nCount me in for Sunday at 6. See you at Lucia's.\n\nAlex",
+        },
+        {
+          id: 'qa_dec00_2',
+          label: "Sorry, I can't make it",
+          kind: 'reply',
+          draftHint: "Tell Maya you can't make it on Sunday",
+          draftBody: "Hi Maya,\n\nI can't make it on Sunday. Give Dad a hug from me, and I'll call him that morning.\n\nAlex",
+        },
+      ],
+      receiptInfo: null,
+      relatedThreadIds: [],
+      senderTrust: 'approved',
+    },
+    {
+      id: 'thr_dec_00b',
+      ...meta('acc_personal'),
+      subject: 'Thanks for Sunday',
+      snippet: 'Thank you for giving up your Sunday to help us move. Dinner is on us once the boxes are unpacked.',
+      participants: [
+        { name: 'Sam Ortiz', email: 'sam.ortiz@icloud.com' },
+        { name: 'Alex Chen', email: 'alex.chen.home@gmail.com' },
+      ],
+      messageCount: 1,
+      lastMessageAt: hoursAgo(1.5),
+      isUnread: true,
+      isStarred: false,
+      isArchived: false,
+      isSnoozedUntil: null,
+      labels: ['Friends'],
+      bucket: 'decision',
+      urgencyScore: 90,
+      distilledAsk: 'Nothing to do. Sam says thanks for Sunday.',
+      goalQuote: 'No need to reply, I just wanted to say thanks.',
+      aiSummaryBullets: ['Sam thanks you for helping with the move on Sunday.', 'No reply is needed.'],
+      deadlineAt: null,
+      deadlineLabel: null,
+      quickActions: [],
+      receiptInfo: null,
+      relatedThreadIds: [],
+      senderTrust: 'approved',
+    },
+    {
       id: 'thr_dec_01',
       ...meta('acc_studio'),
       subject: 'Atelier Loft Keynote Venue: Addendum B & AV Rider',
@@ -1129,13 +1239,13 @@ export function buildDemoDataset(): DemoDataset {
       messageCount: 3,
       lastMessageAt: hoursAgo(2.2),
       isUnread: true,
-      isStarred: false,
+      isStarred: true,
       isArchived: false,
       isSnoozedUntil: null,
       labels: ['Client', 'Solis Health', 'Print'],
       bucket: 'decision',
       urgencyScore: 89,
-      distilledAsk: 'Review the die\u2011line and approve Option B',
+      distilledAsk: 'Approve Option B on the packaging proof',
       goalQuote: 'Can you review the updated die-line PDF attached and reply to greenlight Option B?',
       aiSummaryBullets: [
         'Leadership picked Option B.',
@@ -1175,13 +1285,13 @@ export function buildDemoDataset(): DemoDataset {
       messageCount: 2,
       lastMessageAt: hoursAgo(3.1),
       isUnread: true,
-      isStarred: false,
+      isStarred: true,
       isArchived: false,
       isSnoozedUntil: null,
       labels: ['Home', 'Remodel', 'Contract'],
       bucket: 'decision',
       urgencyScore: 86,
-      distilledAsk: 'Approve the $2,850 lintel change order',
+      distilledAsk: 'Approve the $2,850 kitchen change order',
       goalQuote: 'if you approve the $2,850 steel lintel change order by tomorrow at 3:00 PM',
       aiSummaryBullets: [
         'The city cleared everything except one beam.',
@@ -1226,8 +1336,8 @@ export function buildDemoDataset(): DemoDataset {
       isSnoozedUntil: null,
       labels: ['Client', 'Kestrel AI', 'Engineering'],
       bucket: 'decision',
-      urgencyScore: 84,
-      distilledAsk: 'Pick which build to present Thursday',
+      urgencyScore: 73,
+      distilledAsk: 'Pick which version to present Thursday',
       goalQuote: 'Which build should we present at Thursday\'s 2:00 PM check-in with Priya?',
       aiSummaryBullets: [
         'Build B ships Friday and works on every phone.',
@@ -1273,7 +1383,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Warm Intro', 'Robotics', 'Advisory'],
       bucket: 'decision',
       urgencyScore: 79,
-      distilledAsk: 'Send two 30\u2011minute slots next week',
+      distilledAsk: 'Send Daniel two times to meet next week',
       goalQuote: 'Can you send two 30-minute slots next week so I can lock the intro?',
       aiSummaryBullets: [
         'Daniel wants to introduce you to Samira.',
@@ -1287,7 +1397,7 @@ export function buildDemoDataset(): DemoDataset {
           label: 'Offer two times',
           kind: 'schedule',
           draftHint: 'Offer Daniel two 30-minute slots next week for Samira',
-          draftBody: 'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week at [first time] or [second time].\n\nBest,\nAlex',
+          draftBody: 'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week: [first time] or [second time].\n\nBest,\nAlex',
         },
         {
           id: 'qa_dec06_2',
@@ -1318,7 +1428,7 @@ export function buildDemoDataset(): DemoDataset {
       isSnoozedUntil: null,
       labels: ['Travel', 'Friends', 'Stowe'],
       bucket: 'decision',
-      urgencyScore: 74,
+      urgencyScore: 82,
       distilledAsk: 'Pick your arrival and lift pass',
       goalQuote: 'Are you driving up Thursday night or Friday morning?',
       aiSummaryBullets: [
@@ -1367,7 +1477,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Keynote', 'Vendor'],
       bucket: 'waiting',
       urgencyScore: 72,
-      distilledAsk: 'Nudge Marcus for the itemized quote',
+      distilledAsk: 'Remind Marcus about the itemized quote',
       goalQuote: 'Could you send over the revised itemized quote under $4,200 so I can sign off with Maya?',
       aiSummaryBullets: [
         'You need it to finish the venue addendum.',
@@ -1378,7 +1488,7 @@ export function buildDemoDataset(): DemoDataset {
       quickActions: [
         {
           id: 'qa_wait01_1',
-          label: 'Nudge Marcus for the quote',
+          label: 'Remind Marcus about the quote',
           kind: 'nudge',
           draftHint: 'Nudge Marcus for the revised itemized quote under $4,200',
           draftBody: 'Hi Marcus,\n\nA quick follow-up on the revised itemized quote under $4,200. I need it to sign off with Maya. Could you send it over?\n\nBest,\nAlex',
@@ -1413,7 +1523,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['LP Reporting', 'Finance'],
       bucket: 'waiting',
       urgencyScore: 68,
-      distilledAsk: 'Nudge Tessa for the net IRR table',
+      distilledAsk: 'Remind Tessa about the net IRR table',
       goalQuote: 'could you share the finalized net IRR table and remaining dry powder figure',
       aiSummaryBullets: [
         'The data she needed has arrived.',
@@ -1424,7 +1534,7 @@ export function buildDemoDataset(): DemoDataset {
       quickActions: [
         {
           id: 'qa_wait02_1',
-          label: 'Nudge Tessa',
+          label: 'Remind Tessa',
           kind: 'nudge',
           draftHint: 'Nudge Tessa for the net IRR table and the dry powder figure',
           draftBody: 'Hi Tessa,\n\nA quick follow-up: could you send the finalized net IRR table and the remaining dry powder figure? I need them to finish the Q4 LP letter and confirm Kestrel AI\'s $75k bridge check.\n\nBest,\nAlex',
@@ -1459,7 +1569,7 @@ export function buildDemoDataset(): DemoDataset {
       labels: ['Legal', 'Contract', 'Solis Health'],
       bucket: 'waiting',
       urgencyScore: 65,
-      distilledAsk: 'Nudge Claire for the clean markup',
+      distilledAsk: 'Remind Claire about the clean markup',
       goalQuote: 'Let me know once you have clean markup we can return to Jordan\'s team.',
       aiSummaryBullets: [
         'All terms are already agreed.',
@@ -1470,7 +1580,7 @@ export function buildDemoDataset(): DemoDataset {
       quickActions: [
         {
           id: 'qa_wait03_1',
-          label: 'Nudge Claire',
+          label: 'Remind Claire',
           kind: 'nudge',
           draftHint: 'Nudge Claire for the clean markup of the Section 9 redline',
           draftBody: 'Hi Claire,\n\nChecking in on the clean markup for Solis Health\'s Section 9 redline. Could you send it when it is ready so I can return it to Jordan\'s team?\n\nBest,\nAlex',
@@ -1596,7 +1706,7 @@ export function buildDemoDataset(): DemoDataset {
       isSnoozedUntil: null,
       labels: ['San Francisco', 'Keynote', 'Events'],
       bucket: 'waiting',
-      urgencyScore: 52,
+      urgencyScore: 75,
       distilledAsk: 'Confirm the Thursday walk-through',
       goalQuote: 'we can do a quick walk-through Thursday morning.',
       aiSummaryBullets: [
@@ -1629,7 +1739,7 @@ export function buildDemoDataset(): DemoDataset {
       id: 'thr_ref_01',
       ...meta('acc_studio'),
       subject: 'Q1 Studio Offsite: Hudson Valley vs Sea Ranch Shortlist',
-      snippet: 'Devon narrowed the February 3-day creative retreat to Troutbeck (Hudson Valley) and Sea Ranch Lodge.',
+      snippet: 'Devon narrowed the February retreat to Troutbeck (Hudson Valley) and Sea Ranch Lodge.',
       participants: [
         { name: 'Devon Takahashi', email: 'devon@meridianstudio.co' },
         { name: 'Alex Chen', email: 'alex@meridianstudio.co' },
@@ -1642,12 +1752,12 @@ export function buildDemoDataset(): DemoDataset {
       isSnoozedUntil: null,
       labels: ['Team', 'Offsite'],
       bucket: 'waiting',
-      urgencyScore: 46,
+      urgencyScore: 77,
       distilledAsk: 'Pick Troutbeck or Sea Ranch',
-      goalQuote: 'No rush this week; let\'s pick a winner over coffee next Monday.',
+      goalQuote: 'Which one gets your vote?',
       aiSummaryBullets: [
         'Troutbeck is easy to reach by train.',
-        'Sea Ranch suits West Coast client visits.',
+        'Sea Ranch has the better light but means a flight.',
       ],
       deadlineAt: null,
       deadlineLabel: 'Monday',
@@ -2522,7 +2632,7 @@ export function buildDemoDataset(): DemoDataset {
       toEmails: ['dpark@summitpartners.vc'],
       subject: 'Re: Intro: Samira Patel (Veridian Robotics) - Series A Advisory',
       bodyText:
-        'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week at [first time] or [second time].\n\nBest,\nAlex',
+        'Hi Daniel,\n\nHappy to meet Samira. I can do 30 minutes next week: [first time] or [second time].\n\nBest,\nAlex',
       tone: 'warm',
       status: 'pending_approval',
       scheduledFor: null,

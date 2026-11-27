@@ -4,6 +4,7 @@ import type { AgentChatMessage, EmailThread, ScreenerSender } from './lib/types'
 import type { StackId } from './lib/stacks';
 import { pruneThreadCache } from './lib/threadCache';
 import { logUndone, resetToday, seedSample } from './lib/progress';
+import { resetOnboarding } from './lib/onboarding';
 import { NOT_SAVED, useCardActions } from './storeActions';
 import { TOAST_MS, type CountKey, type Data, type Exiting, type Session, type Toast, type UndoEntry } from './storeTypes';
 
@@ -172,6 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       resetSessions: () => {
         sessions.current.clear();
         resetToday();
+        resetOnboarding();
         setChat([]);
         setExiting(null);
         undoRef.current = null;

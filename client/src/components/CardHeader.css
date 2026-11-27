@@ -3,3 +3,9 @@
 .cardhead__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .cardhead__meta { display: flex; align-items: center; gap: 8px; color: var(--ink-3); white-space: nowrap; }
 .cardhead__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.cardhead__line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
+.cardhead__line .cardhead__name { flex: 1; min-width: 0; }
+.cardhead__line .cardhead__meta { flex: none; }
+.cardhead__subject { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--ink-2); }
+.cardhead__clip { flex: none; color: var(--ink-3); }
+.cardhead__subject-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

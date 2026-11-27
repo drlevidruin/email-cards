@@ -132,6 +132,18 @@ function isGreeting(line: string): boolean {
   return words <= 3 && !/[.!?]$/.test(line);
 }
 
+const JOIN = /,\s+(?:and|but|so)\s+/i;
+
+/** "Give Dad a hug from me, and I'll call him that morning." commits to the second part only: show that part. */
+function committingPart(sentence: string): string {
+  const m = JOIN.exec(sentence);
+  if (!m) return sentence;
+  const head = sentence.slice(0, m.index);
+  const rest = sentence.slice(m.index + m[0].length).trim();
+  if (commits(`${head}.`) || !commits(rest)) return sentence;
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 export function commitmentsIn(body: string, max = 3): string[] {
   const found: string[] = [];
   const lines = body.replace(/[‘’]/g, "'").split(/\n+/);
@@ -143,7 +155,7 @@ export function commitmentsIn(body: string, max = 3): string[] {
     if (line.split(/\s+/).length <= 2 && !/[.!?]$/.test(line) && !/^(approved|yes|confirmed|agreed|i approve)$/i.test(line)) continue;
     for (const s of sentences(line)) {
       if (!s || /\?["')\]]*$/.test(s)) continue;
-      if (commits(s)) found.push(s);
+      if (commits(s)) found.push(committingPart(s));
       if (found.length >= max) return found;
     }
   }

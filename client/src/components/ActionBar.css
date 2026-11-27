@@ -8,7 +8,7 @@
   padding: 8px 0;
 }
 .actionbar__btn {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,7 +21,9 @@
   transition: transform 120ms var(--ease), background 120ms, color 120ms;
 }
 .actionbar__btn svg { flex: none; }
-.actionbar__label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.actionbar__arrow { color: var(--ink-3); }
+.actionbar__btn.is-past .actionbar__arrow, .actionbar__btn--primary .actionbar__arrow { color: inherit; }
+.actionbar__label { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600; white-space: nowrap; }
 .actionbar__btn:active { transform: scale(0.97); }
 .actionbar__btn--primary { color: var(--accent); }
 .actionbar__btn--primary:active { color: var(--accent-press); }

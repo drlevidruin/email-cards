@@ -9,5 +9,12 @@
 .streak__dot.is-pop { animation: dot-pop 300ms var(--ease) both; }
 .streak__letter { line-height: 16px; color: var(--ink-3); font-weight: 400; }
 .streak__count { color: var(--ink-3); white-space: nowrap; }
+/* On the green field: the marks are cream, the quiet ones fade, and nothing is emerald */
+.streak--brand { align-items: flex-start; }
+.streak--brand .streak__dot--clear, .streak--brand .streak__dot--today-clear { background: var(--on-brand); }
+.streak--brand .streak__dot--today { border-color: var(--on-brand); }
+.streak--brand .streak__dot--open { background: var(--on-brand-3); }
+.streak--brand .streak__dot--rest { background: var(--on-brand-3); }
+.streak--brand .streak__letter, .streak--brand .streak__count { color: var(--on-brand-3); }
 @keyframes dot-pop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .streak__dot.is-pop { animation: none; } }

@@ -3,6 +3,7 @@ import { useDialog } from './useDialog';
 import { X } from 'lucide-react';
 import { api, isStaticDemoMode } from '../lib/api';
 import { snapshotLabel } from '../lib/snapshot';
+import { useHint } from '../lib/navHints';
 import { todoCounts } from '../lib/todo';
 import { stackCounts, type StackId } from '../lib/stacks';
 import { AccountPicker, NavRow } from './NavRows';
@@ -19,6 +20,7 @@ interface Props {
 export function Menu({ current, onClose }: Props) {
   const { data, account, resetSessions, reload } = useStore();
   const route = useRoute();
+  const hint = useHint();
 
   const box = useRef<HTMLElement>(null);
   useDialog(box, onClose);
@@ -56,26 +58,27 @@ export function Menu({ current, onClose }: Props) {
         </ul>
         <ul className="menu__group">
           {PILE_ROWS.map((s) => (
-            <NavRow key={s.id} label={s.label} count={counts[s.id]} here={onDeck && s.id === current} onClick={() => go(`/cards/${s.id}`)} />
+            <NavRow key={s.id} list hint={hint(s.id)} label={s.label} count={counts[s.id]} here={onDeck && s.id === current} onClick={() => go(`/cards/${s.id}`)} />
           ))}
         </ul>
         <ul className="menu__group menu__group--gap">
-          <NavRow label="To-do" count={open} onClick={() => go('/goals')} />
-          <NavRow label="Drafts" count={drafts} onClick={() => go('/drafts')} />
-          <NavRow label="All mail" onClick={() => go('/all')} />
+          <NavRow list hint={hint('todo')} label="To-do" count={open} onClick={() => go('/goals')} />
+          <NavRow list hint={hint('drafts')} label="Drafts" count={drafts} onClick={() => go('/drafts')} />
+          <NavRow list hint={hint('all')} label="All mail" onClick={() => go('/all')} />
         </ul>
         <div className="menu__end">
           <AccountPicker />
           <ul>
+            <NavRow label="How it works" onClick={() => go('/how')} />
             <NavRow label="Search" onClick={() => go('/ask')} />
             <NavRow label="Settings" onClick={() => go('/settings')} />
           </ul>
         </div>
         {(data.settings.demoMode || isStaticDemoMode()) && (
           <div className="t-footnote menu__demo">
-            <span>{snapshotLabel() ?? 'Demo data'}</span>
+            <span>{snapshotLabel() ?? 'Sample inbox'}</span>
             <button className="btn btn--text" onClick={() => void reset()}>
-              Reset
+              Start over
             </button>
           </div>
         )}

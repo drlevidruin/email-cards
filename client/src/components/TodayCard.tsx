@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { handledToday, useProgressLog } from '../lib/progress';
+import { isSampleInbox } from '../lib/sample';
 import { counterpart, stackCounts, type DeckItem, type StackId } from '../lib/stacks';
 import { dueParts, isUrgent } from '../lib/time';
 import { todoCounts } from '../lib/todo';
@@ -10,7 +11,10 @@ import { useStore } from '../store';
 import { DueLine } from './Hero';
 import './TodayCard.css';
 
-const dateLine = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+const dateLine = () => {
+  const date = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return isSampleInbox() ? `Sample inbox · ${date}` : date;
+};
 
 const PILES: { id: StackId; label: string }[] = [
   { id: 'new-senders', label: 'New senders' },
@@ -105,7 +109,7 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
     <section className="today" ref={root}>
       <div className="today__head">
         <p className="t-footnote today__date">{dateLine()}</p>
-        <h1 className="t-display today__count">{handled > 0 ? `${left} left` : `${left} need you`}</h1>
+        <h1 className="t-display voice today__count">{handled > 0 ? `${left} left` : `${left} ${left === 1 ? 'email needs' : 'emails need'} you`}</h1>
       </div>
       {counts && counts.dueToday > 0 && (
         <button className="today__duetoday" onClick={() => navigate('/goals')}>
@@ -117,7 +121,7 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
       <button className="today__stack" onClick={onStart} aria-label={`${handled > 0 ? 'Continue' : 'Start'}, ${left} ${left === 1 ? 'card' : 'cards'}`}>
         <span className="today__deck">
           {first && <DueLine label={first.deadlineLabel} />}
-          <span className="t-title-2 today__goal">{first ? first.distilledAsk || first.subject : firstWho}</span>
+          <span className="t-title-2 voice today__goal">{first ? first.distilledAsk || first.subject : firstWho}</span>
           <span className="today__deckfoot">
             <span className="t-footnote today__from">{firstWho}</span>
             <span className="today__cap">
@@ -162,8 +166,8 @@ export function TodayCard({ items, account, keys, onStart, onOpen }: Props) {
           {links.map((l) => (
             <li key={l.path}>
               <button className="today__link" onClick={() => navigate(l.path)}>
+                <span className="voice t-num today__link-num">{l.value}</span>
                 <span className="t-callout today__link-label">{l.label}</span>
-                <span className="t-subhead t-num today__link-value">{l.value}</span>
                 <ChevronRight size={18} strokeWidth={1.75} />
               </button>
             </li>

@@ -24,7 +24,7 @@ export function ReplyScreen({ threadId }: { threadId: string }) {
 
   // With the keyboard open the home-indicator inset is covered, so the composer drops it.
   const keyboard = !!vh && window.innerHeight - vh.h > 100;
-  const composer = <ReplyComposer key={thread.id} thread={thread} qa={route.query.get('qa') ?? undefined} draftId={route.query.get('draft') ?? undefined} desktop={desktop} fromDeck={route.query.get('from') === 'deck'} fromRead={route.query.get('from') === 'read'} fresh={route.query.get('fresh') === '1'} />;
+  const composer = <ReplyComposer key={thread.id} thread={thread} qa={route.query.get('qa') ?? undefined} draftId={route.query.get('draft') ?? undefined} desktop={desktop} fromDeck={route.query.get('from') === 'deck'} fromRead={route.query.get('from') === 'read'} fresh={route.query.get('fresh') === '1'} direct={route.query.get('direct') === '1'} own={route.query.get('own') === '1'} />;
   if (!desktop) {
     return (
       <div className={`reply reply--phone${keyboard ? ' reply--kb' : ''}`} style={vh ? { height: vh.h, top: vh.top } : undefined}>

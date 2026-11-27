@@ -18,6 +18,7 @@
 .choose__own { display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; padding: 0 4px; text-align: left; color: var(--ink-2); }
 .choose__own .t-headline { color: var(--ink); }
 
+.edit__sample { flex: none; padding: 10px 16px; text-align: center; background: var(--canvas); color: var(--ink-2); }
 .edit__rows { flex: none; padding: 0 16px; border-top: 1px solid var(--line); }
 .edit__row { display: flex; align-items: baseline; gap: 12px; min-height: 44px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .edit__label { flex: none; width: 56px; color: var(--ink-3); }

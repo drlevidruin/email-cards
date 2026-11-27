@@ -7,7 +7,7 @@
 .composer__send { grid-column: 3; justify-self: end; display: flex; align-items: center; min-width: 44px; min-height: 44px; padding: 0 4px; }
 .composer__send-pill { display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: var(--radius-m); background: var(--accent); color: #fff; white-space: nowrap; box-shadow: var(--shadow-inset), var(--shadow-btn); }
 .composer__send:active .composer__send-pill { background: var(--accent-press); }
-.composer__send:disabled .composer__send-pill { opacity: 0.4; }
+.composer__send:disabled .composer__send-pill, .composer__send[aria-disabled='true'] .composer__send-pill { opacity: 0.4; }
 .composer__bars { display: flex; flex-direction: column; gap: 12px; width: 100%; padding-top: 12px; }
 .composer__bars span { display: block; height: 16px; border-radius: 8px; background: var(--surface-2); }
 .composer__ask { flex: none; position: relative; margin: 8px 0 calc(12px + env(safe-area-inset-bottom)); }

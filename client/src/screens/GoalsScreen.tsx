@@ -139,10 +139,10 @@ export function GoalsScreen() {
                   <div className="todo__row">
                     <div className="todo__text todo__text--static">
                       <span className="t-callout todo__name">{row.title}</span>
-                      {meta(row, row.nudged ? ['Nudged'] : [])}
+                      {meta(row, row.nudged ? ['Reminded'] : [])}
                     </div>
                     <button className="t-callout todo__nudge" onClick={() => void nudge(row)}>
-                      Nudge
+                      Draft reminder
                     </button>
                   </div>
                 </li>

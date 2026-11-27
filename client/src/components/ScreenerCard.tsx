@@ -23,7 +23,7 @@ export function ScreenerCard({ sender, account, overlay }: Props) {
       <SenderHero sender={sender} />
       <hr className="card__rule" />
       <h2 className="card__subject t-headline">{full ? full.subject : sender.sampleSubject}</h2>
-      <CardBody text={first ? first.bodyText : sender.sampleSnippet} attachments={first?.attachments ?? []} />
+      <CardBody text={first ? first.bodyText : sender.sampleSnippet} />
       {overlay}
     </article>
   );

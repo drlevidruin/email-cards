@@ -13,7 +13,7 @@
 .menu__brand { color: var(--ink); }
 .menu__group { margin-top: 16px; }
 .menu__group--gap { margin-top: 24px; }
-.menu .navrow, .menu .acct__item { height: 44px; min-height: 44px; }
+.menu .navrow, .menu .acct__item { min-height: 44px; }
 .menu__end { display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 16px; }
 .menu__demo { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 0 0 0 10px; color: var(--ink-3); }
 

@@ -54,6 +54,16 @@ export function movesLine(moves: [string, number][]): string {
     .join(' \u00B7 ');
 }
 
+/** The title of a pile that is empty and was not worked today. */
+const EMPTY_TITLE: Record<StackId, string> = {
+  'needs-you': 'All clear.',
+  'new-senders': 'No new senders.',
+  newsletters: 'No newsletters waiting.',
+  receipts: 'No receipts waiting.',
+  bookmarked: 'All clear.',
+  later: 'Nothing saved for later.',
+};
+
 /** What shows when a stack is empty: the pile you just cleared, the honest count of what is still on your list, and the way on. */
 export function FinishCard({ stack, account, celebrate, dayClear, next }: Props) {
   useProgressLog();
@@ -68,24 +78,31 @@ export function FinishCard({ stack, account, celebrate, dayClear, next }: Props)
   const bulk = moves.length === 1 && moves[0][0] === 'Archived' ? moves[0][1] : 0;
   const noun = stack === 'receipts' ? 'receipt' : 'newsletter';
   const todoRow = !!counts && counts.open > 0;
+  // A pile nobody worked today is empty, not cleared: it says so plainly, with no week and no cheer. Needs you is always the full screen.
+  const worked = stack === 'needs-you' || handled > 0 || moves.length > 0;
   return (
     <section className="finish">
       <div className="finish__body">
-        <h1 className="t-display finish__title">All clear</h1>
+        <h1 className="voice finish__title">{worked ? 'All clear.' : EMPTY_TITLE[stack]}</h1>
         {bulk > 0 && <p className="t-subhead finish__stats">{`${bulk} ${noun}${bulk === 1 ? '' : 's'} archived`}</p>}
         {bulk === 0 && handled > 0 && <p className="t-subhead finish__stats">{`${handled} handled in ${duration(mins)}`}</p>}
         {bulk === 0 && moves.length > 0 && <p className="t-footnote finish__pace">{movesLine(moves)}</p>}
       </div>
-      <div className="finish__week">
-        <StreakStrip pop={celebrate && stack === 'needs-you' && dayClear} />
-      </div>
+      {worked && (
+        <div className="finish__week">
+          <StreakStrip brand pop={celebrate && stack === 'needs-you' && dayClear} />
+        </div>
+      )}
       {(todoRow || rest.length > 0) && (
         <ul className="finish__list">
           {todoRow && (
             <li>
               <button className="finish__row" onClick={() => navigate('/goals')}>
-                <span className="t-callout finish__row-label">Still on your To-do</span>
-                <span className="t-subhead t-num finish__row-count">{bits ? `${counts?.open} · ${bits}` : counts?.open}</span>
+                <span className="voice t-num finish__row-num">{counts?.open}</span>
+                <span className="finish__row-text">
+                  <span className="t-callout finish__row-label">Still on your To-do</span>
+                  {bits && <span className="t-footnote finish__row-bits">{bits}</span>}
+                </span>
                 <ChevronRight size={18} strokeWidth={1.75} />
               </button>
             </li>
@@ -93,8 +110,10 @@ export function FinishCard({ stack, account, celebrate, dayClear, next }: Props)
           {rest.map((row) => (
             <li key={row.path}>
               <button className="finish__row" onClick={() => navigate(row.path)}>
-                <span className="t-callout finish__row-label">{row.label}</span>
-                {row.count !== undefined && <span className="t-subhead t-num finish__row-count">{row.count}</span>}
+                <span className="voice t-num finish__row-num">{row.count ?? ''}</span>
+                <span className="finish__row-text">
+                  <span className="t-callout finish__row-label">{row.label}</span>
+                </span>
                 <ChevronRight size={18} strokeWidth={1.75} />
               </button>
             </li>

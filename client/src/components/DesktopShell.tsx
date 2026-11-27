@@ -17,6 +17,7 @@ function where(head: string | undefined, arg: string | undefined, from: string |
     case 'all': return { here: 'all', deck: null };
     case 'ask': return { here: 'search', deck: null };
     case 'settings': return { here: 'settings', deck: null };
+    case 'how': return { here: 'how', deck: null };
     default: return { here: null, deck: null };
   }
 }

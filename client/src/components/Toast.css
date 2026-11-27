@@ -39,6 +39,9 @@
   to { transform: scaleX(0); }
 }
 .toast__text { flex: 1; min-width: 0; }
+.toast__word { white-space: nowrap; }
+.toast__note { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.72); }
+.toast--top { width: 100%; max-width: 420px; padding: 8px 14px; gap: 12px; }
 .toast__undo {
   flex: none;
   align-self: stretch;

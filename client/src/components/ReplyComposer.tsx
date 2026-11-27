@@ -9,6 +9,7 @@ import { goBack, navigate } from '../router';
 import { useStore } from '../store';
 import { useInDeck } from './useThreadActions';
 import { NOT_SAVED } from '../storeActions';
+import { dropMine, myDrafts, saveMine } from '../lib/myDraft';
 import { ReplyChoose } from './ReplyChoose';
 import { ReplyEdit } from './ReplyEdit';
 import './ReplyComposer.css';
@@ -19,17 +20,33 @@ function toneFor(kind: string): DraftTone {
   return 'direct';
 }
 
-export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead, fresh }: { thread: EmailThread; qa?: string; draftId?: string; desktop: boolean; fromDeck?: boolean; fromRead?: boolean; fresh?: boolean }) {
+interface Props {
+  thread: EmailThread;
+  qa?: string;
+  draftId?: string;
+  desktop: boolean;
+  fromDeck?: boolean;
+  fromRead?: boolean;
+  fresh?: boolean;
+  /** Opened straight from an answer row on a card: it starts in the editor, and Cancel returns to the deck. */
+  direct?: boolean;
+  /** Opened from `Write my own` on a card: the editor starts with your unsent draft for this email, or empty. */
+  own?: boolean;
+}
+
+export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead, fresh, direct, own }: Props) {
   const store = useStore();
   const inDeck = useInDeck(thread);
   const chips = replyActions(thread);
   const to = counterpart(thread);
   const first = firstName(to.name);
   // Choose shows every suggested reply in full; Edit is the one reply you may change and send. A saved draft opens straight in Edit.
-  const [mode, setMode] = useState<'choose' | 'edit'>(draftId ? 'edit' : 'choose');
-  const [body, setBody] = useState('');
+  const wanted = chips.find((c) => c.id === qa);
+  const [mode, setMode] = useState<'choose' | 'edit'>(draftId || (direct && (own || wanted)) ? 'edit' : 'choose');
+  // An answer from a card row is in the editor from the first frame
+  const [body, setBody] = useState(direct && wanted?.draftBody ? wanted.draftBody : '');
   // The `[blanks]` the suggestion or agent draft put in, word for word. Only these hold Send back; brackets you type never do.
-  const [blanks, setBlanks] = useState<string[]>([]);
+  const [blanks, setBlanks] = useState<string[]>(() => (direct && wanted?.draftBody ? blanksOf(wanted.draftBody) : []));
   // What you changed by hand: shown on Choose as `Your draft`, and saved to Drafts if you leave.
   const [yours, setYours] = useState('');
   const [drafting, setDrafting] = useState(false);
@@ -44,6 +61,8 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
   const loaded = useRef(false);
   // The id of a draft resumed from Drafts: sent or replaced, it must not stay behind.
   const resumedId = useRef('');
+  // The text of your own unsent draft for this email, as stored. Leaving with exactly this saves nothing.
+  const mineText = useRef('');
   yoursRef.current = yours;
 
   const subject = /^re:/i.test(thread.subject) ? thread.subject : `Re: ${cleanSubject(thread.subject)}`;
@@ -101,7 +120,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
   const edit = (text: string) => {
     setBody(text);
     // Only what you typed counts as yours; picking a suggestion never overwrites it
-    setYours(text.trim() && text.trim() !== baseline.current.trim() ? text : '');
+    setYours(text.trim() && text.trim() !== baseline.current.trim() ? text : mineText.current);
   };
 
   useEffect(() => {
@@ -118,7 +137,10 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
           loaded.current = !fresh;
           if (!fresh) resumedId.current = d.id;
           // Only a draft you wrote is `Your draft`; an agent draft stays the agent's until you change it
-          if (!fresh && d.createdBy === 'user') setYours(d.bodyText);
+          if (!fresh && d.createdBy === 'user') {
+            setYours(d.bodyText);
+            mineText.current = d.bodyText.trim();
+          }
           // An agent draft's blanks hold Send; in your own draft only the blanks a suggestion left count
           const known = new Set(chips.flatMap((c) => blanksOf(c.draftBody ?? '')));
           setBlanks(d.createdBy === 'user' ? blanksOf(d.bodyText).filter((b) => known.has(b)) : blanksOf(d.bodyText));
@@ -130,8 +152,18 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
         .finally(() => setDrafting(false));
       return;
     }
-    const wanted = chips.find((c) => c.id === qa);
+    // Every other route looks for your own unsent draft of this email. A ready answer from a card opens at once and only remembers it.
+    const hold = !wanted;
     if (wanted) pick(wanted);
+    else setDrafting(true);
+    void myDrafts(thread.id)
+      .then(([mine]) => {
+        mineText.current = mine?.bodyText.trim() ?? '';
+        if (mine && !(direct && wanted) && !yoursRef.current) setYours(mine.bodyText.trim());
+        if (own && hold) startFrom(mine?.bodyText ?? '');
+      })
+      .catch(() => store.showToast(NOT_SAVED))
+      .finally(() => hold && setDrafting(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -143,24 +175,24 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       const text = yoursRef.current.trim();
       const d = draft.current;
       draft.current = null;
-      if (text) {
-        const id = d?.id ?? (resumedId.current || undefined);
-        const save = id
-          ? api.updateDraft(id, { bodyText: text, status: 'draft' })
-          : api.createDraft({
-              threadId: thread.id,
-              accountId: thread.accountId,
-              toEmails: [to.email],
-              subject,
-              bodyText: text,
-              createdBy: 'user',
-              status: 'draft',
-            });
-        void save.then(() => store.refresh()).catch(() => undefined);
+      // A draft opened from Drafts or To-do is changed in place
+      const inPlace = draftId ? d?.id ?? resumedId.current : '';
+      // Words left exactly as stored are not saved again, and nothing is said
+      const changed = text !== mineText.current;
+      if (text && inPlace && changed) {
+        void api.updateDraft(inPlace, { bodyText: text, status: 'draft' }).then(() => store.refresh()).catch(() => undefined);
         store.showToast('Saved to Drafts');
-      } else if (d && !loaded.current) {
-        void api.deleteDraft(d.id).catch(() => undefined);
+      } else if (text && !inPlace) {
+        // One draft of yours per email: the text goes into the one there is, or becomes it
+        void saveMine(thread, to.email, subject, text)
+          .then((saved) => {
+            if (saved) store.showToast('Saved to Drafts');
+            return store.refresh();
+          })
+          .catch(() => undefined);
       }
+      // A draft the agent wrote for this visit is not yours unless you changed it, and then it is now in yours
+      if (d && !loaded.current && !(text && inPlace && changed)) void api.deleteDraft(d.id).catch(() => undefined);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -186,16 +218,19 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
         await api.updateDraft(d.id, { bodyText: text });
       }
       const res = await api.sendDraft(d.id);
-      if (!loaded.current) await api.archiveThread(thread.id);
       sent.current = true;
+      if (!loaded.current) await api.archiveThread(thread.id);
       const fromDrafts = !!resumedId.current;
       if (resumedId.current && resumedId.current !== d.id) await api.deleteDraft(resumedId.current).catch(() => undefined);
+      await dropMine(thread.id, d.id).catch(() => undefined);
       const held = res.status === 'held_shabbos' || !!res.heldByShabbos;
       if (fromDeck && !loaded.current) {
         // The deck flies the card off; the open thread must still reload with the reply in it.
         store.markReplied(thread, first, held, true);
         clearThreadCache();
         goBack();
+        // Drafts reads the store: it must not still list a draft that was just removed
+        void store.refresh();
       } else {
         // Read screen replies in the current deck count toward it, but no card is on screen to fly off.
         store.markReplied(thread, first, held, inDeck, true);
@@ -220,7 +255,10 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
     const onKey = (e: KeyboardEvent) => {
       const typing = e.target instanceof HTMLElement && !!e.target.closest('input, textarea');
       if (e.key === 'Escape') {
-        if (modeRef.current === 'edit' && !sending) setMode('choose');
+        if (modeRef.current === 'edit' && !sending) {
+          if (direct) goBack();
+          else setMode('choose');
+        }
         else if (modeRef.current === 'choose') goBack();
       } else if (modeRef.current === 'edit') {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -233,7 +271,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       } else if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && !drafting) {
         const n = Number(e.key);
         if (n >= 1 && n <= Math.min(3, chips.length)) pick(chips[n - 1]);
-        else if (e.key.toLowerCase() === 'w') startFrom('');
+        else if (e.key.toLowerCase() === 'w') startFrom(yoursRef.current);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -252,7 +290,8 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
         sending={sending}
         desktop={desktop}
         onBody={edit}
-        onBack={() => setMode('choose')}
+        cancel={!!direct}
+        onBack={() => (direct ? goBack() : setMode('choose'))}
         onSend={() => void send()}
       />
     );
@@ -268,7 +307,7 @@ export function ReplyComposer({ thread, qa, draftId, desktop, fromDeck, fromRead
       drafting={drafting}
       onPick={pick}
       onYours={() => startFrom(yoursRef.current)}
-      onOwn={() => startFrom('')}
+      onOwn={() => startFrom(yoursRef.current)}
       onAsk={(instruction) => void generate({ instruction })}
     />
   );
