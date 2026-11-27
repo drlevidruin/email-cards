@@ -127,6 +127,8 @@ export interface EmailThread {
   historyId?: string;
   /** Live Gmail only: the addresses (lower case) whose messages in this thread are a mailing, an update or an automatic sender. */
   companySenders?: string[];
+  /** The addresses (lower case) that sent a message in this thread when the owner also wrote in it. Set whenever the list is built, from the stored messages, so grouping never depends on which threads were opened. */
+  talkedTo?: string[];
   /** Live Gmail only: the parser version that read this thread. */
   parseVersion?: number;
   /** Live Gmail only: when the owner marked this thread read or unread in the app. The mark holds until a newer message arrives; without it, Gmail decides. */

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Archive, Bell, BellOff, ChevronLeft, Mail, MailOpen, Pin, PinOff, ArchiveRestore, Search, Settings, SquarePen } from 'lucide-react';
 import { goBack, navigate } from '../router';
 import { useStore } from '../store';
 import { buildChats, type Chat } from '../lib/chats';
 import { api } from '../lib/api';
-import { archiveChat, setUnread, toggleMute, togglePin, unarchiveChat, useChatPrefs } from '../lib/chatPrefs';
+import { adoptCompanyChats, archiveChat, setUnread, toggleMute, togglePin, unarchiveChat, useChatPrefs } from '../lib/chatPrefs';
 import { isArchived, sortChats } from '../lib/chatPrefsCore';
 import { useDrafts } from '../lib/chatDraft';
 import { useLoadedCount } from '../lib/useChatThreads';
@@ -61,6 +61,10 @@ export function ChatsScreen({ activeKey, archivedView }: { activeKey?: string; a
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, loaded]
   );
+  // Settings saved on a sender's address before its company became one chat move to the company chat, before the first paint
+  useLayoutEffect(() => {
+    adoptCompanyChats(chats.map((c) => ({ key: c.key, company: !!c.isCompany, addresses: c.people.map((p) => p.email) })));
+  }, [chats]);
   const archivedOf = (c: Chat) => isArchived(prefs, c.key, c.lastAt);
   const live = useMemo(
     () => chats.filter((c) => !isArchived(prefs, c.key, c.lastAt)),

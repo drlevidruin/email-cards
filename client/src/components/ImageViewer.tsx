@@ -414,7 +414,7 @@ export function ImageViewer({ pictures, index, onIndex, onClose }: { pictures: E
       return false;
     }
   }, [pic]);
-  const shareable = canShareType && !isSvg;
+  const shareable = canShareType && !isSvg && !pic?.remoteSrc;
   // The Blob is fetched when the picture shows, so the tap itself has nothing to wait for
   useEffect(() => {
     if (!pic || pictureBlob(pic)) return;

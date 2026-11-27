@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isSnapshot } from './snapshot';
 import { isLiveMode, LIVE_KEYS } from './liveMode';
-import { canPin, emptyPrefs, movePrefs, parsePrefs, type ChatPrefs } from './chatPrefsCore';
+import { adoptCompanyPrefs, canPin, emptyPrefs, movePrefs, parsePrefs, type ChatPrefs } from './chatPrefsCore';
 
 /** Pin, mute, archive and the hand-set unread mark for each chat. Kept in this browser only. In a saved copy and in live mode they use their own keys. */
 const key = () => (isLiveMode() ? LIVE_KEYS.prefs : isSnapshot() ? 'email_cards_snapshot_prefs_v1' : 'email_cards_chat_prefs_v1');
@@ -49,6 +49,12 @@ export function moveChatPrefs(from: string, to: string, toExists = false): void 
   const p = load();
   if (!(from in p.pinned) && !(from in p.muted)) return;
   commit(movePrefs(p, from, to, toExists));
+}
+
+/** Settings saved on a company's sender addresses move to its company chat, once. */
+export function adoptCompanyChats(chats: { key: string; company: boolean; addresses: string[] }[]): void {
+  const next = adoptCompanyPrefs(load(), chats);
+  if (next) commit(next);
 }
 
 export function toggleMute(k: string): void {

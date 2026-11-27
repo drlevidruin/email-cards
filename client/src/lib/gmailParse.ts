@@ -38,7 +38,7 @@ export interface LiveAccountInfo {
 }
 
 /** Raised whenever the parser starts saving something new, so older saved threads are read once more. */
-export const PARSE_VERSION = 2;
+export const PARSE_VERSION = 3;
 
 /** The history id a sync may trust for a saved thread, or a value that never matches when it was parsed by an older parser. */
 export function trustedHistory(version: number | undefined, historyId: string | undefined): string | undefined {
@@ -79,7 +79,11 @@ function headerMap(headers: Headers): Record<string, string> {
 
 /** base64url (or plain base64, with or without padding) to bytes. Bad input gives what could be read. */
 export function base64urlBytes(data: string): Uint8Array {
-  const clean = data.replace(/[\r\n\s]/g, '').replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, '');
+  const spaced = data.replace(/[\r\n\s]/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  // Padding is cut by walking back: a pattern anchored at the end is slow on a long run of "="
+  let stop = spaced.length;
+  while (stop > 0 && spaced[stop - 1] === '=') stop -= 1;
+  const clean = spaced.slice(0, stop);
   const padded = clean + '='.repeat((4 - (clean.length % 4)) % 4);
   try {
     const raw = atob(padded);
@@ -258,7 +262,7 @@ export function parseAddresses(value: string | undefined): Addr[] {
   for (const raw of splitTop(value)) {
     const { text } = splitComments(raw);
     // A group label ("Team: a@b") is dropped
-    const piece = text.replace(/^\s*[^<>"@:]+:\s*(?=\S)/, '').trim();
+    const piece = text.trimStart().replace(/^[^<>"@:\s][^<>"@:]*:\s*(?=\S)/, '').trim();
     if (!piece) continue;
     let email = '';
     let name = '';
@@ -440,6 +444,40 @@ export interface BucketInput {
   labels: string[];
   /** Header values of the newest message, by lowercase name. */
   headers: Record<string, string>;
+  /** The message has a text/calendar part (an invitation). */
+  calendar?: boolean;
+}
+
+/** Whether a message part tree holds a text/calendar part. */
+export function hasCalendarPart(part: RawPart | undefined): boolean {
+  if (!part) return false;
+  if ((part.mimeType ?? '').toLowerCase() === 'text/calendar') return true;
+  return (part.parts ?? []).some(hasCalendarPart);
+}
+
+/**
+ * Whether a message from someone else is evidence that its sender is a company. A no-reply style address always is. Otherwise it
+ * needs a mailing sign (List-Unsubscribe, Precedence bulk or junk, a promotions, updates or social tab) and must not be an
+ * automatic reply, a discussion-list post or an invitation, which people send from their own address.
+ */
+export function companyEvidence(m: BucketInput): boolean {
+  const local = m.fromEmail.toLowerCase().split('@')[0];
+  if (BULK_SENDER.test(local + '@')) return true;
+  const h = m.headers;
+  const prec = (h['precedence'] ?? '').trim().toLowerCase();
+  const mailing =
+    h['list-unsubscribe'] !== undefined ||
+    /^(bulk|junk)\b/.test(prec) ||
+    m.labels.some((l) => l === 'CATEGORY_PROMOTIONS' || l === 'CATEGORY_UPDATES' || l === 'CATEGORY_SOCIAL');
+  if (!mailing) return false;
+  const auto = (h['auto-submitted'] ?? '').trim().toLowerCase();
+  if (auto && auto !== 'no') return false;
+  if (h['x-autoreply'] !== undefined || h['x-autorespond'] !== undefined || /^auto[-_]?reply\b/.test(prec)) return false;
+  const post = h['list-post'];
+  if (post !== undefined && post.trim().toUpperCase() !== 'NO') return false;
+  if (m.labels.includes('CATEGORY_FORUMS')) return false;
+  if (m.calendar) return false;
+  return true;
 }
 
 /** Whether the newest message is automatic or a mailing: a list header, a bulk precedence, an automatic sender, or a promotions, social or forums tab. */
@@ -555,8 +593,8 @@ export function parseThread(raw: RawThread, account: LiveAccountInfo, mine: stri
   rawMsgs.forEach((r, i) => {
     const m = messages[i];
     if (m.isOutbound || !m.fromEmail) return;
-    const input = { outbound: false, fromEmail: m.fromEmail, labels: r.labelIds ?? [], headers: headerMap(r.payload?.headers) };
-    if (isBulk(input) || input.labels.includes('CATEGORY_UPDATES')) automatic.add(m.fromEmail.toLowerCase());
+    const input = { outbound: false, fromEmail: m.fromEmail, labels: r.labelIds ?? [], headers: headerMap(r.payload?.headers), calendar: hasCalendarPart(r.payload) };
+    if (companyEvidence(input)) automatic.add(m.fromEmail.toLowerCase());
   });
   const kind = threadBucket(
     rawMsgs.map((r, i) => ({ outbound: messages[i].isOutbound, fromEmail: messages[i].fromEmail, labels: r.labelIds ?? [], headers: headerMap(r.payload?.headers) })),

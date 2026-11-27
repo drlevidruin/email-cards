@@ -121,6 +121,23 @@ function computeShabbosStatus(
   };
 }
 
+/** The list's threads, each with `talkedTo`: the addresses that wrote in a thread where the owner also wrote. Built from the stored messages every time. */
+function withTalkedTo(store: DemoStore, threads: EmailThread[]): EmailThread[] {
+  const by = new Map<string, EmailMessage[]>();
+  for (const m of store.messages) {
+    const l = by.get(m.threadId);
+    if (l) l.push(m);
+    else by.set(m.threadId, [m]);
+  }
+  return threads.map((t) => {
+    const msgs = by.get(t.id) ?? [];
+    const talked = msgs.some((m) => m.isOutbound)
+      ? [...new Set(msgs.filter((m) => !m.isOutbound && m.fromEmail).map((m) => m.fromEmail.toLowerCase()))]
+      : [];
+    return { ...t, talkedTo: talked };
+  });
+}
+
 function recomputeUnreadCounts(store: DemoStore): void {
   for (const acc of store.accounts) {
     acc.unreadCount = store.threads.filter(
@@ -486,7 +503,7 @@ export const staticDemoApi = {
     const store = loadStore();
     return deepClone({
       accounts: store.accounts,
-      threads: store.threads,
+      threads: withTalkedTo(store, store.threads),
       commitments: store.commitments,
       screener: store.screener,
       tasks: store.tasks,
@@ -504,7 +521,7 @@ export const staticDemoApi = {
 
   getThreads: async (params?: { accountId?: string; bucket?: string; q?: string }): Promise<EmailThread[]> => {
     const store = loadStore();
-    let list = store.threads;
+    let list = withTalkedTo(store, store.threads);
     if (params?.accountId && params.accountId !== 'all') {
       list = list.filter((t) => t.accountId === params.accountId);
     }

@@ -61,6 +61,39 @@ export function movePrefs(p: ChatPrefs, from: string, to: string, toExists = fal
   return n;
 }
 
+/**
+ * Settings saved on a sender's own address before the senders of one company became a single chat (`o:domain`) move to the company
+ * key. A company chat that has settings of its own keeps them; its old address keys are cleared either way, so a later unpin or
+ * unmute sticks. The company chat is pinned when any address was, muted or archived only when every sender address was (mail the
+ * owner did not hide is never hidden). Returns null when nothing changed.
+ */
+export function adoptCompanyPrefs(p: ChatPrefs, chats: { key: string; company: boolean; addresses: string[] }[]): ChatPrefs | null {
+  let n: ChatPrefs | null = null;
+  const cur = () => (n ??= { pinned: { ...p.pinned }, muted: { ...p.muted }, unread: { ...p.unread }, archived: { ...p.archived } });
+  for (const c of chats) {
+    if (!c.company) continue;
+    const addrs = [...new Set(c.addresses.map((a) => a.toLowerCase()).filter((a) => a !== '' && a !== c.key))];
+    const touched = addrs.filter((a) => a in p.pinned || a in p.muted || a in p.unread || a in p.archived);
+    if (touched.length === 0) continue;
+    const own = c.key in p.pinned || c.key in p.muted || c.key in p.unread || c.key in p.archived;
+    const out = cur();
+    if (!own) {
+      const pins = addrs.filter((a) => a in p.pinned).map((a) => p.pinned[a]);
+      if (pins.length > 0) out.pinned[c.key] = Math.max(...pins);
+      if (addrs.every((a) => a in p.muted)) out.muted[c.key] = true;
+      if (addrs.every((a) => a in p.archived)) out.archived[c.key] = Math.min(...addrs.map((a) => p.archived[a]));
+      if (addrs.some((a) => a in p.unread)) out.unread[c.key] = true;
+    }
+    for (const a of touched) {
+      delete out.pinned[a];
+      delete out.muted[a];
+      delete out.unread[a];
+      delete out.archived[a];
+    }
+  }
+  return n;
+}
+
 /** Pinned chats first (the one pinned last on top), then the rest, newest first. */
 export function sortChats<T extends { key: string; lastAt: string }>(chats: T[], p: ChatPrefs): T[] {
   const t = (c: T) => {

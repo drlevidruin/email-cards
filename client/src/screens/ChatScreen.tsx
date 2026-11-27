@@ -5,7 +5,7 @@ import { goBack, navigate, cameFrom } from '../router';
 import { useStore } from '../store';
 import { NOT_SAVED } from '../storeActions';
 import { bubbleText, buildChats, isUpdateThread, keyOf, openAsk, replyThread, type Chat } from '../lib/chats';
-import { groupName, type Person } from '../lib/people';
+import { groupName, othersOf, type Person } from '../lib/people';
 import { replyPlan, type Recipients } from '../lib/recipients';
 import { fullOf, useLoadedCount } from '../lib/useChatThreads';
 import { clearThreadCache, loadThread, peekThread } from '../lib/threadCache';
@@ -18,7 +18,7 @@ import { dropMine } from '../lib/myDraft';
 import { getDraft, setDraft } from '../lib/chatDraft';
 import { moveChatPrefs } from '../lib/chatPrefs';
 import { linkify } from '../lib/linkify';
-import { cleanEmailText } from '../lib/cleanText';
+import { cleanEmailText, realSubject } from '../lib/cleanText';
 import { firstName } from '../lib/utils';
 import type { EmailMessage, EmailThread } from '../lib/types';
 import { Avatar, ChatAvatar, hueOf } from '../components/Avatar';
@@ -125,9 +125,12 @@ function Bubble({ item, first, fresh, who, whoColor, face, mark, whole, setRef, 
   const [view, setView] = useState<number | null>(null);
   usePictureVersion();
   const pictures = msg.attachments.filter(isPicture);
-  const cleaned = item.held ? msg.bodyText : whole ? cleanEmailText(msg.bodyText).trim() : bubbleText(msg.bodyText, msg.fromName);
-  // An email with no words left shows its subject, unless it carries pictures
-  const full = cleaned.trim() || msg.attachments.some(isPicture) ? cleaned : msg.subject || '';
+  const cleaned = useMemo(
+    () => (item.held ? msg.bodyText : whole ? cleanEmailText(msg.bodyText).trim() : bubbleText(msg.bodyText, msg.fromName)),
+    [item.held, whole, msg.bodyText, msg.fromName]
+  );
+  // An email with no words left shows its subject, pictures or not
+  const full = cleaned.trim() ? cleaned : realSubject(msg.subject);
   // Fold by rendered lines: a text more than four lines taller than its 12-line box gets Read more; a shorter overflow is shown whole
   useLayoutEffect(() => {
     const el = body.current;
@@ -440,8 +443,10 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     setSending(true);
     try {
       // Does a chat already have the key this send may move the thread to? Looked at before the send changes anything.
-      const willAdd = [...sendTo.to, ...sendTo.cc].filter((a) => !chat.people.some((p) => p.email.toLowerCase() === a.toLowerCase()));
-      const newKeyTaken = willAdd.length > 0 && !!data && buildChats(data, peekThread, Date.now()).some((c) => c.key === keyOf([...chat.people, ...willAdd.map((email) => ({ email }))]));
+      // A company chat holds every sender of the company: the new key is built from this thread's own people, not from all of them
+      const basePeople = chat.isCompany ? othersOf(target, mine) : chat.people;
+      const willAdd = [...sendTo.to, ...sendTo.cc].filter((a) => !basePeople.some((p) => p.email.toLowerCase() === a.toLowerCase()));
+      const newKeyTaken = willAdd.length > 0 && !!data && buildChats(data, peekThread, Date.now()).some((c) => c.key === keyOf([...basePeople, ...willAdd.map((email) => ({ email }))]));
       const subject = /^re:/i.test(target.subject) ? target.subject : `Re: ${cleanSubject(target.subject)}`;
       let d: { id: string };
       let res: { status?: string; heldByShabbos?: boolean };
@@ -487,11 +492,11 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
       clearThreadCache();
       await store.refresh().catch(() => undefined);
       // Someone new on To or Cc: the thread now belongs to the group chat that includes them
-      const added = [...went.to, ...went.cc].filter((a) => !chat.people.some((p) => p.email.toLowerCase() === a.toLowerCase()));
+      const added = [...went.to, ...went.cc].filter((a) => !basePeople.some((p) => p.email.toLowerCase() === a.toLowerCase()));
       // Let the refreshed chats draw first, so the new chat is there when the route changes
       if (added.length > 0) {
         await new Promise((done) => requestAnimationFrame(() => done(null)));
-        const newKey = keyOf([...chat.people, ...added.map((email) => ({ email }))]);
+        const newKey = keyOf([...basePeople, ...added.map((email) => ({ email }))]);
         // Nothing else is left under the old key, and the email was really sent (a held one adds nobody yet): its pin and mute move to the new one
         if (!hold && chat.threads.every((t) => t.id === target.id)) moveChatPrefs(chat.key, newKey, newKeyTaken);
         navigate(`/chat/${encodeURIComponent(newKey)}`, { replace: true });

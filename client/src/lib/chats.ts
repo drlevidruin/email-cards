@@ -8,7 +8,7 @@ import { skim } from './skim';
 import { firstName } from './utils';
 import { chatCategory, looksBulk, type Category } from './categories';
 import { companyName, groupThreads } from './orgChats';
-import { cleanEmailText } from './cleanText';
+import { cleanEmailText, realSubject, shortenLinks } from './cleanText';
 import { isLiveMode } from './liveMode';
 
 export interface Chat {
@@ -127,11 +127,11 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
     const newest = threads[threads.length - 1];
     const msg = newest ? newestOf(full(newest.id) ?? newest) : undefined;
     const words = msg ? bubbleText(cutText(msg.bodyText, 4000), msg.fromName) : newest?.snippet ?? sender?.sampleSnippet ?? '';
-    const text = (!words.trim() && msg ? attachmentPreview(msg) : words) || (newest ? oneLine(newest.subject || '') : '');
+    const text = (!words.trim() && msg ? attachmentPreview(msg) : words) || (newest ? oneLine(realSubject(newest.subject)) : '');
     const lastMine = !!msg?.isOutbound;
     const who = isGroup && msg && !lastMine ? `${firstName(msg.fromName || msg.fromEmail)}: ` : '';
     // A company chat shows the subject of its newest email; its body only when there is no subject
-    const subject = g.company && newest ? oneLine(newest.subject || msg?.subject || '') : '';
+    const subject = g.company && newest ? oneLine(realSubject(newest.subject) || realSubject(msg?.subject)) : '';
     const newestFirst = [...threads].reverse();
     const people = g.company ? orderedSenders(g.people, newestFirst) : g.people;
     const name = isGroup
@@ -147,7 +147,7 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
       isGroup,
       threads,
       lastAt: newest?.lastMessageAt ?? sender?.firstSeenAt ?? '',
-      preview: subject || oneLine(who + text),
+      preview: subject || oneLine(shortenLinks(who + text)),
       lastMine,
       unread: threads.filter((t) => t.isUnread).length,
       needsReply: !g.company && (!!openAsk(threads) || (isLiveMode() && threads.some(liveNeedsReply))),

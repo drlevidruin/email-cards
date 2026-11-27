@@ -1,24 +1,22 @@
 import { Fragment, type ReactNode } from 'react';
-import { aloneOnLine, shortLink } from './cleanText';
+import { parseLink, shortLink, trimAddress } from './cleanText';
 
 const ADDRESS = /https?:\/\/[^\s<>"]+/gi;
-const TRAIL_MARKS = '.,)!?;:';
 
-/** Plain text cut into text pieces and links. Only http:// and https:// addresses become links; a closing mark after one stays text. */
+/** Plain text cut into text pieces and links. Only http:// and https:// addresses the browser can read become links; each shows its short label (the real host and the first part of the path) and opens the full address. A closing mark after one stays text. */
 export function linkify(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];
   let at = 0;
   let n = 0;
   for (const m of text.matchAll(ADDRESS)) {
     const start = m.index ?? 0;
-    // Trim the end with a loop: a pattern anchored at the end is slow on a very long run of marks
-    let href = m[0];
-    while (href.length > 0 && TRAIL_MARKS.includes(href[href.length - 1])) href = href.slice(0, -1);
-    if (!/^https?:\/\/[^\s/]/i.test(href)) continue;
+    const href = trimAddress(m[0]);
+    const url = href ? parseLink(href) : null;
+    if (!href || !url) continue;
     if (start > at) out.push(<Fragment key={`${keyBase}-t${n}`}>{text.slice(at, start)}</Fragment>);
     out.push(
-      <a key={`${keyBase}-a${n}`} className="bub__link" href={href} target="_blank" rel="noopener noreferrer">
-        {aloneOnLine(text, start, start + href.length) ? shortLink(href) : href}
+      <a key={`${keyBase}-a${n}`} className="bub__link" href={url.href} target="_blank" rel="noopener noreferrer">
+        {shortLink(href)}
       </a>
     );
     at = start + href.length;
