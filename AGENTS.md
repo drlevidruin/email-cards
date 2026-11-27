@@ -1,5 +1,66 @@
 # Email Cards: notes for any agent working here
 
+## Handoff, 11A (2026-11-27): the app is a chat
+
+- Levi: "Scrap this instead. Let's make an email interface that looks like WhatsApp, or like a chat, so instead of it just being separate emails like that, each email is like a different chat message. It looks that way. So it's through email, but I'm actually chatting."
+- The home is `#/chats`, a list with one chat per person (`lib/chats.ts` groups every loaded thread by the other person's address, handled ones too, and adds pending new senders as chats flagged `isNew`). `#/chat/<email>` is one chat: every email is a bubble, theirs left, mine right, with a message field that replies by email.
+- On a phone the list and the chat are two screens; at 1024px and wider they are two panes of one screen (`screens/ChatsScreen.tsx` holds both, `screens/ChatScreen.tsx` is the chat). The old rail and side panel do not wrap these routes. The default route and the welcome gate now lead to the list; there is no welcome.
+- The deck screens (`#/cards/...`, reply, read, all mail and the rest) remain in the code and still work by URL, but nothing in the chat interface links to them.
+- The look lives in tokens on `.chatapp` (`--c-*`), not in the global tokens. System sans only. The browser bars stay white (`useBrandChrome` is not called on these screens).
+- Replaced from the old rules: one accent is now the chat green; pills are used for the filters and the suggested replies; no welcome or first-run help; no serif on these screens.
+- Still true: light only, system fonts, no emoji, no em or en dashes, hash routes, undo from the toast (Done uses the store's `done`), nothing is sent without the Send button (a suggested reply only fills the field), and a send is held over Shabbos and Yom Tov (the bubble shows "Held until after Shabbos").
+- Sending uses the reply editor's calls: `createDraft`, `sendDraft`, `archiveThread`, `dropMine`, then `markReplied` for the toast. Opening a chat marks its threads read.
+
+## Handoff, 11B (2026-11-27): faults found by using the chat
+
+- The ask bar shows the whole ask in up to two lines with the deadline under it.
+- A bubble folds at 12 rendered lines (CSS line clamp, measured in a layout effect); `onFold` re-pins the scroller to the newest message, and Read more does not move it.
+- `lib/signature.ts` drops a closing name block (the sender's name and short lines under it) from a bubble and from the list preview. `lib/skim.ts` is unchanged because the cards use it. `sig-check.mts` tests it.
+- The mail-open button in the chat header shows every email whole (nothing removed); the 12-line fold still applies.
+- The toast in a chat rides at the top of the messages, not over the newest one.
+- "Needs reply" is the chats that show an ask bar (`openAsk`); `replyThread` returns that thread first.
+- Avatar colours: eight, picked with an FNV-1a hash so neighbours in the sample list differ.
+- On a laptop the old shell's rail lists only Chats, New email and Settings; the old screens and routes remain.
+- Lime is gone: `--signal` is the chat green and `--on-signal` is white.
+- The sample key is `email_cards_static_demo_v5`, so every browser starts the sample fresh.
+- Button colours work now: the `.chatapp button { color: inherit }` rule was beating the single-class rules and is deleted.
+
+## Handoff, 11C (2026-11-27): groups, Cc and Bcc
+
+- The rule (changed in 11D): the line above the message field always says who gets your message, by name.
+- Chat keys: one other person is their address; two or more is a group chat, keyed `g:` plus the sorted lower-case addresses joined by commas (`keyOf` in `lib/chats.ts`). Cc'd people are members. Links encode the key. A muted sender hides only their one-to-one chat, and the New badge is only for one-to-one chats.
+- `lib/recipients.ts` `replyPlan` (rewritten in 11D, see below) was reply all, by the newest email that is not mine. If that email names people and none is me, I was bcc'd: the reply goes only to the sender and the line above the field says so. A newsletter or receipt never counts as bcc'd. `recipients-check` is `rec-check.mts` in the scratchpad.
+- Marks in a bubble's last line (one at most): `You were cc'd`, `You were bcc'd`, `Bcc <names>` on my own bubble, `Only to <names>` in a group when a message missed someone.
+- The line above the field (`.chatbar__to`) always shows (11D). It opens the people sheet, as do the header and the `Cc/Bcc` button.
+- `components/PeopleSheet.tsx`: To, Cc and Bcc as chips, edits are live, `Everyone in this chat` puts the plan back. To always keeps one person.
+- After a send with someone new on To or Cc, the app opens the group chat the thread now belongs to (the sample store adds them to the thread's participants).
+- Server: drafts take `bccEmails` (`bcc_emails_json` column, added to older databases at start-up). Gmail OAuth sends a `Bcc:` header and Gmail IMAP sends `bcc`. The local copy of a sent message does not store Bcc, and received mail is stored as before.
+- New email has a `Cc/Bcc` button under To that adds the two rows. The sample has three new threads (`thr_grp_01` to `thr_grp_03`).
+
+## Handoff, 11D (2026-11-27): after four first-time readers and a review
+
+- A1: `replyPlan` puts everyone in To, planned from the newest email in the thread (mine or theirs). Someone I added stays on the next message. Not named on it means only the sender; `bccd` is true unless the thread is a newsletter or receipt. `rec-check.mts` rewritten.
+- A2: a row above the field always reads `To Maya`, `To Devon and Priya`, with ` · Cc` and ` · Bcc` parts; `To Owen only · You were bcc'd` when bcc'd and unedited. A `Cc/Bcc` text button opens the people sheet. The people button beside the field is gone.
+- A3: the header's second line is the address (one to one) or the people's addresses (group), or `You got a hidden copy (Bcc)`. A `More` button opens a small sheet: show full or short emails, and who gets your message.
+- A4: the ask bar has a round check at its left (`Mark as done`) in place of the Done text button; it fills for 250ms, then runs done.
+- A5: the people sheet is titled `Who gets your message`, rows say what Cc (copy) and Bcc (hidden copy) are, To has its own input, the hint `Nothing is sent until you press Send.` always shows, the foot button reads OK.
+- A6: paired avatars show one letter per disc, 34px discs in a 52px box, 26px discs in a 40px box in the header.
+- B1: nothing sends until the email being answered has loaded (`ready`); the thread loads on its own; `useLoadedCount` takes the newest 80 threads, not the first 80.
+- B2: the person's own edit of To, Cc and Bcc resets when the thread a reply answers changes.
+- B3: only `createDraft` and `sendDraft` failures show `That did not send. Try again.` (the draft is deleted). After the send, every later step swallows its failure and the field is already cleared.
+- B4: the sent toast names everyone in To and Cc, the way the line above the field writes them.
+- B5: `bubbleText` strips only the quoted block at the end of an email; empty results fall back to the whole text; `dropSignature` keeps a block with a P.S.
+- B6: the Allow toast and the done toast no longer mention Needs you, the inbox or All mail.
+- B7, before the chat runs on real mail:
+  - A send archives the thread, and the server's `/bootstrap` leaves archived threads out (`server/src/db.ts`, near line 962), so on real mail an answered conversation would leave its chat. The chat needs archived threads too.
+  - `appendOutboundMessageToThread` (`server/src/routes.ts`, near line 233) stores no Bcc and does not add new To or Cc people to the thread's participants, so the `Bcc` mark on my bubble and the move to the group chat would not happen on real mail.
+  - The server changes of 11C (the `Bcc` header in both send paths, the `bcc_emails_json` column) have been typechecked but never run against a mailbox.
+  - If loading the thread being answered fails, Send stays off until the chat is reopened; it needs a retry and a word to the person.
+
+11E (2026-11-27): after the second review
+- The people sheet cannot open before the email being answered has loaded: the header name and the More row do nothing while `ready` is false, the sheet is drawn only when ready, and `peopleOpen` resets if `ready` turns false.
+- `bubbleText` drops one quoted block (and its `wrote:` line) when the answer is written under it; with two or more quoted runs and text between them, every line stays.
+
 ## Handoff, 10H and 10I (2026-11-27): a green table, white cards, lime for the one thing to do
 
 - Why: Levi rejected the quiet beige card as bland and the 10G colour blocks as cheap, and lifted every design constraint for one more try.

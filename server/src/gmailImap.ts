@@ -246,6 +246,7 @@ export async function sendGmailImapMessage(
     fromName?: string;
     toEmails: string[];
     ccEmails?: string[];
+    bccEmails?: string[];
     subject: string;
     bodyText: string;
   },
@@ -262,6 +263,7 @@ export async function sendGmailImapMessage(
     from: opts.fromName ? `"${opts.fromName}" <${email.trim()}>` : email.trim(),
     to: opts.toEmails.join(', '),
     cc: opts.ccEmails && opts.ccEmails.length > 0 ? opts.ccEmails.join(', ') : undefined,
+    bcc: opts.bccEmails && opts.bccEmails.length > 0 ? opts.bccEmails.join(', ') : undefined,
     subject: opts.subject,
     text: opts.bodyText,
   });

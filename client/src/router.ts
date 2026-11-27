@@ -70,5 +70,5 @@ export function navigate(path: string, opts: { replace?: boolean } = {}) {
 
 export function goBack() {
   if (depth() > 0) window.history.back();
-  else navigate('/cards/needs-you', { replace: true });
+  else navigate('/chats', { replace: true });
 }

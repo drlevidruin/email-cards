@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   /* Three colours (Levi, 2026-11-27: "be brave. Change anything. Change colors"): the table's deep green, white paper, green-black ink.
-     Lime (--signal) is the one loud colour: it is on the one thing a screen wants done (its main button), on the progress line, and under the sentence that asks. Words on lime are --on-signal. The --p-* values are the paper inks;
+     The signal colour (--signal) is the chat green: it is on a screen's main button. Words on it are --on-signal. The --p-* values are the paper inks;
      words drawn straight on the table swap --ink and the rest for cream (CardsScreen.css) and paper laid on it swaps them back. */
   --p-ink: #0E1612;
   --p-ink-2: #3B4540;
@@ -29,10 +29,10 @@
   --accent-tint: #F1F8F5;
   --accent-mark: rgba(11, 122, 90, 0.16);
   --accent-line: rgba(11, 122, 90, 0.10);
-  --signal: #B9F25E;
-  --signal-press: #A8E24B;
-  --on-signal: #0A3A2D;
-  --mark: #D9F7A3;
+  --signal: #128C4A;
+  --signal-press: #0E773E;
+  --on-signal: #FFFFFF;
+  --mark: #DDF3E4;
   --danger: var(--p-danger);
   --ok: var(--accent);
   --radius-card: 28px;

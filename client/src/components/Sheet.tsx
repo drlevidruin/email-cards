@@ -7,10 +7,11 @@ interface Props {
   onClose: () => void;
   /** Centered dialog on every width. Otherwise a bottom sheet on phones. */
   dialog?: boolean;
+  className?: string;
   children: ReactNode;
 }
 
-export function Sheet({ title, onClose, dialog, children }: Props) {
+export function Sheet({ title, onClose, dialog, className, children }: Props) {
   const box = useRef<HTMLDivElement>(null);
   useDialog(box, onClose);
 
@@ -19,7 +20,7 @@ export function Sheet({ title, onClose, dialog, children }: Props) {
       <div
         ref={box}
         tabIndex={-1}
-        className={`sheet${dialog ? ' sheet--dialog' : ''}`}
+        className={`sheet${dialog ? ' sheet--dialog' : ''}${className ? ` ${className}` : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

@@ -204,6 +204,7 @@ export async function dispatchDraftNow(
       fromName: account.displayName,
       toEmails: draft.toEmails,
       ccEmails: draft.ccEmails,
+      bccEmails: draft.bccEmails,
       subject: draft.subject,
       bodyText: draft.bodyText,
       externalThreadId,
@@ -217,6 +218,7 @@ export async function dispatchDraftNow(
       fromName: account.displayName,
       toEmails: draft.toEmails,
       ccEmails: draft.ccEmails,
+      bccEmails: draft.bccEmails,
       subject: draft.subject,
       bodyText: draft.bodyText,
     });
@@ -675,6 +677,9 @@ export function createApiRouter(db: PrismDatabase): Router {
     const ccEmails = Array.isArray(req.body?.ccEmails)
       ? (req.body.ccEmails as unknown[]).map(String).filter(Boolean)
       : undefined;
+    const bccEmails = Array.isArray(req.body?.bccEmails)
+      ? (req.body.bccEmails as unknown[]).map(String).filter(Boolean)
+      : undefined;
     const accounts = db.getAccounts();
     const accountId = String(req.body?.accountId || accounts[0]?.id || 'acc_studio');
     const subject = String(req.body?.subject || '(No subject)');
@@ -700,6 +705,7 @@ export function createApiRouter(db: PrismDatabase): Router {
       accountId,
       toEmails,
       ccEmails,
+      bccEmails,
       subject,
       bodyText,
       tone,
@@ -723,6 +729,9 @@ export function createApiRouter(db: PrismDatabase): Router {
     }
     if (Array.isArray(req.body?.ccEmails)) {
       patch.ccEmails = (req.body.ccEmails as unknown[]).map(String).filter(Boolean);
+    }
+    if (Array.isArray(req.body?.bccEmails)) {
+      patch.bccEmails = (req.body.bccEmails as unknown[]).map(String).filter(Boolean);
     }
     if (typeof req.body?.subject === 'string') patch.subject = req.body.subject;
     if (typeof req.body?.bodyText === 'string') patch.bodyText = req.body.bodyText;

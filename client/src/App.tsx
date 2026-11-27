@@ -11,6 +11,7 @@ import { useIsDesktop } from './lib/useIsDesktop';
 import { useWelcome } from './lib/welcome';
 import { AllMailScreen } from './screens/AllMailScreen';
 import { AskScreen } from './screens/AskScreen';
+import { ChatsScreen } from './screens/ChatsScreen';
 import { CardsScreen } from './screens/CardsScreen';
 import { DraftsScreen } from './screens/DraftsScreen';
 import { GoalsScreen } from './screens/GoalsScreen';
@@ -29,6 +30,14 @@ const PAGES: Record<string, () => JSX.Element> = {
   settings: SettingsScreen,
 };
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s).toLowerCase();
+  } catch {
+    return s.toLowerCase();
+  }
+}
+
 function Routes() {
   const { segments, query } = useRoute();
   const [head, arg] = segments;
@@ -36,13 +45,16 @@ function Routes() {
     (head === 'cards' && isStackId(arg)) ||
     ((head === 'reply' || head === 'read') && !!arg) ||
     head === 'all' ||
+    head === 'chats' ||
+    (head === 'chat' && !!arg) ||
     (!!head && Object.hasOwn(PAGES, head) && !arg);
 
   useEffect(() => {
-    if (!known) navigate('/cards/needs-you', { replace: true });
+    if (!known) navigate('/chats', { replace: true });
   }, [known]);
 
   if (!known) return null;
+  if (head === 'chats' || head === 'chat') return <ChatsScreen activeKey={head === 'chat' ? safeDecode(arg) : undefined} />;
   // A reader opened from a deck keeps that deck on screen under it
   const under = head === 'cards' ? arg : head === 'read' ? query.get('from') : null;
   const Page = head && head !== 'cards' && head !== 'reply' && head !== 'read' && head !== 'all' ? PAGES[head] : null;
@@ -63,13 +75,16 @@ function GlobalKeys() {
   const { segments } = useRoute();
   const [shortcuts, setShortcuts] = useState(false);
   // The composers own the keyboard
-  useGlobalKeys({ onShortcuts: () => setShortcuts((s) => !s), off: segments[0] === 'reply' || segments[0] === 'new' });
+  useGlobalKeys({ onShortcuts: () => setShortcuts((s) => !s), off: segments[0] === 'reply' || segments[0] === 'new' || segments[0] === 'chat' || segments[0] === 'chats' });
   return shortcuts ? <ShortcutsDialog onClose={() => setShortcuts(false)} /> : null;
 }
 
 function Frame() {
   const desktop = useIsDesktop();
-  return desktop ? (
+  const { segments } = useRoute();
+  // The chat screens carry their own two panes: no rail or side panel around them
+  const chat = segments[0] === 'chats' || segments[0] === 'chat';
+  return desktop && !chat ? (
     <DesktopShell>
       <Routes />
     </DesktopShell>

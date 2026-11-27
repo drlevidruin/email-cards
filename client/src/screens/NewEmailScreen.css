@@ -19,3 +19,5 @@ select.new__control { appearance: none; -webkit-appearance: none; }
   .new { margin: 0; overflow: hidden; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
   .new__body { padding-bottom: 16px; }
 }
+
+.new__more { flex: none; min-width: 44px; height: 44px; padding: 0 0 0 12px; font-size: 15px; font-weight: 600; color: var(--ink-3); }

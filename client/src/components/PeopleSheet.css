@@ -1,0 +1,24 @@
+.sheet.psheet { background: var(--c-surface); color: var(--c-ink); }
+@media (min-width: 1024px) { .sheet.psheet { width: 420px; } }
+.psheet .sheet__title { color: var(--c-ink); }
+.psheet__rows { display: flex; flex-direction: column; }
+.psheet__row { display: flex; align-items: flex-start; gap: 4px; min-height: 48px; padding: 8px 8px; border-top: 1px solid var(--c-line); }
+.psheet__label { flex: none; width: 76px; padding-top: 4px; display: flex; flex-direction: column; }
+.psheet__name { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--c-ink-2); }
+.psheet__sub { font-size: 11px; line-height: 14px; color: var(--c-ink-3); }
+.psheet__chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 6px; }
+.psheet__chip { display: inline-flex; align-items: center; max-width: 100%; height: 28px; padding: 0 0 0 12px; border-radius: 14px; background: var(--c-field); font-size: 14px; line-height: 20px; color: var(--c-ink); }
+.psheet__chip:last-child { padding-right: 12px; }
+.psheet__chipname { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.psheet__x { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 2px; border-radius: 14px; color: var(--c-ink-2); }
+.psheet__x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+.psheet__chip:has(.psheet__x) { padding-right: 0; }
+.psheet__input { flex: 1 1 120px; min-width: 120px; height: 28px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; font-size: 16px; color: var(--c-ink); outline: 0; }
+.psheet__input::placeholder { color: var(--c-ink-3); }
+.psheet__input:focus-visible { outline: 2px solid var(--c-green); outline-offset: 2px; }
+.psheet__input--bad, .psheet__input--bad:focus-visible { outline: 2px solid var(--c-danger); outline-offset: 2px; }
+.psheet__note { margin: 4px 8px 0; padding-top: 10px; border-top: 1px solid var(--c-line); font-size: 13px; line-height: 18px; color: var(--c-ink-2); }
+.psheet__foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; padding: 0 8px; }
+.psheet__reset { height: 44px; padding: 0 8px; margin-right: auto; font-size: 14px; font-weight: 600; color: var(--c-green-ink); }
+.psheet__done { height: 44px; min-width: 96px; padding: 0 24px; border-radius: 22px; background: var(--c-green); color: #FFFFFF; font-size: 16px; font-weight: 600; }
+.psheet__done:active { background: var(--c-green-press); }

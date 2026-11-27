@@ -56,6 +56,7 @@ export interface EmailMessage {
   fromEmail: string;
   toEmails: string[];
   ccEmails?: string[];
+  bccEmails?: string[];
   subject: string;
   snippet: string;
   bodyText: string;
@@ -162,6 +163,7 @@ export interface DraftItem {
   accountId: string;
   toEmails: string[];
   ccEmails?: string[];
+  bccEmails?: string[];
   subject: string;
   bodyText: string;
   tone?: DraftTone;

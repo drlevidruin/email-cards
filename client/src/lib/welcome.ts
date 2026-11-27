@@ -1,7 +1,5 @@
 import { useSyncExternalStore } from 'react';
 import { useProgressLog } from './progress';
-import { hasWelcomed } from './onboarding';
-import { isSampleInbox } from './sample';
 
 /**
  * The welcome layer's state. It shows on a first visit to the sample inbox, until its button is pressed once.
@@ -18,7 +16,8 @@ const emit = () => {
 
 export type WelcomeMode = 'first' | null;
 
-const modeNow = (): WelcomeMode => (isSampleInbox() && !hasWelcomed() ? 'first' : null);
+/** The chat app has no welcome: a first visit lands on the chat list. */
+const modeNow = (): WelcomeMode => null;
 
 export function setWelcomeLeaving(v: boolean): void {
   leaving = v;

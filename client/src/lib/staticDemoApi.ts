@@ -570,6 +570,7 @@ export const staticDemoApi = {
     accountId: string;
     toEmails: string[];
     ccEmails?: string[];
+    bccEmails?: string[];
     subject: string;
     bodyText: string;
     tone?: DraftItem['tone'];
@@ -583,6 +584,7 @@ export const staticDemoApi = {
       accountId: payload.accountId,
       toEmails: payload.toEmails,
       ccEmails: payload.ccEmails || [],
+      bccEmails: payload.bccEmails || [],
       subject: payload.subject,
       bodyText: payload.bodyText,
       tone: payload.tone,
@@ -599,7 +601,7 @@ export const staticDemoApi = {
   updateDraft: async (
     id: string,
     patch: Partial<
-      Pick<DraftItem, 'toEmails' | 'ccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId'>
+      Pick<DraftItem, 'toEmails' | 'ccEmails' | 'bccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId'>
     >
   ): Promise<DraftItem> => {
     const store = loadStore();
@@ -657,6 +659,7 @@ export const staticDemoApi = {
           fromEmail: acc.email,
           toEmails: d.toEmails,
           ccEmails: d.ccEmails,
+          bccEmails: d.bccEmails,
           subject: d.subject,
           snippet: d.bodyText.slice(0, 140),
           bodyText: d.bodyText,
@@ -666,6 +669,14 @@ export const staticDemoApi = {
           attachments: [],
         };
         store.messages.push(msg);
+        const known = new Set(thread.participants.map((p) => p.email.toLowerCase()));
+        known.add(acc.email.toLowerCase());
+        for (const addr of [...d.toEmails, ...(d.ccEmails ?? [])]) {
+          if (!addr || known.has(addr.toLowerCase())) continue;
+          known.add(addr.toLowerCase());
+          const hit = store.threads.flatMap((t) => t.participants).find((p) => p.email.toLowerCase() === addr.toLowerCase());
+          thread.participants.push({ name: hit?.name || addr, email: addr });
+        }
         thread.messageCount += 1;
         thread.lastMessageAt = msg.sentAt;
         thread.snippet = msg.snippet;

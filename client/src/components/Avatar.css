@@ -13,3 +13,12 @@
 }
 .avatar--small { width: 36px; height: 36px; font-size: 13px; }
 .avatar--card { width: 40px; height: 40px; font-size: 14px; }
+
+.avatarpair { flex: none; position: relative; display: inline-block; width: 52px; height: 52px; }
+.avatarpair .avatarpair__a.avatar,
+.avatarpair .avatarpair__b.avatar { position: absolute; width: 34px; height: 34px; font-size: 15px; font-weight: 600; line-height: 1; }
+.avatarpair .avatarpair__a.avatar { left: 0; top: 0; }
+.avatarpair .avatarpair__b.avatar { right: 0; bottom: 0; box-shadow: 0 0 0 2px #FFFFFF; }
+.avatarpair--small { width: 40px; height: 40px; }
+.avatarpair--small .avatarpair__a.avatar,
+.avatarpair--small .avatarpair__b.avatar { width: 26px; height: 26px; font-size: 12px; }

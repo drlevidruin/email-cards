@@ -2,7 +2,6 @@ import { useCallback, useMemo, type Dispatch, type MutableRefObject, type SetSta
 import { api } from './lib/api';
 import { sentToast } from './lib/snapshot';
 import { logMoves, logUndone } from './lib/progress';
-import { takeFirstDone } from './lib/onboarding';
 import type { EmailThread, ScreenerSender } from './lib/types';
 import type { StackId } from './lib/stacks';
 import { noticeWho } from './lib/noticeName';
@@ -162,7 +161,7 @@ export function useCardActions(core: Core) {
         toast: () => {
           const { first, full } = noticeWho(t, stack);
           const said = first ? `${first}'s email is done` : `Done: ${full}`;
-          return takeFirstDone() ? `${said}. It's out of your inbox, kept in All mail.` : said;
+          return said;
         },
         undoFallback: async () => {
           await api.unarchiveThread(t.id);
@@ -215,7 +214,7 @@ export function useCardActions(core: Core) {
   const decide = useCallback(
     (s: ScreenerSender, stack: StackId, d: 'approved' | 'feed' | 'muted') => {
       const status = d === 'muted' ? 'muted' : d === 'feed' ? 'feed' : 'approved';
-      const toast = d === 'muted' ? `Blocked ${s.name}` : d === 'feed' ? `Moved ${s.name} to Newsletters` : `Allowed ${s.name}. Now in Needs you.`;
+      const toast = d === 'muted' ? `Blocked ${s.name}` : d === 'feed' ? `Moved ${s.name} to Newsletters` : `Allowed ${s.name}`;
       return commit({
         stack,
         ids: [s.email],

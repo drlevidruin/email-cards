@@ -225,6 +225,7 @@ export class PrismDatabase {
         account_id TEXT NOT NULL,
         to_emails_json TEXT NOT NULL,
         cc_emails_json TEXT,
+        bcc_emails_json TEXT,
         subject TEXT NOT NULL,
         body_text TEXT NOT NULL,
         tone TEXT,
@@ -275,6 +276,12 @@ export class PrismDatabase {
         created_at TEXT NOT NULL
       );
     `);
+    // A database made before Bcc existed gets the column once
+    try {
+      this.db.exec('ALTER TABLE drafts ADD COLUMN bcc_emails_json TEXT');
+    } catch (err) {
+      if (!/duplicate column/i.test(String((err as Error)?.message))) throw err;
+    }
   }
 
   private ensureDefaultSettings(): void {
@@ -1519,6 +1526,9 @@ export class PrismDatabase {
       ccEmails: r.cc_emails_json
         ? safeJsonParse<string[]>(r.cc_emails_json as string, [])
         : undefined,
+      bccEmails: r.bcc_emails_json
+        ? safeJsonParse<string[]>(r.bcc_emails_json as string, [])
+        : undefined,
       subject: String(r.subject),
       bodyText: String(r.body_text),
       tone: (r.tone as DraftItem['tone']) || undefined,
@@ -1555,9 +1565,9 @@ export class PrismDatabase {
     this.db
       .prepare(
         `INSERT OR REPLACE INTO drafts (
-          id, thread_id, account_id, to_emails_json, cc_emails_json,
+          id, thread_id, account_id, to_emails_json, cc_emails_json, bcc_emails_json,
           subject, body_text, tone, status, scheduled_for, created_by, created_at, is_demo
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id,
@@ -1565,6 +1575,7 @@ export class PrismDatabase {
         draft.accountId,
         JSON.stringify(draft.toEmails),
         draft.ccEmails ? JSON.stringify(draft.ccEmails) : null,
+        draft.bccEmails ? JSON.stringify(draft.bccEmails) : null,
         draft.subject,
         draft.bodyText,
         draft.tone ?? null,
@@ -1582,7 +1593,7 @@ export class PrismDatabase {
     patch: Partial<
       Pick<
         DraftItem,
-        'toEmails' | 'ccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId' | 'tone'
+        'toEmails' | 'ccEmails' | 'bccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId' | 'tone'
       >
     >,
   ): DraftItem | null {

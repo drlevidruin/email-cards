@@ -249,6 +249,7 @@ export const api = {
     accountId: string;
     toEmails: string[];
     ccEmails?: string[];
+    bccEmails?: string[];
     subject: string;
     bodyText: string;
     tone?: DraftItem['tone'];
@@ -265,7 +266,7 @@ export const api = {
   updateDraft: (
     id: string,
     patch: Partial<
-      Pick<DraftItem, 'toEmails' | 'ccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId'>
+      Pick<DraftItem, 'toEmails' | 'ccEmails' | 'bccEmails' | 'subject' | 'bodyText' | 'status' | 'scheduledFor' | 'accountId'>
     >
   ) =>
     staticDemoActive

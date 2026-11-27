@@ -9,12 +9,17 @@ interface Spot {
   top?: boolean;
 }
 
-/** The toast sits at the top bar on a deck screen, else at the bottom: 12px above the action bar on a deck screen, else 16px above the bottom edge. It never covers the top bar or a title. */
+/** The toast sits at the top of the messages in a chat, over the top bar on a deck screen, else at the bottom: 12px above the action bar on a deck screen, else 16px above the bottom edge. It never covers the newest message, the top bar or a title. */
 function place(): Spot {
   // On a deck screen the notice sits over the middle of the top bar (the title and the count), clear of the menu and search buttons
   const head = document.querySelector('.cards__col .topbar')?.getBoundingClientRect();
   if (head && head.height > 0 && !document.querySelector('.reader')) {
     return { top: true, style: { top: Math.round(head.top + 2), bottom: 'auto', left: Math.round(head.left + 52), right: Math.round(window.innerWidth - head.right + 52), padding: 0 } };
+  }
+  // In a chat the toast rides at the top of the messages, so the message just sent stays clear
+  const chat = document.querySelector('.chat .chat__scroll')?.getBoundingClientRect();
+  if (chat && chat.height > 0) {
+    return { style: { top: Math.round(chat.top + 8), bottom: 'auto', left: Math.round(chat.left), right: Math.round(window.innerWidth - chat.right) } };
   }
   const bars = [...document.querySelectorAll('.actionbar')];
   const bar = bars[bars.length - 1]?.getBoundingClientRect();

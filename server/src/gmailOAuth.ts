@@ -373,6 +373,7 @@ export async function sendGmailOAuthMessage(
     fromName?: string;
     toEmails: string[];
     ccEmails?: string[];
+    bccEmails?: string[];
     subject: string;
     bodyText: string;
     externalThreadId?: string;
@@ -383,6 +384,7 @@ export async function sendGmailOAuthMessage(
     `From: ${fromHeader}`,
     `To: ${opts.toEmails.join(', ')}`,
     ...(opts.ccEmails && opts.ccEmails.length > 0 ? [`Cc: ${opts.ccEmails.join(', ')}`] : []),
+    ...(opts.bccEmails && opts.bccEmails.length > 0 ? [`Bcc: ${opts.bccEmails.join(', ')}`] : []),
     `Subject: ${opts.subject}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset="UTF-8"',
