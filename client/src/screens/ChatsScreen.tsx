@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Search, Settings, SquarePen } from 'lucide-react';
 import { navigate } from '../router';
 import { useStore } from '../store';
@@ -7,26 +7,31 @@ import { useDrafts } from '../lib/chatDraft';
 import { useLoadedCount } from '../lib/useChatThreads';
 import { peekThread } from '../lib/threadCache';
 import { relativeTime } from '../lib/time';
-import { isSampleInbox } from '../lib/sample';
+import { demoNote } from '../lib/sample';
+import { CATEGORY_LABEL, CATEGORY_ORDER, type Category } from '../lib/categories';
 import { useIsDesktop } from '../lib/useIsDesktop';
 import { Avatar, AvatarPair } from '../components/Avatar';
 import { ChatScreen } from './ChatScreen';
 import './ChatsScreen.css';
 
-type Filter = 'all' | 'unread' | 'needs' | 'updates';
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'unread', label: 'Unread' },
-  { id: 'needs', label: 'Needs reply' },
-  { id: 'updates', label: 'Updates' },
-];
+type Tab = 'all' | 'needs' | Category;
 
-const pass: Record<Filter, (c: Chat) => boolean> = {
-  all: () => true,
-  unread: (c) => c.unread > 0,
-  needs: (c) => c.needsReply,
-  updates: (c) => c.isUpdate,
-};
+const matches = (tab: Tab, c: Chat) => (tab === 'all' ? true : tab === 'needs' ? c.needsReply : c.category === tab);
+
+/** Receipts in the chats of the Bills tab: how many and the total, when they share one currency. */
+function receiptLine(chats: Chat[]): string | null {
+  const receipts = chats.flatMap((c) => c.threads.filter((t) => t.receiptInfo));
+  if (receipts.length === 0) return null;
+  const currencies = new Set(receipts.map((t) => t.receiptInfo!.currency));
+  if (currencies.size !== 1) return null;
+  let total: string;
+  try {
+    total = new Intl.NumberFormat('en-US', { style: 'currency', currency: [...currencies][0] }).format(receipts.reduce((a, t) => a + t.receiptInfo!.amount, 0));
+  } catch {
+    return null;
+  }
+  return `${receipts.length} ${receipts.length === 1 ? 'receipt' : 'receipts'} \u00B7 ${total}`;
+}
 
 function Row({ chat, open, draft }: { chat: Chat; open: boolean; draft: string }) {
   const unread = chat.unread > 0;
@@ -72,7 +77,8 @@ export function ChatsScreen({ activeKey }: { activeKey?: string }) {
   const { data, status } = useStore();
   const desktop = useIsDesktop();
   const drafts = useDrafts();
-  const [filter, setFilter] = useState<Filter>('all');
+  const [chosen, setChosen] = useState<Tab>('all');
+  const pills = useRef(new Map<Tab, HTMLButtonElement>());
   const [q, setQ] = useState('');
   const loaded = useLoadedCount(data?.threads ?? []);
   const chats = useMemo(
@@ -80,10 +86,28 @@ export function ChatsScreen({ activeKey }: { activeKey?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, loaded]
   );
+  const tabs = useMemo(() => {
+    const out: { id: Tab; label: string; unread: number }[] = [{ id: 'all', label: 'All', unread: 0 }];
+    const add = (id: Tab, label: string) => {
+      const inTab = chats.filter((c) => matches(id, c));
+      if (inTab.length > 0) out.push({ id, label, unread: inTab.filter((c) => c.unread > 0).length });
+    };
+    add('needs', 'Needs reply');
+    for (const id of CATEGORY_ORDER) add(id, CATEGORY_LABEL[id]);
+    return out;
+  }, [chats]);
+  // A tab whose last chat has left goes back to All
+  const tab: Tab = tabs.some((t) => t.id === chosen) ? chosen : 'all';
+  const inTab = useMemo(() => chats.filter((c) => matches(tab, c)), [chats, tab]);
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return chats.filter((c) => pass[filter](c) && (!needle || `${c.name} ${c.email} ${c.preview}`.toLowerCase().includes(needle)));
-  }, [chats, filter, q]);
+    return inTab.filter((c) => !needle || `${c.name} ${c.email} ${c.preview}`.toLowerCase().includes(needle));
+  }, [inTab, q]);
+  const sum = useMemo(() => (tab === 'bills' ? receiptLine(inTab) : null), [tab, inTab]);
+  useEffect(() => {
+    pills.current.get(tab)?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
+  }, [tab]);
+  const note = demoNote();
   const active = activeKey ? chats.find((c) => c.key === activeKey) : undefined;
   // A chat that is not there (a wrong address, or a sender just blocked) returns to the list
   useEffect(() => {
@@ -106,14 +130,26 @@ export function ChatsScreen({ activeKey }: { activeKey?: string }) {
           <Search size={18} strokeWidth={1.75} aria-hidden="true" />
           <input type="search" placeholder="Search" aria-label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
-        <div className="chatlist__filters" role="group" aria-label="Filter">
-          {FILTERS.map((f) => (
-            <button key={f.id} className={`chatpillbtn${filter === f.id ? ' chatpillbtn--on' : ''}`} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-              {f.label}
+        <div className="chatlist__filters" role="group" aria-label="Categories">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              ref={(el) => {
+                if (el) pills.current.set(t.id, el);
+                else pills.current.delete(t.id);
+              }}
+              className={`chatpillbtn${tab === t.id ? ' chatpillbtn--on' : ''}`}
+              aria-pressed={tab === t.id}
+              aria-label={t.unread > 0 ? `${t.label}, ${t.unread} unread` : t.label}
+              onClick={() => setChosen(t.id)}
+            >
+              {t.label}
+              {t.unread > 0 && <span className="chatpillbtn__n" aria-hidden="true">{t.unread}</span>}
             </button>
           ))}
         </div>
-        {isSampleInbox() && <p className="chatlist__sample">Sample inbox. Nothing is really sent.</p>}
+        {sum && <p className="chatlist__sum">{sum}</p>}
+        {note && <p className="chatlist__sample">{note}</p>}
         <div className="chatlist__scroll">
           {status === 'ready' && rows.length === 0 && <p className="chatlist__empty">No chats here</p>}
           <ul>

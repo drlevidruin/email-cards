@@ -95,6 +95,12 @@
 - `lib/safePreview.ts`: a picture loads only from `blob:`, `data:image/` or the page's own origin (a picture from another server tells it the email was opened); other attachments show as file rows.
 - In a snapshot `lib/chatDraft.ts` starts empty and reads nothing from storage.
 
+13A (2026-11-27): category tabs, reset, snapshot wording
+- Reset (and the welcome button, the global `G I` key and the back label's default) now land on `/chats`, not on a deck.
+- The tabs above the chat list are `All`, `Needs reply`, then each category that has a chat. `lib/categories.ts` `threadCategory(t, ctx)`, first match wins: 1) has `receiptInfo`: orders words, else travel (category or words), else bills; 2) a newsletter or promotion label: news; 3) a group chat: people; 4) not automated (not an update and the sender does not look automated): people; 5) automated: alerts, orders, travel, events, bills, else news if an update or bulk sender, else people. Whole words only, in subject, snippet and labels. A chat's category is its newest thread's (`Chat.category`). Bills shows `N receipts · $total` when all are in one currency.
+- The sender tests `looksAutomated` and `looksBulk` exist because real mail is not always marked as an update.
+- In a snapshot a chat says `Saved copy of your mail. Nothing is sent.` (`demoNote()` in `lib/sample.ts`) and never calls it the sample inbox; the send toast keeps `Snapshot. Nothing was sent.`
+
 ## Handoff, 10H and 10I (2026-11-27): a green table, white cards, lime for the one thing to do
 
 - Why: Levi rejected the quiet beige card as bland and the 10G colour blocks as cheap, and lifted every design constraint for one more try.

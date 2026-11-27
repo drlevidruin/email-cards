@@ -36,7 +36,7 @@ export function PageShell({ title, footer, right, canvas, fill, bare, children }
         <header className={`page__bar${collapsed ? ' is-collapsed' : ''}`}>
           <button className="page__back t-subhead" onClick={goBack}>
             <ChevronLeft size={22} strokeWidth={1.75} />
-            {placeName(cameFrom() ?? '/cards/needs-you')}
+            {placeName(cameFrom() ?? '/chats')}
           </button>
           {title && <h2 className="page__bar-title t-headline">{title}</h2>}
           {right && <div className="page__bar-right">{right}</div>}

@@ -25,9 +25,9 @@ export function Welcome() {
     if (!mode) return;
     window.clearTimeout(timer.current);
     setWelcomeLeaving(true);
-    // Land on the first card of Needs you with the deck already started, under the layer as it lifts
+    // Land on the chat list, with the deck state still started, under the layer as it lifts
     markWelcomed();
-    navigate('/cards/needs-you', { replace: true });
+    navigate('/chats', { replace: true });
     store.session('needs-you').todayDone = true;
     markStart('needs-you');
     store.touch();

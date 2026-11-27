@@ -13,7 +13,7 @@ import { cleanSubject, replyActions } from '../lib/stacks';
 import { dueText, isHot } from '../lib/time';
 import { facts, skim } from '../lib/skim';
 import { findQuote } from '../lib/highlight';
-import { isSampleInbox } from '../lib/sample';
+import { demoNote } from '../lib/sample';
 import { dropMine } from '../lib/myDraft';
 import { getDraft, setDraft } from '../lib/chatDraft';
 import { linkify } from '../lib/linkify';
@@ -45,7 +45,7 @@ function dayLabel(iso: string): string {
 }
 
 type Item =
-  | { kind: 'sample'; id: string }
+  | { kind: 'sample'; id: string; text: string }
   | { kind: 'day'; id: string; label: string }
   | { kind: 'subject'; id: string; label: string }
   | { kind: 'msg'; id: string; msg: EmailMessage; thread: EmailThread; held?: boolean };
@@ -57,7 +57,7 @@ interface Held {
   threadId: string;
 }
 
-function buildItems(threads: EmailThread[], held: Held[], sample: boolean): Item[] {
+function buildItems(threads: EmailThread[], held: Held[], sample: string | null): Item[] {
   const all: { msg: EmailMessage; thread: EmailThread; held?: boolean }[] = [];
   for (const t of threads) for (const m of t.messages ?? []) all.push({ msg: m, thread: t });
   for (const h of held) {
@@ -70,7 +70,7 @@ function buildItems(threads: EmailThread[], held: Held[], sample: boolean): Item
     });
   }
   all.sort((a, b) => ts(a.msg.sentAt) - ts(b.msg.sentAt));
-  const out: Item[] = sample ? [{ kind: 'sample', id: 'sample' }] : [];
+  const out: Item[] = sample ? [{ kind: 'sample', id: 'sample', text: sample }] : [];
   let day = '';
   let thread = '';
   for (const e of all) {
@@ -190,7 +190,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     [chat.threads, loaded]
   );
   const [held, setHeld] = useState<Held[]>([]);
-  const items = useMemo(() => buildItems(threads, held, isSampleInbox()), [threads, held]);
+  const items = useMemo(() => buildItems(threads, held, demoNote()), [threads, held]);
   const sender = chat.isGroup ? undefined : data?.screener.find((s) => s.status === 'pending' && s.email.toLowerCase() === chat.key);
   const ask = openAsk(chat.threads);
   const target = replyThread(chat, data!) ?? chat.threads[chat.threads.length - 1];
@@ -483,7 +483,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
   const rows = items.map((it, idx) => {
     const before = prev;
     prev = it;
-    if (it.kind === 'sample') return <div key={it.id} className="chatpill chatpill--note">Sample inbox. Nothing is really sent.</div>;
+    if (it.kind === 'sample') return <div key={it.id} className="chatpill chatpill--note">{it.text}</div>;
     if (it.kind === 'day') return <div key={it.id} className="chatpill">{it.label}</div>;
     if (it.kind === 'subject')
       return (

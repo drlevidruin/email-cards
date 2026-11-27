@@ -5,6 +5,7 @@ import { groupName, othersOf, type Person } from './people';
 import { dropSignature } from './signature';
 import { skim } from './skim';
 import { firstName } from './utils';
+import { chatCategory, type Category } from './categories';
 
 export interface Chat {
   key: string;
@@ -21,6 +22,8 @@ export interface Chat {
   unread: number;
   needsReply: boolean;
   isUpdate: boolean;
+  /** The kind of mail the chat's newest thread is. */
+  category: Category;
   isNew: boolean;
 }
 
@@ -139,6 +142,7 @@ export function buildChats(data: Pick<Data, 'threads' | 'screener' | 'commitment
       unread: threads.filter((t) => t.isUnread).length,
       needsReply: !!openAsk(threads),
       isUpdate: threads.length > 0 && threads.every(isUpdateThread),
+      category: chatCategory(threads, isUpdateThread, { senderEmail: isGroup ? undefined : g.people[0].email, isGroup }),
       isNew: !!sender,
     });
   }

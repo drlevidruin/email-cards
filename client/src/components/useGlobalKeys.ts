@@ -7,11 +7,11 @@ interface Opts {
   off: boolean;
 }
 
-const GO: Record<string, string> = { t: '/goals', i: '/cards/needs-you', d: '/drafts' };
+const GO: Record<string, string> = { t: '/goals', i: '/chats', d: '/drafts' };
 
 /**
  * The keys that work anywhere, when no field has focus: / Search, C New email,
- * G then T To-do, G then I Needs you, G then D Drafts, ? the shortcut sheet.
+ * G then T To-do, G then I Chats, G then D Drafts, ? the shortcut sheet.
  * It listens first (capture), so `G T` never also does the deck's To-do move.
  */
 export function useGlobalKeys({ onShortcuts, off }: Opts) {

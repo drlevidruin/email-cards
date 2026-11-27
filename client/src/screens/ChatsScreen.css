@@ -71,10 +71,11 @@
 .chatlist__search input::placeholder { color: var(--c-ink-3); }
 .chatlist__search:focus-within { outline: 2px solid var(--c-green); outline-offset: 2px; }
 .chatlist__search input::-webkit-search-cancel-button { display: none; }
-.chatlist__filters { flex: none; display: flex; gap: 8px; padding: 0 16px 8px; overflow-x: auto; scrollbar-width: none; }
+.chatlist__filters { flex: none; display: flex; gap: 8px; padding: 0 28px 8px 16px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
 .chatlist__filters::-webkit-scrollbar { display: none; }
 .chatpillbtn {
-  flex: none;
+  flex: 0 0 auto;
+  white-space: nowrap;
   height: 34px;
   padding: 0 14px;
   border-radius: 17px;
@@ -85,7 +86,10 @@
   position: relative;
 }
 .chatpillbtn::after { content: ''; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+.chatpillbtn__n { margin-left: 6px; font-size: 14px; font-weight: 600; color: var(--c-green-ink); }
+.chatpillbtn--on .chatpillbtn__n { color: inherit; }
 .chatpillbtn--on { background: var(--c-green-soft); color: var(--c-green-ink); }
+.chatlist__sum { flex: none; margin: 0; padding: 0 16px 8px; font-size: 13px; color: var(--c-ink-2); }
 .chatlist__sample { flex: none; margin: 0; padding: 2px 16px 6px; text-align: center; font-size: 12px; color: var(--c-ink-3); }
 .chatlist__scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: env(safe-area-inset-bottom); overscroll-behavior: contain; }
 .chatlist__empty { margin: 48px 16px; text-align: center; font-size: 15px; color: var(--c-ink-3); }

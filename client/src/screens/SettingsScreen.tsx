@@ -46,8 +46,8 @@ export function SettingsScreen() {
       await api.resetDemo();
       store.resetSessions();
       await store.reload();
-      store.showToast(isSnapshot() ? 'Snapshot reset' : 'Demo reset');
-      navigate('/cards/needs-you');
+      store.showToast(isSnapshot() ? 'Snapshot reset' : 'Sample inbox reset');
+      navigate('/chats');
     } catch {
       store.showToast(NOT_SAVED);
     }
