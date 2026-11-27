@@ -75,7 +75,7 @@ interface Props {
   todoOn?: boolean;
   /** The reader's bar: words only, with Reply. */
   reader?: boolean;
-  /** The card shows answer rows, so the answers are the primary action and Done is ink. */
+  /** The card shows answer rows, so the answers are the filled action and Done is tinted like the other moves. */
   answers?: boolean;
 }
 
@@ -92,7 +92,7 @@ export function ActionBar({ variant, active, past, onAction, todoOn, reader, ans
         return (
           <button
             key={action}
-            className={`actionbar__btn${on ? ' is-on' : ''}${accent ? ' actionbar__btn--primary' : ''}${lit === action ? (past ? ' is-active is-past' : ' is-active') : ''}`}
+            className={`actionbar__btn actionbar__btn--${action}${on ? ' is-on' : ''}${accent ? ' actionbar__btn--primary' : ''}${lit === action ? (past ? ' is-active is-past' : ' is-active') : ''}`}
             aria-pressed={action === 'todo' && reader ? on : undefined}
             aria-label={on ? 'On To-do' : undefined}
             onClick={() => onAction(action)}

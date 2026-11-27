@@ -1,25 +1,27 @@
-/* The answer rows run edge to edge along the foot of the card. */
-.answers { flex: none; display: flex; flex-direction: column; margin: 0 -20px; border-radius: 0 0 var(--radius-card) var(--radius-card); overflow: hidden; }
+/* The answers are the card's last block: a green row for each ready reply, a white row for your own. */
+.answers { flex: none; display: flex; flex-direction: column; border-top: 1px solid var(--line-strong); }
 .answers__row {
-  display: flex; align-items: center; gap: 12px; width: 100%; height: 46px; padding: 0 20px;
-  border-top: 1px solid var(--line); text-align: left; background: transparent;
+  display: flex; align-items: center; gap: 12px; width: 100%; height: 46px; padding: 0 var(--pad, 20px);
+  border-top: 1px solid var(--line-strong); text-align: left; background: var(--surface); color: var(--ink-2);
 }
-.answers__row:active { background: var(--canvas); }
+.answers__row:first-child { border-top: 0; }
+.answers__row--ready { background: var(--done-soft); color: var(--done); }
+.answers__row--ready + .answers__row--ready { border-top-color: var(--accent-rule); }
+.answers__row:active { background: var(--surface-2); }
+.answers__row--ready:active { background: #CDEADD; }
 .answers__icon { flex: none; color: var(--ink-3); }
 .answers__icon--ready { color: var(--accent); }
-.answers__label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 16px; font-weight: 400; color: var(--ink-2); }
-.answers__label--ready { font-weight: 600; color: var(--ink); }
+.answers__label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 16px; font-weight: 400; color: var(--ink); }
+.answers__label--ready { font-weight: 600; color: var(--done); }
+.answers__go { flex: none; opacity: 0.6; }
 .answers__cap { flex: none; }
-.card.card--answers { padding-bottom: 0; }
 @media (max-height: 700px) { .answers__row { height: 44px; } }
 @media (min-width: 1024px) {
-  .answers { margin: 0 -32px; }
-  .answers__row { padding: 0 32px; }
-  .answers__row:hover { background: var(--canvas); }
+  .answers__row:hover { background: var(--surface-2); }
+  .answers__row--ready:hover { background: #CDEADD; }
 }
-/* A short window gives the email the room: tighter card padding and rule */
+/* A short window gives the email the room: tighter blocks */
 @media (max-height: 700px) and (max-width: 1023px) {
-  .card.card--answers { padding-top: 16px; }
-  .card--answers .card__rule { margin: 10px 0 8px; }
-  .card--answers .cardbody { margin-top: 0; }
+  .card--mail .cardhead { padding-top: 10px; padding-bottom: 10px; }
+  .cardwords { padding-top: 8px; }
 }

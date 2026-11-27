@@ -18,12 +18,14 @@ export function ScreenerCard({ sender, account, overlay }: Props) {
   const full = useThread(sender.threadIds?.[0]);
   const first = newestMessage(full);
   return (
-    <article className="card">
+    <article className="card card--mail">
       <CardHeader name={sender.name} email={sender.email} account={account} />
       <SenderHero sender={sender} />
-      <hr className="card__rule" />
-      <h2 className="card__subject t-headline">{full ? full.subject : sender.sampleSubject}</h2>
-      <CardBody text={first ? first.bodyText : sender.sampleSnippet} />
+      <section className="cardwords">
+        <div className="cardwords__label t-caption">Their first email</div>
+        <h2 className="card__subject t-headline">{full ? full.subject : sender.sampleSubject}</h2>
+        <CardBody text={first ? first.bodyText : sender.sampleSnippet} />
+      </section>
       {overlay}
     </article>
   );

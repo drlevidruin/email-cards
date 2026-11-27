@@ -20,7 +20,7 @@ function wash(hex: string): string {
 export function Avatar({ name, email, small, card }: { name: string; email?: string; small?: boolean; card?: boolean }) {
   const hue = hueFor(email || name);
   return (
-    <span className={`avatar${small ? ' avatar--small' : ''}${card ? ' avatar--card' : ''}`} style={{ background: wash(hue), color: hue }} aria-hidden="true">
+    <span className={`avatar${small ? ' avatar--small' : ''}${card ? ' avatar--card' : ''}`} style={card ? { background: hue, color: '#fff' } : { background: wash(hue), color: hue }} aria-hidden="true">
       {getInitials(name)}
     </span>
   );

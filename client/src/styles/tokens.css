@@ -1,21 +1,37 @@
 :root {
   color-scheme: light;
-  --canvas: #F2F1ED;
+  --canvas: #E6E9EF;
   --surface: #FFFFFF;
-  --surface-2: #F0EEE9;
-  --line: rgba(28, 25, 20, 0.08);
-  --line-strong: rgba(28, 25, 20, 0.14);
-  --ink: #191714;
-  --ink-2: #47433C;
-  --ink-3: #6F6A61;
-  --ink-4: #A39E94;
-  --ink-body: #2A2722;
+  --surface-2: #F1F3F6;
+  --line: rgba(20, 24, 34, 0.12);
+  --line-strong: rgba(20, 24, 34, 0.22);
+  --ink: #14161A;
+  --ink-2: #353942;
+  --ink-3: #5A5F6A;
+  --ink-4: #8C919B;
+  --ink-body: #1A1D23;
   --accent: #0B7A5A;
   --accent-press: #08654A;
-  --accent-soft: #E2F2EB;
+  --accent-soft: #DDF2E9;
   --accent-tint: #F1F8F5;
   --accent-mark: rgba(11, 122, 90, 0.16);
   --accent-line: rgba(11, 122, 90, 0.10);
+  /* One colour per job (Levi, 2026-11-27): a deep tone for words and icons, a soft tone for fills.
+     Later is amber, To-do and Newsletter indigo, Skip grey, Done, Allow and the answers green, Block red.
+     The deadline chip is amber too: amber is time. Yellow is the marker on the sentence that asks. */
+  --later: #9A4B00;
+  --later-soft: #FDECCB;
+  --todo: #3B46C4;
+  --todo-soft: #E2E5FC;
+  --skip: #4A4E57;
+  --skip-soft: #E8EAEF;
+  --done: #08654A;
+  --done-soft: #DDF2E9;
+  --stop: #A82A20;
+  --stop-soft: #FBE3E0;
+  --mark: #FFE27A;
+  --accent-rule: rgba(11, 122, 90, 0.26);
+  --card-edge: rgba(20, 24, 34, 0.16);
   --danger: #C2362B;
   --ok: var(--accent);
   --radius-card: 26px;
@@ -24,7 +40,7 @@
   --radius-s: 10px;
   --radius-xs: 4px;
   --radius-pill: 999px;
-  --shadow-card: 0 0 0 1px rgba(28, 25, 20, 0.04), 0 2px 4px rgba(28, 25, 20, 0.04), 0 14px 32px -10px rgba(28, 25, 20, 0.14);
+  --shadow-card: 0 0 0 1px rgba(20, 24, 34, 0.05), 0 2px 4px rgba(20, 24, 34, 0.06), 0 16px 36px -10px rgba(20, 24, 34, 0.22);
   --shadow-float: 0 0 0 1px rgba(28, 25, 20, 0.05), 0 10px 28px -6px rgba(28, 25, 20, 0.16);
   --shadow-btn: 0 1px 2px rgba(28, 25, 20, 0.06), 0 2px 8px rgba(28, 25, 20, 0.05);
   --shadow-pop: var(--shadow-float);

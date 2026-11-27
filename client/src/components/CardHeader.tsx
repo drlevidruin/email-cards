@@ -1,4 +1,5 @@
 import { Paperclip } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import type { GmailAccount } from '../lib/types';
 import { Avatar } from './Avatar';
 import './CardHeader.css';
@@ -20,16 +21,16 @@ export function CardHeader({ name, email, account, age, subject, attached }: Pro
   const meta = (
     <div className="cardhead__meta t-footnote">
       {account && (
-        <>
-          <span className="cardhead__dot" style={{ background: account.color }} />
-          <span>{account.label}</span>
-        </>
+        <span className="cardhead__acct">
+          <span className="cardhead__dot" />
+          {account.label}
+        </span>
       )}
       {age && <span className="t-num">{age}</span>}
     </div>
   );
   return (
-    <div className="cardhead">
+    <div className="cardhead" style={account ? ({ '--acct': account.color } as CSSProperties) : undefined}>
       <Avatar name={name} email={email} card />
       <div className="cardhead__who">
         {subject !== undefined ? (

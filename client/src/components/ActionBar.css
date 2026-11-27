@@ -1,50 +1,59 @@
-/* Four equal buttons on the canvas: an icon and its label side by side, no fill. Done is emerald, the rest ink. */
+/* The moves sit in a white dock under the card. Each has its own colour, the same one its stamp uses: Later amber,
+   To-do indigo, Skip grey, Done green, Block red. The one the screen most wants is filled; the rest are tinted. */
 .actionbar {
   flex: none;
   display: flex;
   gap: 6px;
   height: 64px;
   margin: 0 16px calc(16px + env(safe-area-inset-bottom));
-  padding: 8px 0;
+  padding: 7px;
+  border: 1px solid var(--card-edge);
+  border-radius: 21px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(20, 24, 34, 0.05), 0 8px 20px -10px rgba(20, 24, 34, 0.18);
 }
 .actionbar__btn {
+  --tone: var(--skip); --soft: var(--skip-soft);
   flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  height: 48px;
+  height: 100%;
   padding: 0 4px;
-  border-radius: 15px;
-  color: var(--ink);
-  transition: transform 120ms var(--ease), background 120ms, color 120ms;
+  border-radius: 14px;
+  background: var(--soft);
+  color: var(--tone);
+  transition: transform 120ms var(--ease), background 120ms, color 120ms, box-shadow 120ms;
 }
+.actionbar__btn--later { --tone: var(--later); --soft: var(--later-soft); }
+.actionbar__btn--todo, .actionbar__btn--newsletters { --tone: var(--todo); --soft: var(--todo-soft); }
+.actionbar__btn--done, .actionbar__btn--allow, .actionbar__btn--reply { --tone: var(--done); --soft: var(--done-soft); }
+.actionbar__btn--block { --tone: var(--stop); --soft: var(--stop-soft); }
 .actionbar__btn svg { flex: none; }
-.actionbar__arrow { color: var(--ink-3); }
-.actionbar__btn.is-past .actionbar__arrow, .actionbar__btn--primary .actionbar__arrow { color: inherit; }
-.actionbar__label { display: inline-flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 600; white-space: nowrap; }
+.actionbar__arrow { color: inherit; }
+.actionbar__label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .actionbar__btn:active { transform: scale(0.97); }
-.actionbar__btn--primary { color: var(--accent); }
-.actionbar__btn--primary:active { color: var(--accent-press); }
-/* Dragging toward a button: it gets a light wash.
-   Past the commit point, where the pill fills, the button fills the same way: emerald for Done, ink for the rest. */
-.actionbar__btn { --tone: var(--ink); }
-.actionbar__btn--primary { --tone: var(--accent); }
-.actionbar__btn.is-active { background: var(--line); color: var(--ink); }
-.actionbar__btn--primary.is-active { background: var(--accent-soft); color: var(--accent); }
-.actionbar__btn.is-past, .actionbar__btn--primary.is-past { background: var(--tone); color: #fff; animation: badge-pop 150ms var(--ease); }
-.actionbar__btn.is-on { background: var(--surface-2); color: var(--ink); }
+/* The filled one: Done on a card with no answers, Allow, and Done in the reader */
+.actionbar__btn--primary { background: var(--accent); color: #fff; }
+.actionbar__btn--primary:active { background: var(--accent-press); }
+/* Dragging toward a button rings it in its colour. Past the commit point it fills, the way the stamp goes solid. */
+.actionbar__btn.is-active { box-shadow: inset 0 0 0 2px var(--tone); }
+.actionbar__btn.is-past { background: var(--tone); color: #fff; box-shadow: none; animation: badge-pop 150ms var(--ease); }
+.actionbar__btn.is-on { background: var(--tone); color: #fff; }
+.actionbar__cap { background: rgba(255, 255, 255, 0.6); border-color: transparent; box-shadow: none; color: inherit; }
+.actionbar__btn--primary .actionbar__cap, .actionbar__btn.is-past .actionbar__cap, .actionbar__btn.is-on .actionbar__cap { background: rgba(255, 255, 255, 0.22); }
 
 @media (max-width: 380px) {
-  .actionbar { gap: 2px; margin-left: 10px; margin-right: 10px; }
-  .actionbar__btn { gap: 4px; padding: 0 2px; }
-  .actionbar__label { gap: 4px; }
-  .actionbar__btn > svg, .actionbar__label > svg { width: 18px; height: 18px; }
+  .actionbar { gap: 4px; margin-left: 10px; margin-right: 10px; padding: 6px; }
+  .actionbar__btn { gap: 3px; padding: 0 2px; }
+  .actionbar__label { gap: 4px; font-size: 14px; }
+  .actionbar__btn > svg, .actionbar__label > svg { width: 16px; height: 16px; }
 }
 
 @media (min-width: 1024px) {
   .actionbar { width: 100%; margin: 16px 0 0; }
-  .actionbar__btn:hover { background: var(--surface-2); }
-  .actionbar__btn--primary:hover { color: var(--accent-press); }
+  .actionbar__btn:hover { box-shadow: inset 0 0 0 2px var(--tone); }
+  .actionbar__btn--primary:hover { background: var(--accent-press); box-shadow: none; }
 }

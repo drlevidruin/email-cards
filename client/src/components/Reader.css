@@ -25,6 +25,6 @@
   .reader--desk.is-leaving { animation: none; }
   .reader--desk .reader__col { flex: none; width: min(680px, 100% - 48px); max-width: none; max-height: 100%; overflow: hidden; border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-card); }
   .reader__actions { flex: none; padding: 0 20px 12px; }
-  .reader__actions .actionbar { margin-top: 0; background: var(--surface-2); box-shadow: none; }
+  .reader__actions .actionbar { margin-top: 0; background: var(--surface-2); box-shadow: none; border-color: transparent; }
   .reader--desk .reader__scroll { padding: 4px 32px 28px; border-top: 1px solid var(--line); padding-top: 16px; }
 }

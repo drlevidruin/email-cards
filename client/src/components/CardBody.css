@@ -8,13 +8,13 @@
   overflow-wrap: anywhere;
 }
 .cardbody__mark {
-  padding: 0 2px;
+  padding: 1px 2px;
   border-radius: 3px;
-  background: var(--accent-mark);
+  background: var(--mark);
   color: inherit;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
-.cardbody__fade { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface)); pointer-events: none; }
-.cardbody__lead { color: var(--ink-4); }
-.cardbody__more { position: absolute; right: 0; bottom: 0; z-index: 1; padding: 2px 0 0 28px; color: var(--ink); background: linear-gradient(to right, rgba(255, 255, 255, 0), #fff 24px); }
+.cardbody__fade { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: linear-gradient(to bottom, var(--zone-0, rgba(255, 255, 255, 0)), var(--zone, var(--surface))); pointer-events: none; }
+.cardbody__lead { color: var(--ink-3); }
+.cardbody__more { position: absolute; right: 0; bottom: 0; z-index: 1; padding: 2px 0 0 28px; color: var(--ink); background: linear-gradient(to right, var(--zone-0, rgba(255, 255, 255, 0)), var(--zone, #fff) 24px); }

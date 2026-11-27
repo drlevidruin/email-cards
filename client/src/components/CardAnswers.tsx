@@ -1,4 +1,4 @@
-import { PenLine, Reply } from 'lucide-react';
+import { ChevronRight, PenLine, Reply } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
 import { replyActions } from '../lib/stacks';
 import type { EmailThread } from '../lib/types';
@@ -69,10 +69,10 @@ export function CardAnswers({ thread, onAnswer }: Props) {
   return (
     <div className="answers">
       {rows.map((r) => (
-        <button key={r.id} className="answers__row" data-answer={r.id} onClick={() => !justTapped() && onAnswer?.(r.id)}>
-          {r.ready ? <Reply className="answers__icon answers__icon--ready" size={18} strokeWidth={2} aria-hidden="true" /> : <PenLine className="answers__icon" size={18} strokeWidth={2} aria-hidden="true" />}
+        <button key={r.id} className={`answers__row${r.ready ? ' answers__row--ready' : ''}`} data-answer={r.id} onClick={() => !justTapped() && onAnswer?.(r.id)}>
+          {r.ready ? <Reply className="answers__icon answers__icon--ready" size={18} strokeWidth={2.25} aria-hidden="true" /> : <PenLine className="answers__icon" size={18} strokeWidth={2} aria-hidden="true" />}
           <span className={`answers__label${r.ready ? ' answers__label--ready' : ''}`}>{r.label}</span>
-          {desktop && <kbd className="keycap answers__cap">{r.key}</kbd>}
+          {desktop ? <kbd className="keycap answers__cap">{r.key}</kbd> : <ChevronRight className="answers__go" size={18} strokeWidth={2} aria-hidden="true" />}
         </button>
       ))}
     </div>

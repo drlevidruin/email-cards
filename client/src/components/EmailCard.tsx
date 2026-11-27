@@ -23,7 +23,7 @@ interface Props {
   onAnswer?: (qa: string) => void;
 }
 
-/** A calm letter: who it is from and the subject, the Goal, as much of the email as fits, and the answers. */
+/** An email as four blocks: who it is from, the ask, as much of the email as fits, and the answers. */
 export function EmailCard({ thread, account, overlay, goalFirst, answers, onAnswer }: Props) {
   const full = useThread(thread.id);
   const newest = newestMessage(full);
@@ -32,11 +32,13 @@ export function EmailCard({ thread, account, overlay, goalFirst, answers, onAnsw
   const subject = kind === 'subject' ? undefined : cleanSubject(thread.subject);
   const attached = (newest?.attachments.length ?? 0) > 0;
   return (
-    <article className={`card${answers ? ' card--answers' : ''}`}>
+    <article className={`card card--mail${answers ? ' card--answers' : ''}`}>
       <CardHeader name={who.name} email={who.email} account={account} age={relativeTime(thread.lastMessageAt)} subject={subject} attached={attached} />
       <Hero thread={thread} goalFirst={goalFirst} />
-      <hr className="card__rule" />
-      <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} />
+      <section className="cardwords">
+        <div className="cardwords__label t-caption">The email</div>
+        <CardBody text={newest ? newest.bodyText : thread.snippet} quote={kind === 'goal' ? thread.goalQuote : null} />
+      </section>
       {answers && <CardAnswers thread={thread} onAnswer={onAnswer} />}
       {overlay}
     </article>

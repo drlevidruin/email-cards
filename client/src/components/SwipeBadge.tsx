@@ -8,7 +8,7 @@ export type BadgeLabels = Partial<Record<Dir, string>>;
 /** What the force value holds while a button or key flies the card: 0 for none, else the direction's number. */
 export const FORCE: Record<Dir, number> = { right: 1, left: 2, up: 3, down: 4 };
 
-const TONE: Record<string, string> = { Done: 'accent', Allow: 'accent', Block: 'danger', Skip: 'quiet' };
+const TONE: Record<string, string> = { Done: 'accent', Allow: 'accent', Block: 'danger', Skip: 'quiet', Later: 'later', 'To-do': 'todo', Newsletters: 'todo', Newsletter: 'todo' };
 const ORDER: Dir[] = ['right', 'left', 'up', 'down'];
 
 interface Props {

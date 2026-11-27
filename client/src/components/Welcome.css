@@ -54,7 +54,7 @@
 /* The highlighted sentence, as on a real card */
 .wpic__lines .wpic__line--mark::before {
   content: ''; position: absolute; left: -3px; top: -3px; width: calc(60% + 3px); height: 13px; border-radius: 3px;
-  background: linear-gradient(var(--accent-mark), var(--accent-mark)), #FFFFFF;
+  background: linear-gradient(var(--mark), var(--mark)), #FFFFFF;
 }
 
 .wpic__label {

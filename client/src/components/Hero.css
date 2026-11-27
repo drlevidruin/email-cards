@@ -12,3 +12,17 @@
 .dueline { font-weight: 600; color: var(--accent); }
 .dueline--hot { color: var(--danger); }
 .dueline--quiet { color: var(--ink-3); }
+
+/* On a card the ask is its own block, the only pure white one. The deadline is a chip: amber for a date, red when it is today or late, grey for waiting. */
+.card--mail .hero { margin-top: 0; padding: 14px var(--pad) 16px; }
+.card--mail .hero__text { margin-top: 0; }
+.card--mail .dueline {
+  display: flex; align-items: center; width: fit-content; height: 24px; padding: 0 10px; border-radius: var(--radius-pill);
+  background: var(--later-soft); color: var(--later);
+}
+.card--mail .dueline--hot { background: var(--danger); color: #fff; }
+.card--mail .dueline--quiet { background: var(--skip-soft); color: var(--skip); }
+.card--mail .dueline + .hero__text, .card--mail .dueline + .hero__label { margin-top: 8px; }
+.card--mail .hero__label + .hero__text { margin-top: 2px; }
+@media (min-width: 1024px) { .card--mail .hero { padding: 20px var(--pad); } }
+@media (max-height: 700px) and (max-width: 1023px) { .card--mail .hero { padding: 10px var(--pad) 12px; } }
