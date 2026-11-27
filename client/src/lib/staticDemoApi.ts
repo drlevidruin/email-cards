@@ -35,8 +35,9 @@ import { buildStack } from './stacks';
 import { dueParts, dueTime, isDueToday, isOverdue } from './time';
 import { counterpart } from './people';
 import { isSnapshot, ownerName, snapshotData, snapshotStoreKey } from './snapshot';
+import { SAMPLE_STORE_KEY } from './freshSample';
 
-const storageKey = () => (isSnapshot() ? snapshotStoreKey() : 'email_cards_static_demo_v3');
+const storageKey = () => (isSnapshot() ? snapshotStoreKey() : SAMPLE_STORE_KEY);
 
 interface UndoRecord {
   id: string;

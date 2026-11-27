@@ -9,6 +9,9 @@
 - Undo and a change of pile teach no lesson (`useCardPointer` takes `nextId` and `pile`).
 - Tab from a fill-in to its own Add no longer adds behind your back (`BlankRows.tsx`).
 
+10F (returning visitors):
+- The sample store key is now v4 (`lib/freshSample.ts`). A browser holding an older sample is started over once at load: older sample stores and `email_cards_progress_v1` are removed, a private inbox is untouched. Whenever the sample mail changes in a way a first visit depends on, raise the key's version.
+
 - One-draft rule: each email has at most one unsent draft of yours. Leaving the reply screen saves changed text into it (or makes it) with one "Saved to Drafts" notice; unchanged or empty saves and deletes nothing. Send removes your draft for that email. Code is `lib/myDraft.ts` and `ReplyComposer.tsx`; a ready answer from a card only remembers your draft, it never replaces it.
 - Fill-ins: Add keeps focus and jumps to the next open fill-in. Cancel and Back drop typed-but-not-added text with no draft. The stale Send press uses a 1 second window (`pressedAt`) in `ReplyEdit.tsx`.
 - Card lessons live in a page-long map by card id (`lessonFor` in `lib/onboarding.ts`), cleared by Start over. `useBrandChrome` follows the media query while a green screen is up.
