@@ -60,6 +60,7 @@
   - Text typed before the thread being answered has loaded is not saved as a draft until the next keystroke after it loads (the save in `screens/ChatScreen.tsx` waits for `ready` so it cannot wipe the kept people). The sample loads at once; on a slow mailbox, save the text alone while waiting.
   - A picture sent from the sample is a `blob:` address, never released, and gone after the tab closes, when it shows as a file row. Real sending needs a stored copy.
   - The server has no way to fetch an attachment's content or a preview, and no way to send one. The attach button shows only in the sample, and a real email's pictures have no `previewUrl`, so they show as file rows.
+  - Pin, mute, archive and the hand-set unread mark live only in this browser; on real mail, archive and read should reach Gmail.
 
 11E (2026-11-27): after the second review
 - The people sheet cannot open before the email being answered has loaded: the header name and the More row do nothing while `ready` is false, the sheet is drawn only when ready, and `peopleOpen` resets if `ready` turns false.
@@ -100,6 +101,11 @@
 - The tabs above the chat list are `All`, `Needs reply`, then each category that has a chat. `lib/categories.ts` `threadCategory(t, ctx)`, first match wins: 1) has `receiptInfo`: orders words, else travel (category or words), else bills; 2) a newsletter or promotion label: news; 3) a group chat: people; 4) not automated (not an update and the sender does not look automated): people; 5) automated: alerts, orders, travel, events, bills, else news if an update or bulk sender, else people. Whole words only, in subject, snippet and labels. A chat's category is its newest thread's (`Chat.category`). Bills shows `N receipts · $total` when all are in one currency.
 - The sender tests `looksAutomated` and `looksBulk` exist because real mail is not always marked as an update.
 - In a snapshot a chat says `Saved copy of your mail. Nothing is sent.` (`demoNote()` in `lib/sample.ts`) and never calls it the sample inbox; the send toast keeps `Snapshot. Nothing was sent.`
+
+14A (2026-11-27): pin, mute, archive, unread, keyboard fit
+- Chat settings: `lib/chatPrefsCore.ts` (pure: parse, `isArchived`, `canPin`, `sortChats`, three pins at most) and `lib/chatPrefs.ts` (saved in this browser, a separate key in a saved copy, cleared by Settings Reset).
+- The chat list: swipe right for Archive and Mute, swipe left for Pin and Read or Unread (touch and pen only); press and hold, right click or the chevron on a laptop opens a sheet with the same four; a long swipe right archives; `Archived` row and `#/chats/archived` screen; a new email brings an archived chat back.
+- Keyboard on a phone: `lib/useViewportVars.ts` sets `--vvh` and `--vvtop` from the visual viewport and the chat app is fixed to that area; the message list keeps the newest message in view when it changes height; suggestions hide while the field has text.
 
 ## Handoff, 10H and 10I (2026-11-27): a green table, white cards, lime for the one thing to do
 

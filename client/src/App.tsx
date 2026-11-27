@@ -54,7 +54,7 @@ function Routes() {
   }, [known]);
 
   if (!known) return null;
-  if (head === 'chats' || head === 'chat') return <ChatsScreen activeKey={head === 'chat' ? safeDecode(arg) : undefined} />;
+  if (head === 'chats' || head === 'chat') return <ChatsScreen activeKey={head === 'chat' ? safeDecode(arg) : undefined} archivedView={head === 'chats' && arg === 'archived'} />;
   // A reader opened from a deck keeps that deck on screen under it
   const under = head === 'cards' ? arg : head === 'read' ? query.get('from') : null;
   const Page = head && head !== 'cards' && head !== 'reply' && head !== 'read' && head !== 'all' ? PAGES[head] : null;

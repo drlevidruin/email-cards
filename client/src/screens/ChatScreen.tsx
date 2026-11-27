@@ -333,9 +333,13 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     if (fit.length < chosen.length) store.showToast('That file is too big to send.');
     if (fit.length > 0) setFiles((l) => [...l, ...fit]);
   };
+  // How far the person is from the newest message, as last seen: the list keeps them there when it changes height
+  const gap = useRef(0);
   const onScroll = () => {
     const el = scroller.current;
-    if (el) setAway(el.scrollHeight - el.scrollTop - el.clientHeight > 400);
+    if (!el) return;
+    gap.current = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setAway(gap.current > 400);
   };
   const toNewest = () => {
     const el = scroller.current;
@@ -353,6 +357,18 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chat.threads]);
+
+  // The list changed height (the keyboard, the suggestions, the ask bar, the field growing): stay on the newest message unless the person scrolled up
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const watch = new ResizeObserver(() => {
+      if (gap.current <= 120) el.scrollTop = el.scrollHeight;
+      gap.current = el.scrollHeight - el.scrollTop - el.clientHeight;
+    });
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
 
   // The newest message is in view when a chat opens and when one is added
   const count = items.length;
@@ -476,7 +492,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
 
   const pickSuggestion = (body: string) => {
     setText(skim(body));
-    field.current?.focus();
+    field.current?.focus({ preventScroll: true });
   };
 
   let prev: Item | undefined;
@@ -575,7 +591,7 @@ export function ChatScreen({ chat, desktop }: { chat: Chat; desktop: boolean }) 
         )}
       </div>
       <div className="chatbar">
-        {suggestions.length > 0 && (
+        {suggestions.length > 0 && !text && (
           <div className="chatbar__sugs" role="group" aria-label="Suggested replies">
             {suggestions.map((c) => (
               <button key={c.id} className="chatbar__sug" onClick={() => pickSuggestion(c.draftBody ?? '')}>
